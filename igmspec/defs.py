@@ -11,9 +11,9 @@ def z_priority():
 
     """
     zpri = [
-        'BOSS_PCA',   # PCA analysis by Paris et al. 2015 on BOSS spectra
-        'BOSS_PIPE',  # BOSS Pipeline redshifts
-        'UNKN',       # Unknown
+        str('BOSS_PCA'),   # PCA analysis by Paris et al. 2015 on BOSS spectra
+        str('BOSS_PIPE'),  # BOSS Pipeline redshifts
+        str('UNKN'),       # Unknown
     ]
     return zpri
 
@@ -30,8 +30,8 @@ def survey_flag(survey, iflag=None):
     flag_val : int
 
     """
-    survey_dict = {'BOSS-DR12': 1,
-                   'HD-LLS-DR1': 4,   # Prochaska et al. 2015
+    survey_dict = {'BOSS_DR12': 1,
+                   'HD-LLS_DR1': 4,   # Prochaska et al. 2015
                    }
     #
     return survey_dict[survey]

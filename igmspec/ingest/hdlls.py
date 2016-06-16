@@ -33,7 +33,7 @@ def meta_for_build():
     meta['EPOCH'] = [2000.]*nqso
     meta['zem'] = hdlls_meta['Z_QSO']
     meta['sig_zem'] = [0.]*nqso
-    meta['flag_zem'] = ['UNKN']*nqso
+    meta['flag_zem'] = [str('UNKN')]*nqso
     # Return
     return meta
 
@@ -45,7 +45,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False):
     ----------
     hdf : hdf5 pointer
     IDs : ndarray
-      int array of ID values in mainDB
+      int array of IGMsp_ID values in mainDB
     sname : str
       Survey name
 
@@ -53,11 +53,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False):
     -------
 
     """
-    import tarfile
+    #import tarfile
     # Add Survey
     hdlls_grp = hdf.create_group(sname)
     # Checks
-    if sname != 'HD-LLS-DR1':
+    if sname != 'HD-LLS_DR1':
         raise IOError("Not expecting this survey..")
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")
@@ -75,24 +75,27 @@ def hdf5_adddata(hdf, IDs, sname, debug=False):
     idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
     if np.sum(d2d > 0.1*u.arcsec):
         raise ValueError("Bad matches in HD-LLS")
-    all_IDs = IDs[idx]
+    meta_IDs = IDs[idx]
 
     # Kludgy Table judo
     hdlls_full = hdlls_meta[0:1]
     spec_files = []
 
-    # Loop me
-    for row in hdlls_meta:
+    full_IDs = []
+    # Loop me to bid the full survey catalog
+    for kk,row in enumerate(hdlls_meta):
         for spec_file in row['SPEC_FILES']:
             if spec_file == 'NULL':
                 continue
             # Add to full table
             hdlls_full.add_row(row)
             spec_files.append(spec_file)
+            full_IDs.append(meta_IDs[kk])
     # Trim down
     hdlls_full = hdlls_full[1:]
     hdlls_full.remove_column('SPEC_FILES')
     hdlls_full.add_column(Column(spec_files,name='SPEC_FILE'))
+    hdlls_full.add_column(Column(full_IDs, name='IGMsp_ID'))
     uni, uni_idx = np.unique(np.array(spec_files), return_index=True)
     hdlls_full = hdlls_full[uni_idx]
 
@@ -109,51 +112,56 @@ def hdf5_adddata(hdf, IDs, sname, debug=False):
                               (str('sig'),  'float32', (max_npix)),
                               #(str('co'),   'float32', (max_npix)),
                              ])
-    tar = tarfile.open(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1_spectra.tar.gz')
-    full_ids = np.zeros(len(hdlls_full), dtype=int)
-    spec_set = hdf[sname].create_dataset('spec', data=data, #chunks=True,
-                                         compression='gzip', maxshape=(None,))
+    # Init
+    full_idx = np.zeros(len(hdlls_full), dtype=int)
+    spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
+                                         maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
-    for jj,member in enumerate(tar.getmembers()):
+
+    import glob
+    members = glob.glob(os.getenv('RAW_IGMSPEC')+'/{:s}/*fits'.format(sname))
+    for jj,member in enumerate(members):
+    #tar = tarfile.open(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1_spectra.tar.gz')
+    #for jj,member in enumerate(tar.getmembers()):
+        kk = jj
+        """
         if '.' not in member.name:
             print('Skipping a likely folder: {:s}'.format(member.name))
             continue
         if jj == 0:
             raise ValueError("HD-LLS: Did not expect to get here")
+        """
         # Extract
-        f = tar.extractfile(member)
+        #f = tar.extractfile(member)
+        f = member
         hdu = fits.open(f)
         # Parse name
-        fname = f.name.split('/')[1]
+        #fname = f.name.split('/')[-1]
+        fname = f.split('/')[-1]
         mt = np.where(hdlls_full['SPEC_FILE'] == fname)[0]
         if len(mt) != 1:
             pdb.set_trace()
             raise ValueError("HD-LLS: No match to spectral file?!")
         else:
             print('loading {:s}'.format(fname))
-            full_ids[jj-1] = mt[0]
-        # Load
-        try:
-            flux, sig, wave = hdu[0].data, hdu[1].data, hdu[2].data
-        except IndexError:
-            pdb.set_trace()
-        npix = len(wave)
+            full_idx[kk] = mt[0]
+        # npix
+        npix = hdu[0].header['NAXIS1']
         if npix > max_npix:
             raise ValueError("Too many pixels... ({:d})".format(npix))
         # Some fiddling about
-        data['wave'][0][:npix] = wave
-        data['flux'][0][:npix] = flux
-        data['sig'][0][:npix] = sig
+        for key in ['wave','flux','sig']:
+            data[key] = 0.  # Important to init (for compression too)
+        data['flux'][0][:npix] = hdu[0].data
+        data['sig'][0][:npix] = hdu[1].data
+        data['wave'][0][:npix] = hdu[2].data
         # Only way to set the dataset correctly
-        spec_set[jj-1] = data
-        # Flush
-        #if (jj % 15) == 0:
-        #    hdf.flush()
+        spec_set[kk] = data
 
-    tar.close()
+    #tar.close()
 
     # Add HDLLS meta to hdf5
-    hdf[sname]['meta'] = hdlls_full[full_ids]  # No special dataset necessary?
+    hdf[sname]['meta'] = hdlls_full[full_idx]  # No special dataset necessary?
     #
     return
 

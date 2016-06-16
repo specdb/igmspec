@@ -1,0 +1,5 @@
+The DataBase file(s) should go here if you can write
+  to this directory.  
+
+Either way,  $IGMSPEC_DB needs to point to where the files are located
+

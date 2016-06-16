@@ -63,7 +63,7 @@ def chk_maindb_join(maindb, newdb):
 
 
 def get_new_ids(maindb, newdb, toler=2*u.arcsec, chk=True):
-    """ Generate new IGMS_IDs for an input DB
+    """ Generate new IGMsp_IDs for an input DB
     Parameters
     ----------
     maindb : Table
@@ -87,12 +87,12 @@ def get_new_ids(maindb, newdb, toler=2*u.arcsec, chk=True):
     new = d2d > toler
     #
     # Old IDs
-    IDs[~new] = -1 * maindb[idx[~new]]['IGMS_ID']
+    IDs[~new] = -1 * maindb[idx[~new]]['IGMsp_ID']
     nnew = np.sum(new)
     # New IDs
     if nnew > 0:
         # Generate
-        newID = np.max(maindb['IGMS_ID']) + 1
+        newID = np.max(maindb['IGMsp_ID']) + 1
         newIDs = newID + np.arange(nnew, dtype=int)
         # Insert
         IDs[new] = newIDs
@@ -111,30 +111,30 @@ def ver01():
 
     """
     # HDF5 file
-    outfil = igmspec.__path__[0]+'/../IGMspec_DB.hdf5'
+    outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_ver01.hdf5'
     hdf = h5py.File(outfil,'w')
 
     # Defs
     zpri = z_priority()
     lenz = [len(zpi) for zpi in zpri]
-    dummyf = '#'*np.max(np.array(lenz))  # For the Table
+    dummyf = str('#')*np.max(np.array(lenz))  # For the Table
 
     # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
-    idict = dict(RA=0., DEC=0., IGMS_ID=0, EPOCH=2000.,
+    idict = dict(RA=0., DEC=0., IGMsp_ID=0, EPOCH=2000.,
                  zem=0., sig_zem=0., flag_zem=dummyf, flag_survey=0)
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]
     maindb = Table(lst, names=tkeys)
 
-    ''' BOSS-DR12 '''
+    ''' BOSS_DR12 '''
     # Read
     boss_meta = boss.meta_for_build()
     nboss = len(boss_meta)
     # IDs
     boss_ids = np.arange(nboss,dtype=int)
-    boss_meta.add_column(Column(boss_ids, name='IGMS_ID'))
+    boss_meta.add_column(Column(boss_ids, name='IGMsp_ID'))
     # Survey flag
-    flag_s = survey_flag('BOSS-DR12')
+    flag_s = survey_flag('BOSS_DR12')
     boss_meta.add_column(Column([flag_s]*nboss, name='flag_survey'))
     # Check
     assert chk_maindb_join(maindb, boss_meta)
@@ -144,7 +144,7 @@ def ver01():
     # Update hf5 file (TBD)
 
     ''' HD-LLS '''
-    sname = 'HD-LLS-DR1'
+    sname = 'HD-LLS_DR1'
     # Read
     hdlls_meta = hdlls.meta_for_build()
     nhdlls = len(hdlls_meta)
@@ -154,26 +154,24 @@ def ver01():
     new = hdlls_ids > 0
     hdlls_meta = hdlls_meta[new]
     nnew = len(hdlls_meta)
-    hdlls_meta.add_column(Column(hdlls_ids[new], name='IGMS_ID'))
+    hdlls_meta.add_column(Column(hdlls_ids[new], name='IGMsp_ID'))
     # Reset IDs to all positive
     hdlls_ids = np.abs(hdlls_ids)
     # Survey flag
     flag_s = survey_flag(sname)
     hdlls_meta.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    midx = np.array(maindb['IGMS_ID'][hdlls_ids[~new]])
+    midx = np.array(maindb['IGMsp_ID'][hdlls_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
     # Append
     assert chk_maindb_join(maindb, hdlls_meta)
     maindb = vstack([maindb,hdlls_meta], join_type='exact')
     # Update hf5 file
+    pdb.set_trace()
     hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
 
-
-    pdb.set_trace()
-
     # Finish
+    hdf['catalog'] = maindb
     hdf.close()
-
 
 if __name__ == '__main__':
     ver01()

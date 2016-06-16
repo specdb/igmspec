@@ -24,7 +24,7 @@ def meta_for_build():
     meta['EPOCH'] = [2000.]*nqso
     meta['zem'] = boss_meta['Z_PCA']
     meta['sig_zem'] = boss_meta['ERR_ZPCA']
-    meta['flag_zem'] = ['BOSS_PCA']*nqso
+    meta['flag_zem'] = [str('BOSS_PCA')]*nqso
     # Return
     return meta
 
