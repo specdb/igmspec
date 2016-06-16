@@ -17,6 +17,7 @@ def z_priority():
     ]
     return zpri
 
+
 def survey_flag(survey, iflag=None):
     """ Defines bitwise survey flag for IGMspec
     Parameters
@@ -29,7 +30,9 @@ def survey_flag(survey, iflag=None):
     flag_val : int
 
     """
-    survey_dict = {'BOSS-DR12': 1}
+    survey_dict = {'BOSS-DR12': 1,
+                   'HD-LLS-DR1': 4,   # Prochaska et al. 2015
+                   }
     #
     return survey_dict[survey]
 
