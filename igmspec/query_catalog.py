@@ -2,10 +2,6 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-
-import os, glob, imp
-import psutil
-import warnings
 import h5py
 import numpy as np
 import pdb
@@ -63,6 +59,36 @@ class QueryCatalog(object):
         self.cat = Table(hdf['catalog'].value)
         self.db_file = db_file
 
+    def cut_on_surveys(self, surveys, IGM_IDs):
+        """
+        Parameters
+        ----------
+        surveys : list
+        IGM_IDs : int array
+          True means show
+
+        Returns
+        -------
+        msk : bool array
+          True mean in survey
+
+        """
+        good = np.in1d(self.cat['IGM_ID'], IGM_IDs)
+        cut_cat = self.cat[good]
+        # Flags
+        fs = cut_cat['flag_survey']
+        msk = np.array([False]*len(cut_cat))
+        for survey in surveys:
+            flag = idefs.survey_flag(survey)
+            # In the survey?
+            query = (fs % (flag*2)) >= flag
+            if np.sum(query) > 0:
+                msk[query] = True
+        gdIDs = cut_cat['IGM_ID'][msk]
+        # Return
+        final = np.in1d(IGM_IDs, gdIDs)
+        return final
+
     def match_coord(self, cat_coords, toler=0.5*u.arcsec, verbose=True):
         """ Match an input set of SkyCoords to the catalog within a given radius
 
@@ -90,6 +116,41 @@ class QueryCatalog(object):
         if verbose:
             print("Your search yielded {:d} matches".format(np.sum(good)))
         return self.cat['IGM_ID'][good]
+
+    def pairs(self, sep, dv):
+        """ Generate a pair catalog
+        Parameters
+        ----------
+        sep : Angle or Quantity
+        dv : Quantity
+          Offset in velocity.  Positive for projected pairs (i.e. dz > input value)
+
+        Returns
+        -------
+
+        """
+        # Checks
+        if not isinstance(sep, (Angle, Quantity)):
+            raise IOError("Input radius must be an Angle type, e.g. 10.*u.arcsec")
+        if not isinstance(dv, (Quantity)):
+            raise IOError("Input velocity must be a quantity, e.g. u.km/u.s")
+        # Match
+        idx, d2d, d3d = match_coordinates_sky(self.coords, self.coords, nthneighbor=2)
+        close = d2d < sep
+        # Cut on redshift
+        if dv > 0.:  # Desire projected pairs
+            zem1 = self.cat['zem'][close]
+            zem2 = self.cat['zem'][idx[close]]
+            dv12 = ltu.v_from_z(zem1,zem2)
+            gdz = np.abs(dv12) > dv
+            # f/g and b/g
+            izfg = dv12[gdz] < 0*u.km/u.s
+            ID_fg = self.cat['IGM_ID'][close][gdz][izfg]
+            ID_bg = self.cat['IGM_ID'][idx[close]][gdz][izfg]
+        else:
+            pdb.set_trace()
+        # Reload
+        return ID_fg, ID_bg
 
     def radial_search(self, inp, radius, verbose=True):
         """ Search for sources in a radius around the input coord
@@ -121,7 +182,7 @@ class QueryCatalog(object):
 
         Parameters
         ----------
-        ids : bool array
+        IGM_IDs : int array
           True means show
 
         Returns
@@ -143,7 +204,6 @@ class QueryCatalog(object):
         for survey in self.surveys:
             print("    {:s}: {:d}".format(survey, idefs.get_survey_dict()[survey]))
 
-
     def setup(self):
         """ Set up a few things, e.g. SkyCoord for the catalog
         Returns
@@ -154,8 +214,8 @@ class QueryCatalog(object):
         # SkyCoord
         self.coords = SkyCoord(ra=self.cat['RA'], dec=self.cat['DEC'], unit='deg')
         # Formatting the Table
-        self.cat['RA'].format = '7.3f'
-        self.cat['DEC'].format = '7.3f'
+        self.cat['RA'].format = '8.4f'
+        self.cat['DEC'].format = '8.4f'
         self.cat['zem'].format = '6.3f'
         self.cat['sig_zem'].format = '5.3f'
         # Surveys

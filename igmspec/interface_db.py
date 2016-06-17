@@ -34,6 +34,8 @@ class InterfaceDB(object):
     hdf : pointer to DB
     maximum_ram : float, optonal
       Maximum memory allowed for the Python session, in Gb
+    survey_bool : bool array
+      Used to grab data from a given survey
     """
 
     def __init__(self, db_file=None, maximum_ram=10.):
@@ -75,24 +77,82 @@ class InterfaceDB(object):
         self.surveys = surveys
         print("Available surveys: {}".format(self.surveys))
 
-    def grab_meta(self, survey):
-        """ Grab meta data for survey
+    def grab_ids(self, survey, IGM_IDs, verbose=True, meta=None):
+        """ Grab the survey IDs
+
+        Parameters
+        ----------
+        survey : str
+          Name of the Survey
+        IGM_IDs : int or ndarray
+          IGM_ID values
+        verbose
+
         Returns
         -------
 
         """
+        # Check
+        if survey not in self.hdf.keys():
+            raise IOError("Survey {:s} not in your DB file {:s}".format(survey, self.db_file))
+        # Find IGMS_IDs indices in survey
+        if meta is None:
+            meta = self.hdf[survey]['meta'].value
+        if 'IGM_ID' not in meta.dtype.names:
+            raise ValueError("Meta table in {:s} survey is missing IGSM_ID column!".format(survey))
+        in_survey = np.in1d(meta['IGM_ID'], IGM_IDs)
+        # Store and return
+        self.survey_bool = in_survey
+        return in_survey
+
+    def grab_meta(self, survey, IGM_IDs, show=True):
+        """ Grab meta data for survey
+        Parameters
+        ----------
+        show : bool, optional
+          Show the Meta table (print) in addition to returning
+
+        Returns
+        -------
+        meta : Table(s)
+
+        """
+        # Grab IDs then cut
+        _ = self.grab_ids(survey, IGM_IDs)
+        meta = Table(self.hdf[survey]['meta'].value)[self.survey_bool]
+        self.meta = meta
+        self.meta['RA'].format = '7.3f'
+        self.meta['DEC'].format = '7.3f'
+        self.meta['zem'].format = '6.3f'
+        self.meta['WV_MIN'].format = '6.1f'
+        self.meta['WV_MAX'].format = '6.1f'
+        # Show?
+        if show:
+            meta_keys = ['IGM_ID', 'RA', 'DEC', 'zem', 'SPEC_FILE']
+            for key in meta.keys():
+                if key not in meta_keys:
+                    meta_keys += [key]
+            meta[meta_keys].pprint(max_width=120)
+        # Load and return
+        return meta
 
     def grab_spec(self, survey, IGM_IDs, verbose=True):
         """ Grab spectra using staged IDs
 
         Parameters
         ----------
-        survey
+        survey : str or list
+        IGM_IDs : int or intarr
 
         Returns
         -------
 
         """
+        if isinstance(survey, list):
+            all_spec = []
+            for isurvey in survey:
+                all_spec.append(self.grab_spec(isurvey, IGM_IDs))
+            return all_spec
         if self.stage_data(survey, IGM_IDs):
             if verbose:
                 print("Loaded spectra")
@@ -117,8 +177,8 @@ class InterfaceDB(object):
         ----------
         survey : str
           Name of the Survey
-        IGMS_IDs : int or ndarray
-          IGMS_ID values
+        IGM_IDs : int or ndarray
+          IGM_ID values
 
         Returns
         -------
@@ -129,12 +189,8 @@ class InterfaceDB(object):
         """
         # Checks
         if survey not in self.hdf.keys():
-            raise IOError("Survey {:s} not in your DB file {:s}".format(self.db_file))
-        # Find IGMS_IDs indices in survey
-        meta = self.hdf[survey]['meta'].value
-        if 'IGM_ID' not in meta.dtype.names:
-            raise ValueError("Meta table in {:s} survey is missing IGSM_ID column!".format(survey))
-        in_survey = np.in1d(meta['IGM_ID'], IGM_IDs)
+            raise IOError("Survey {:s} not in your DB file {:s}".format(survey, self.db_file))
+        in_survey = self.grab_ids(survey, IGM_IDs)
         nhits = np.sum(in_survey)
         # Memory check (approximate; ignores meta data)
         spec_Gb = self.hdf[survey]['spec'][0].nbytes/1e9  # Gb
@@ -145,7 +201,6 @@ class InterfaceDB(object):
         else:
             if verbose:
                 print("Staged {:d} spectra totalling {:g} Gb".format(nhits, new_memory))
-            self.survey_bool = in_survey
             return True
 
 

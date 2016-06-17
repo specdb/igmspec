@@ -270,6 +270,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
     meta.add_column(Column(np.arange(nmeta,dtype=int),name='SURVEY_ID'))
+    meta.rename_column('Z_QSO', 'zem')
 
     # Add HDLLS meta to hdf5
     if iiu.chk_meta(meta):

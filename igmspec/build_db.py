@@ -8,8 +8,8 @@ import h5py
 import numbers
 import pdb
 
-from igmspec.defs import z_priority, survey_flag, get_cat_dict
-from igmspec.ingest import boss, hdlls, kodiaq
+from igmspec import defs
+from igmspec.ingest import boss, hdlls, kodiaq, ggg
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -77,7 +77,7 @@ def get_new_ids(maindb, newdb, chk=True):
       New IDs are generated as needed
 
     """
-    cdict = get_cat_dict()
+    cdict = defs.get_cat_dict()
     IDs = np.zeros(len(newdb), dtype=int)
     # Setup
     c_main = SkyCoord(ra=maindb['RA'], dec=maindb['DEC'], unit='deg')
@@ -142,10 +142,10 @@ def ver01():
     hdf = h5py.File(outfil,'w')
 
     # Defs
-    zpri = z_priority()
+    zpri = defs.z_priority()
     lenz = [len(zpi) for zpi in zpri]
     dummyf = str('#')*np.max(np.array(lenz))  # For the Table
-    cdict = get_cat_dict()
+    cdict = defs.get_cat_dict()
 
     # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
     idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
@@ -162,14 +162,14 @@ def ver01():
     boss_ids = np.arange(nboss,dtype=int)
     boss_meta.add_column(Column(boss_ids, name='IGM_ID'))
     # Survey flag
-    flag_s = survey_flag('BOSS_DR12')
+    flag_s = defs.survey_flag('BOSS_DR12')
     boss_meta.add_column(Column([flag_s]*nboss, name='flag_survey'))
     # Check
     assert chk_maindb_join(maindb, boss_meta)
     # Append
     maindb = vstack([maindb,boss_meta], join_type='exact')
     maindb = maindb[1:]  # Eliminate dummy line
-    # Update hf5 file (TBD)
+
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
@@ -178,7 +178,7 @@ def ver01():
     kodiaq_cut, new, kodiaq_ids = set_new_ids(maindb, kodiaq_meta)
     nnew = np.sum(new)
     # Survey flag
-    flag_s = survey_flag(sname)
+    flag_s = defs.survey_flag(sname)
     kodiaq_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
     midx = np.array(maindb['IGM_ID'][kodiaq_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
@@ -196,7 +196,7 @@ def ver01():
     hdlls_cut, new, hdlls_ids = set_new_ids(maindb, hdlls_meta)
     nnew = np.sum(new)
     # Survey flag
-    flag_s = survey_flag(sname)
+    flag_s = defs.survey_flag(sname)
     hdlls_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
     midx = np.array(maindb['IGM_ID'][hdlls_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
@@ -206,8 +206,29 @@ def ver01():
     # Update hf5 file
     hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
 
+    ''' GGG '''
+    sname = 'GGG'
+    ggg_meta = ggg.meta_for_build()
+    # IDs
+    ggg_cut, new, ggg_ids = set_new_ids(maindb, ggg_meta)
+    nnew = np.sum(new)
+    # Survey flag
+    flag_s = defs.survey_flag(sname)
+    ggg_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+    midx = np.array(maindb['IGM_ID'][ggg_ids[~new]])
+    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
+    # Append
+    assert chk_maindb_join(maindb, ggg_cut)
+    maindb = vstack([maindb,ggg_cut], join_type='exact')
+    # Update hf5 file
+    ggg.hdf5_adddata(hdf, ggg_ids, sname)
+
     # Finish
     hdf['catalog'] = maindb
+    hdf['catalog'].attrs['EPOCH'] = 2000.
+    hdf['catalog'].attrs['Z_PRIORITY'] = zpri
+    #hdf['catalog'].attrs['CAT_DICT'] = cdict
+    #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
 

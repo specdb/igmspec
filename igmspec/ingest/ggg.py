@@ -1,6 +1,6 @@
-""" Module to ingest KODIAQ Survey data
+""" Module to ingest GGG Survey data
 
-O'Meara et al. 2016
+Worseck et al. 2014
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -9,11 +9,13 @@ import pdb
 import os
 import glob
 import imp
+import datetime
 
-from astropy.table import Table, Column
+from astropy.table import Table, Column, vstack
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 from astropy import units as u
 from astropy.io import fits
+from astropy.time import Time
 
 from linetools import utils as ltu
 from linetools.spectra import io as lsio
@@ -24,34 +26,27 @@ igms_path = imp.find_module('igmspec')[1]
 
 
 def grab_meta():
-    """ Grab KODIAQ meta Table
+    """ Grab GGG meta Table
     Returns
     -------
 
     """
-    kodiaq_file = igms_path+'/data/meta/KODIAQ_DR1_summary.ascii'
-    kodiaq_meta = Table.read(kodiaq_file, format='ascii', comment='#')
-    # Verify DR1
-    for row in kodiaq_meta:
-        assert row['kodrelease'] == 1
+    # This table has units in it!
+    ggg_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/GGG/GGG_catalog.fits')
     # RA/DEC, DATE
-    ra = []
-    dec = []
     dateobs = []
-    for row in kodiaq_meta:
-        # Fix DEC
-        # Get RA/DEC
-        coord = ltu.radec_to_coord((row['sRA'],row['sDEC']))
-        ra.append(coord.ra.value)
-        dec.append(coord.dec.value)
+    for row in ggg_meta:
         # DATE
-        dvals = row['pi_date'].split('_')
-        dateobs.append(str('{:s}-{:s}-{:02d}'.format(dvals[-1],dvals[1][0:3],int(dvals[2]))))  #%Y-%b-%d
-    kodiaq_meta.add_column(Column(ra, name='RA'))
-    kodiaq_meta.add_column(Column(dec, name='DEC'))
-    kodiaq_meta.add_column(Column(dateobs, name='DATE-OBS'))
+        t = Time(row['RMJD'], format='mjd')
+        tymd = str(t.iso.split(' ')[0])
+        tval = datetime.datetime.strptime(tymd, '%Y-%m-%d')
+        dateobs.append(datetime.datetime.strftime(tval,'%Y-%b-%d'))
+    ggg_meta.add_column(Column(dateobs, name='DATE-OBS'))
+    # Turn off units
+    for key in ['RA', 'DEC']:
+        ggg_meta[key].unit = None
     #
-    return kodiaq_meta
+    return ggg_meta
 
 
 def meta_for_build():
@@ -60,25 +55,25 @@ def meta_for_build():
     -------
     meta : Table
     """
-    kodiaq_meta = grab_meta()
+    ggg_meta = grab_meta()
     # Cut down to unique QSOs
-    names = np.array([name[0:26] for name in kodiaq_meta['qso']])
+    names = np.array([name[0:26] for name in ggg_meta['SDSSJ']])
     uni, uni_idx = np.unique(names, return_index=True)
-    kodiaq_meta = kodiaq_meta[uni_idx]
-    nqso = len(kodiaq_meta)
+    ggg_meta = ggg_meta[uni_idx]
+    nqso = len(ggg_meta)
     #
     meta = Table()
-    meta['RA'] = kodiaq_meta['RA']
-    meta['DEC'] = kodiaq_meta['DEC']
-    meta['zem'] = kodiaq_meta['zem']
-    meta['sig_zem'] = [0.]*nqso
-    meta['flag_zem'] = [str('SIMBAD')]*nqso
+    meta['RA'] = ggg_meta['RA']
+    meta['DEC'] = ggg_meta['DEC']
+    meta['zem'] = ggg_meta['z_gmos']
+    meta['sig_zem'] = ggg_meta['zerror_gmos']
+    meta['flag_zem'] = [str('GGG')]*nqso
     # Return
     return meta
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
-    """ Append KODIAQ data to the h5 file
+    """ Append GGG data to the h5 file
 
     Parameters
     ----------
@@ -96,12 +91,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     """
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
-    kodiaq_grp = hdf.create_group(sname)
+    ggg_grp = hdf.create_group(sname)
     # Load up
     meta = grab_meta()
     bmeta = meta_for_build()
     # Checks
-    if sname != 'KODIAQ_DR1':
+    if sname != 'GGG':
         raise IOError("Not expecting this survey..")
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")
@@ -110,20 +105,18 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         raise ValueError("Wrong sized table..")
 
     # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 0.1*u.arcsec):
-        raise ValueError("Bad matches in KODIAQ")
-    meta_IDs = IDs[idx]
-
-    # Loop me to bid the full survey catalog
+    meta_IDs = IDs
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
+
+    # Add zem
+    meta['zem'] = meta['z_gmos']
+
+    # Double up for the two gratings
+    meta = vstack([meta,meta])
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 200000  # Just needs to be large enough
+    max_npix = 1600  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -137,19 +130,19 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     Rlist = []
     wvminlist = []
     wvmaxlist = []
-    dateobslist = []
     npixlist = []
     speclist = []
     # Loop
-    path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
+    path = os.getenv('RAW_IGMSPEC')+'/GGG/'
     maxpix = 0
     for jj,row in enumerate(meta):
         # Generate full file
-        full_file = path+row['qso']+'/'+row['pi_date']+'/'+row['spec_prefix']+'_f.fits'
+        if jj >= nspec//2:
+            full_file = path+row['name']+'_R400.fits.gz'
+        else:
+            full_file = path+row['name']+'_B600.fits.gz'
         # Extract
-        print("KODIAQ: Reading {:s}".format(full_file))
-        hduf = fits.open(full_file)
-        head = hduf[0].header
+        print("GGG: Reading {:s}".format(full_file))
         spec = lsio.readspec(full_file)
         # Parse name
         fname = full_file.split('/')[-1]
@@ -170,10 +163,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
-        try:
-            Rlist.append(iiu.set_resolution(head))
-        except ValueError:
-            pdb.set_trace()
+        if 'R400' in fname:
+            Rlist.append(833.)
+        else:
+            Rlist.append(940.)
         # Only way to set the dataset correctly
         if chk_meta_only:
             continue
@@ -181,6 +174,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
 
     #
     print("Max pix = {:d}".format(maxpix))
+    meta.sort('RA')
     # Add columns
     meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     meta.add_column(Column(speclist, name='SPEC_FILE'))

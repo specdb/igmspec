@@ -13,6 +13,7 @@ def z_priority():
 
     """
     zpri = [
+        str('GGG'),        # GGG redshifts
         str('BOSS_PCA'),   # PCA analysis by Paris et al. 2015 on BOSS spectra
         str('BOSS_PIPE'),  # BOSS Pipeline redshifts
         str('UNKN'),       # Unknown
@@ -40,6 +41,7 @@ def get_survey_dict():
     survey_dict['SDSS_DR7'] = 2
     survey_dict['KODIAQ_DR1'] = 4   # O'Meara et al. 2016
     survey_dict['HD-LLS_DR1'] = 8   # Prochaska et al. 2015
+    survey_dict['GGG'] = 16         # Worseck et al. 201X
     #
     return survey_dict
 
