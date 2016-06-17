@@ -59,7 +59,11 @@ def get_res_dicts():
 
     """
     ESI_Rdict = {'0.50_arcsec': 4545./0.5, '0.75_arcsec': 4545./0.75}
-    HIRES_Rdict = {'C1': 40000./0.86, 'C5': 40000./1.1}
+    HIRES1 = 36000.*1.148  # https://koa.ipac.caltech.edu/UserGuide/deckname_detail.html
+    HIRES_Rdict = {'C1': HIRES1/0.861,
+                   'C5': HIRES1/1.148,
+                   'E3': HIRES1/0.4,
+                   }
     #
     Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict)
     #

@@ -78,7 +78,7 @@ def meta_for_build():
     return meta
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
+def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=True):
     """ Append HD-LLS data to the h5 file
 
     Parameters
@@ -201,13 +201,28 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             try:
                 Rlist.append(iiu.set_resolution(head))
             except ValueError:
-                # A few by hand
+                # A few by hand (pulled from Table 1)
                 if 'J073149' in fname:
                     Rlist.append(Rdicts['HIRES']['C5'])
                     tval = datetime.datetime.strptime('2006-01-04', '%Y-%m-%d')
                 elif 'J081435' in fname:
                     Rlist.append(Rdicts['HIRES']['C1'])
                     tval = datetime.datetime.strptime('2006-12-26', '%Y-%m-%d') # 2008 too
+                elif 'J095309' in fname:
+                    Rlist.append(Rdicts['HIRES']['C1'])
+                    tval = datetime.datetime.strptime('2005-03-18', '%Y-%m-%d')
+                elif 'J113418' in fname:
+                    Rlist.append(Rdicts['HIRES']['C5'])
+                    tval = datetime.datetime.strptime('2006-01-05', '%Y-%m-%d')
+                elif 'J135706' in fname:
+                    Rlist.append(Rdicts['HIRES']['C5'])
+                    tval = datetime.datetime.strptime('2007-04-28', '%Y-%m-%d')
+                elif 'J155556.9' in fname:
+                    Rlist.append(Rdicts['HIRES']['C5'])
+                    tval = datetime.datetime.strptime('2005-04-15', '%Y-%m-%d')
+                elif 'J212329' in fname:
+                    Rlist.append(Rdicts['HIRES']['E3'])
+                    tval = datetime.datetime.strptime('2006-08-20', '%Y-%m-%d')
                 else:
                     pdb.set_trace()
             else:
@@ -219,18 +234,26 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             except ValueError:
                 print("Using R=6,000 for ESI")
                 Rlist.append(6000.)
-            tval = datetime.datetime.strptime(head['DATE'], '%Y-%m-%d')
+            try:
+                tval = datetime.datetime.strptime(head['DATE'], '%Y-%m-%d')
+            except KeyError:
+                if ('J223438.5' in fname) or ('J231543' in fname):
+                    tval = datetime.datetime.strptime('2004-09-11', '%Y-%m-%d')
+                else:
+                    pdb.set_trace()
             dateobslist.append(datetime.datetime.strftime(tval,'%Y-%b-%d'))
         elif 'MIKE' in fname:  # APPROXIMATE
             sep = full_coord[mt[0]].separation(mike_coord)
             imin = np.argmin(sep)
             if sep[imin] > 1.*u.arcsec:
+                pdb.set_trace()
                 raise ValueError("Bad separation in MIKE")
             Rlist.append(25000. / mike_meta['Slit'][imin])
             dateobslist.append(mike_meta['DATE-OBS'][imin])
         elif 'MAGE' in fname:  # APPROXIMATE
-            print("NEED TO SET R for {:s}".format(fname))
+            print("NEED TO SET R and DATE-OBS for {:s}".format(fname))
             Rlist.append(5000.)
+            dateobslist.append('2016-Jul-17')
         else:  # MagE
             raise ValueError("UH OH")
         # Only way to set the dataset correctly
@@ -238,8 +261,17 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             continue
         spec_set[kk] = data
 
-    # Add HDLLS meta to hdf5
+    # Add columns
     meta = hdlls_full[full_idx]
+    pdb.set_trace()
+    meta.add_column(Column(npixlist, name='NPIX'))
+    meta.add_column(Column(dateobslist, name='DATE-OBS'))
+    meta.add_column(Column(wvminlist, name='WV_MIN'))
+    meta.add_column(Column(wvmaxlist, name='WV_MAX'))
+    meta.add_column(Column(Rlist, name='R'))
+    meta.add_column(Column(np.arange(len(meta),dtype=int)),name='SURVEY_ID')
+
+    # Add HDLLS meta to hdf5
     if iiu.chk_meta(meta):
         if chk_meta_only:
             pdb.set_trace()

@@ -28,7 +28,11 @@ def chk_meta(meta):
             print("Missing column {:s} in meta".format(clm))
     # Check date formatting
     for row in meta:
-        tval = datetime.datetime.strptime(row['DATE-OBS'], '%Y-%b-%d')
+        try:
+            tval = datetime.datetime.strptime(row['DATE-OBS'], '%Y-%b-%d')
+        except:
+            print("Bad or missing DATE-OBS value")
+            chk = False
     # Return
     return chk
 

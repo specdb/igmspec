@@ -82,7 +82,7 @@ class InterfaceDB(object):
 
         """
 
-    def grab_spec(self, survey, IGMsp_IDs, verbose=True):
+    def grab_spec(self, survey, IGM_IDs, verbose=True):
         """ Grab spectra using staged IDs
 
         Parameters
@@ -93,7 +93,7 @@ class InterfaceDB(object):
         -------
 
         """
-        if self.stage_data(survey, IGMsp_IDs):
+        if self.stage_data(survey, IGM_IDs):
             if verbose:
                 print("Loaded spectra")
             data = self.hdf[survey]['spec'][self.survey_bool]
@@ -109,7 +109,7 @@ class InterfaceDB(object):
         # Return
         return spec
 
-    def stage_data(self, survey, IGMsp_IDs, verbose=True):
+    def stage_data(self, survey, IGM_IDs, verbose=True):
         """ Stage the spectra for serving
         Mainly checks the memory
 
@@ -132,9 +132,9 @@ class InterfaceDB(object):
             raise IOError("Survey {:s} not in your DB file {:s}".format(self.db_file))
         # Find IGMS_IDs indices in survey
         meta = self.hdf[survey]['meta'].value
-        if 'IGMsp_ID' not in meta.dtype.names:
+        if 'IGM_ID' not in meta.dtype.names:
             raise ValueError("Meta table in {:s} survey is missing IGSM_ID column!".format(survey))
-        in_survey = np.in1d(meta['IGMsp_ID'], IGMsp_IDs)
+        in_survey = np.in1d(meta['IGM_ID'], IGM_IDs)
         nhits = np.sum(in_survey)
         # Memory check (approximate; ignores meta data)
         spec_Gb = self.hdf[survey]['spec'][0].nbytes/1e9  # Gb
