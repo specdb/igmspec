@@ -89,7 +89,7 @@ class QueryCatalog(object):
         # Return
         if verbose:
             print("Your search yielded {:d} matches".format(np.sum(good)))
-        return self.cat['IGMsp_ID'][good]
+        return self.cat['IGM_ID'][good]
 
     def radial_search(self, inp, radius, verbose=True):
         """ Search for sources in a radius around the input coord
@@ -114,13 +114,14 @@ class QueryCatalog(object):
         # Return
         if verbose:
             print("Your search yielded {:d} match[es]".format(np.sum(good)))
-        return self.cat['IGMsp_ID'][good]
+        return self.cat['IGM_ID'][good]
 
-    def show_meta(self, good):
-        """
+    def show_cat(self, IGM_IDs):
+        """  Show the catalog
+
         Parameters
         ----------
-        good : bool array
+        ids : bool array
           True means show
 
         Returns
@@ -128,8 +129,10 @@ class QueryCatalog(object):
 
         """
         # IGMspec catalog
+        good = np.in1d(self.cat['IGM_ID'], IGM_IDs)
+
         # Catalog keys
-        cat_keys = ['IGMsp_ID', 'RA', 'DEC', 'zem', 'flag_survey']
+        cat_keys = ['IGM_ID', 'RA', 'DEC', 'zem', 'flag_survey']
         for key in self.cat.keys():
             if key not in cat_keys:
                 cat_keys += [key]

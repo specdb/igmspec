@@ -49,3 +49,18 @@ def survey_flag(survey, iflag=None):
     #
     return survey_dict[survey]
 
+def get_res_dicts():
+    """ Resolution dicts
+
+    Returns
+    -------
+    Rdicts : dict
+      dict of R dicts
+
+    """
+    ESI_Rdict = {'0.50_arcsec': 4545./0.5, '0.75_arcsec': 4545./0.75}
+    HIRES_Rdict = {'C1': 40000./0.86, 'C5': 40000./1.1}
+    #
+    Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict)
+    #
+    return Rdicts

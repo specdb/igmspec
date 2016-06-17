@@ -7,11 +7,51 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import pdb
 import os
+import glob
+import imp
+import datetime
 
 from astropy.table import Table, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 from astropy import units as u
 from astropy.io import fits
+
+from linetools import utils as ltu
+
+from igmspec.ingest import utils as iiu
+
+igms_path = imp.find_module('igmspec')[1]
+
+
+def grab_meta_mike():
+    """ Grab MIKE meta Table
+    Returns
+    -------
+
+    """
+    mike_file = igms_path+'/data/meta/HD-LLS_DR1_MIKE.ascii'
+    mike_meta = Table.read(mike_file, format='ascii', delimiter='&',
+                           guess=False, comment='#')
+    # RA/DEC, DATE
+    ra = []
+    dec = []
+    dateobs = []
+    for row in mike_meta:
+        # Fix DEC
+        if '--' in row['sDEC']:
+            row['sDEC'] = row['sDEC'].replace('--','-')
+        # Get RA/DEC
+        coord = ltu.radec_to_coord((row['sRA'],row['sDEC']))
+        ra.append(coord.ra.value)
+        dec.append(coord.dec.value)
+        # DATE
+        dvals = row['DATE'].split(' ')
+        dateobs.append(str('{:s}-{:s}-{:s}'.format(dvals[2],dvals[1],dvals[0])))
+    mike_meta.add_column(Column(ra, name='RA'))
+    mike_meta.add_column(Column(dec, name='DEC'))
+    mike_meta.add_column(Column(dateobs, name='DATE-OBS'))
+    #
+    return mike_meta
 
 
 def meta_for_build():
@@ -38,24 +78,31 @@ def meta_for_build():
     return meta
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False):
+def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     """ Append HD-LLS data to the h5 file
 
     Parameters
     ----------
     hdf : hdf5 pointer
     IDs : ndarray
-      int array of IGMsp_ID values in mainDB
+      int array of IGM_ID values in mainDB
     sname : str
       Survey name
+    chk_meta_only : bool, optional
+      Only check meta file;  will not write
 
     Returns
     -------
 
     """
-    #import tarfile
+    from igmspec import defs
     # Add Survey
+    print("Adding {:s} survey to DB".format(sname))
     hdlls_grp = hdf.create_group(sname)
+    # Load up
+    Rdicts = defs.get_res_dicts()
+    mike_meta = grab_meta_mike()
+    mike_coord = SkyCoord(ra=mike_meta['RA'], dec=mike_meta['DEC'], unit='deg')
     # Checks
     if sname != 'HD-LLS_DR1':
         raise IOError("Not expecting this survey..")
@@ -95,18 +142,15 @@ def hdf5_adddata(hdf, IDs, sname, debug=False):
     hdlls_full = hdlls_full[1:]
     hdlls_full.remove_column('SPEC_FILES')
     hdlls_full.add_column(Column(spec_files,name='SPEC_FILE'))
-    hdlls_full.add_column(Column(full_IDs, name='IGMsp_ID'))
+    hdlls_full.add_column(Column(full_IDs, name='IGM_ID'))
     uni, uni_idx = np.unique(np.array(spec_files), return_index=True)
     hdlls_full = hdlls_full[uni_idx]
+    full_coord = SkyCoord(ra=hdlls_full['RA'], dec=hdlls_full['DEC'], unit='deg')
 
-
-    # Build spectra
-    if debug:
-        nspec = 10
-    else:
-        nspec = len(hdlls_full)
-    max_npix = 210000
-    data = np.ma.empty((1,), #self.npix),  # THIS WILL NOT SCALE FOR BOSS!!
+    # Build spectra (and parse for meta)
+    nspec = len(hdlls_full)
+    max_npix = 210000  # Just needs to be large enough
+    data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
                               (str('sig'),  'float32', (max_npix)),
@@ -117,26 +161,19 @@ def hdf5_adddata(hdf, IDs, sname, debug=False):
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
-
-    import glob
+    Rlist = []
+    wvminlist = []
+    wvmaxlist = []
+    dateobslist = []
+    npixlist = []
+    # Loop
     members = glob.glob(os.getenv('RAW_IGMSPEC')+'/{:s}/*fits'.format(sname))
     for jj,member in enumerate(members):
-    #tar = tarfile.open(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1_spectra.tar.gz')
-    #for jj,member in enumerate(tar.getmembers()):
         kk = jj
-        """
-        if '.' not in member.name:
-            print('Skipping a likely folder: {:s}'.format(member.name))
-            continue
-        if jj == 0:
-            raise ValueError("HD-LLS: Did not expect to get here")
-        """
         # Extract
-        #f = tar.extractfile(member)
         f = member
         hdu = fits.open(f)
         # Parse name
-        #fname = f.name.split('/')[-1]
         fname = f.split('/')[-1]
         mt = np.where(hdlls_full['SPEC_FILE'] == fname)[0]
         if len(mt) != 1:
@@ -146,22 +183,69 @@ def hdf5_adddata(hdf, IDs, sname, debug=False):
             print('loading {:s}'.format(fname))
             full_idx[kk] = mt[0]
         # npix
-        npix = hdu[0].header['NAXIS1']
+        head = hdu[0].header
+        npix = head['NAXIS1']
         if npix > max_npix:
-            raise ValueError("Too many pixels... ({:d})".format(npix))
+            raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
         # Some fiddling about
         for key in ['wave','flux','sig']:
             data[key] = 0.  # Important to init (for compression too)
         data['flux'][0][:npix] = hdu[0].data
         data['sig'][0][:npix] = hdu[1].data
         data['wave'][0][:npix] = hdu[2].data
+        # Meta
+        wvminlist.append(np.min(data['wave'][0][:npix]))
+        wvmaxlist.append(np.max(data['wave'][0][:npix]))
+        npixlist.append(npix)
+        if 'HIRES' in fname:
+            try:
+                Rlist.append(iiu.set_resolution(head))
+            except ValueError:
+                # A few by hand
+                if 'J073149' in fname:
+                    Rlist.append(Rdicts['HIRES']['C5'])
+                    tval = datetime.datetime.strptime('2006-01-04', '%Y-%m-%d')
+                elif 'J081435' in fname:
+                    Rlist.append(Rdicts['HIRES']['C1'])
+                    tval = datetime.datetime.strptime('2006-12-26', '%Y-%m-%d') # 2008 too
+                else:
+                    pdb.set_trace()
+            else:
+                tval = datetime.datetime.strptime(head['DATE-OBS'], '%Y-%m-%d')
+            dateobslist.append(datetime.datetime.strftime(tval,'%Y-%b-%d'))
+        elif 'ESI' in fname:
+            try:
+                Rlist.append(iiu.set_resolution(head))
+            except ValueError:
+                print("Using R=6,000 for ESI")
+                Rlist.append(6000.)
+            tval = datetime.datetime.strptime(head['DATE'], '%Y-%m-%d')
+            dateobslist.append(datetime.datetime.strftime(tval,'%Y-%b-%d'))
+        elif 'MIKE' in fname:  # APPROXIMATE
+            sep = full_coord[mt[0]].separation(mike_coord)
+            imin = np.argmin(sep)
+            if sep[imin] > 1.*u.arcsec:
+                raise ValueError("Bad separation in MIKE")
+            Rlist.append(25000. / mike_meta['Slit'][imin])
+            dateobslist.append(mike_meta['DATE-OBS'][imin])
+        elif 'MAGE' in fname:  # APPROXIMATE
+            print("NEED TO SET R for {:s}".format(fname))
+            Rlist.append(5000.)
+        else:  # MagE
+            raise ValueError("UH OH")
         # Only way to set the dataset correctly
+        if chk_meta_only:
+            continue
         spec_set[kk] = data
 
-    #tar.close()
-
     # Add HDLLS meta to hdf5
-    hdf[sname]['meta'] = hdlls_full[full_idx]  # No special dataset necessary?
+    meta = hdlls_full[full_idx]
+    if iiu.chk_meta(meta):
+        if chk_meta_only:
+            pdb.set_trace()
+        hdf[sname]['meta'] = meta
+    else:
+        raise ValueError("meta file failed")
     #
     return
 

@@ -82,7 +82,7 @@ class InterfaceDB(object):
 
         """
 
-    def grab_spec(self, survey, IGMsp_IDs):
+    def grab_spec(self, survey, IGMsp_IDs, verbose=True):
         """ Grab spectra using staged IDs
 
         Parameters
@@ -94,6 +94,8 @@ class InterfaceDB(object):
 
         """
         if self.stage_data(survey, IGMsp_IDs):
+            if verbose:
+                print("Loaded spectra")
             data = self.hdf[survey]['spec'][self.survey_bool]
         else:
             print("Staging failed..  Not returning spectra")
@@ -107,7 +109,7 @@ class InterfaceDB(object):
         # Return
         return spec
 
-    def stage_data(self, survey, IGMsp_IDs):
+    def stage_data(self, survey, IGMsp_IDs, verbose=True):
         """ Stage the spectra for serving
         Mainly checks the memory
 
@@ -135,12 +137,14 @@ class InterfaceDB(object):
         in_survey = np.in1d(meta['IGMsp_ID'], IGMsp_IDs)
         nhits = np.sum(in_survey)
         # Memory check (approximate; ignores meta data)
-        spec_bytes = self.hdf[survey]['spec'][0].nbytes/1e9  # Gb
-        new_memory = spec_bytes*nhits
+        spec_Gb = self.hdf[survey]['spec'][0].nbytes/1e9  # Gb
+        new_memory = spec_Gb*nhits
         if new_memory + self.memory_used > self.memory_max:
             warnings.warn("This request would exceed your maximum memory limit of {:g} Gb".format(self.memory_max))
             return False
         else:
+            if verbose:
+                print("Staged {:d} spectra totalling {:g} Gb".format(nhits, new_memory))
             self.survey_bool = in_survey
             return True
 

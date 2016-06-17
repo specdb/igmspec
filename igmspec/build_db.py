@@ -63,7 +63,7 @@ def chk_maindb_join(maindb, newdb):
 
 
 def get_new_ids(maindb, newdb, toler=2*u.arcsec, chk=True):
-    """ Generate new IGMsp_IDs for an input DB
+    """ Generate new IGM_IDs for an input DB
     Parameters
     ----------
     maindb : Table
@@ -87,12 +87,12 @@ def get_new_ids(maindb, newdb, toler=2*u.arcsec, chk=True):
     new = d2d > toler
     #
     # Old IDs
-    IDs[~new] = -1 * maindb[idx[~new]]['IGMsp_ID']
+    IDs[~new] = -1 * maindb[idx[~new]]['IGM_ID']
     nnew = np.sum(new)
     # New IDs
     if nnew > 0:
         # Generate
-        newID = np.max(maindb['IGMsp_ID']) + 1
+        newID = np.max(maindb['IGM_ID']) + 1
         newIDs = newID + np.arange(nnew, dtype=int)
         # Insert
         IDs[new] = newIDs
@@ -120,7 +120,7 @@ def ver01():
     dummyf = str('#')*np.max(np.array(lenz))  # For the Table
 
     # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
-    idict = dict(RA=0., DEC=0., IGMsp_ID=0, EPOCH=2000.,
+    idict = dict(RA=0., DEC=0., IGM_ID=0, EPOCH=2000.,
                  zem=0., sig_zem=0., flag_zem=dummyf, flag_survey=0)
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]
@@ -132,7 +132,7 @@ def ver01():
     nboss = len(boss_meta)
     # IDs
     boss_ids = np.arange(nboss,dtype=int)
-    boss_meta.add_column(Column(boss_ids, name='IGMsp_ID'))
+    boss_meta.add_column(Column(boss_ids, name='IGM_ID'))
     # Survey flag
     flag_s = survey_flag('BOSS_DR12')
     boss_meta.add_column(Column([flag_s]*nboss, name='flag_survey'))
@@ -154,13 +154,13 @@ def ver01():
     new = hdlls_ids > 0
     hdlls_meta = hdlls_meta[new]
     nnew = len(hdlls_meta)
-    hdlls_meta.add_column(Column(hdlls_ids[new], name='IGMsp_ID'))
+    hdlls_meta.add_column(Column(hdlls_ids[new], name='IGM_ID'))
     # Reset IDs to all positive
     hdlls_ids = np.abs(hdlls_ids)
     # Survey flag
     flag_s = survey_flag(sname)
     hdlls_meta.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    midx = np.array(maindb['IGMsp_ID'][hdlls_ids[~new]])
+    midx = np.array(maindb['IGM_ID'][hdlls_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
     # Append
     assert chk_maindb_join(maindb, hdlls_meta)
