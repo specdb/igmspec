@@ -16,7 +16,7 @@ from astropy import units as u
 from astropy.units import Quantity
 from astropy.coordinates import SkyCoord, match_coordinates_sky, Angle
 
-from igmspec.defs import z_priority, survey_flag
+from igmspec import defs as idefs
 from igmspec import db_utils as idbu
 
 from linetools import utils as ltu
@@ -89,14 +89,14 @@ class QueryCatalog(object):
         # Return
         if verbose:
             print("Your search yielded {:d} matches".format(np.sum(good)))
-        return good
+        return self.cat['IGMsp_ID'][good]
 
     def radial_search(self, inp, radius, verbose=True):
         """ Search for sources in a radius around the input coord
 
         Parameters
         ----------
-        inp : tuple or SkyCoord
+        inp : str or tuple or SkyCoord
           See linetools.utils.radec_to_coord
         toler
         verbose
@@ -114,7 +114,32 @@ class QueryCatalog(object):
         # Return
         if verbose:
             print("Your search yielded {:d} match[es]".format(np.sum(good)))
-        return good
+        return self.cat['IGMsp_ID'][good]
+
+    def show_meta(self, good):
+        """
+        Parameters
+        ----------
+        good : bool array
+          True means show
+
+        Returns
+        -------
+
+        """
+        # IGMspec catalog
+        # Catalog keys
+        cat_keys = ['IGMsp_ID', 'RA', 'DEC', 'zem', 'flag_survey']
+        for key in self.cat.keys():
+            if key not in cat_keys:
+                cat_keys += [key]
+        self.cat[cat_keys][good].pprint(max_width=120)
+        # Print survey dict
+        print("----------")
+        print("Survey key:")
+        for survey in self.surveys:
+            print("    {:s}: {:d}".format(survey, idefs.get_survey_dict()[survey]))
+
 
     def setup(self):
         """ Set up a few things, e.g. SkyCoord for the catalog
@@ -122,10 +147,26 @@ class QueryCatalog(object):
         -------
 
         """
+        from igmspec import cat_utils as icu
+        # SkyCoord
         self.coords = SkyCoord(ra=self.cat['RA'], dec=self.cat['DEC'], unit='deg')
-
+        # Formatting the Table
+        self.cat['RA'].format = '7.3f'
+        self.cat['DEC'].format = '7.3f'
+        self.cat['zem'].format = '6.3f'
+        self.cat['sig_zem'].format = '5.3f'
+        # Surveys
+        surveys = idefs.get_survey_dict()
+        unif = np.unique(self.cat['flag_survey'])
+        all_surveys = []
+        for ifs in unif:
+            all_surveys += icu.flag_to_surveys(ifs)
+        self.surveys = list(np.unique(all_surveys))
 
     def __repr__(self):
-        txt = '<{:s}:  DB_file={:s} with {:d} sources>'.format(self.__class__.__name__,
+        txt = '<{:s}:  DB_file={:s} with {:d} sources\n'.format(self.__class__.__name__,
                                             self.db_file, len(self.cat))
+        # Surveys
+        txt += '   Loaded surveys are {} \n'.format(self.surveys)
+        txt += '>'
         return (txt)

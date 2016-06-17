@@ -5,6 +5,30 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import h5py
 from astropy.table import Table
 
+from igmspec import defs as idefs
+
+
+def flag_to_surveys(flag):
+    """ Convert flag_survey to list of surveys
+
+    Parameters
+    ----------
+    flag : int
+
+    Returns
+    -------
+    surveys : list
+
+    """
+    survey_dict = idefs.get_survey_dict()
+    #
+    surveys = []
+    for key,sflag in survey_dict.items():
+        if flag % (2**sflag) >= sflag:
+            surveys.append(key)
+    # Return
+    return surveys
+
 
 def write_cat_to_fits(DB_file, cat_fits_file):
     """ Simple script to write the catalog file to a FITS file (mainly for others)

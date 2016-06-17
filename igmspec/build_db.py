@@ -165,13 +165,14 @@ def ver01():
     # Append
     assert chk_maindb_join(maindb, hdlls_meta)
     maindb = vstack([maindb,hdlls_meta], join_type='exact')
-    # Update hf5 file
     pdb.set_trace()
+    # Update hf5 file
     hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
 
     # Finish
     hdf['catalog'] = maindb
     hdf.close()
+    print("Wrote {:s} DB file".format(outfil))
 
 if __name__ == '__main__':
     ver01()

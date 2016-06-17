@@ -6,15 +6,18 @@ import os, glob, imp
 import psutil
 import warnings
 import h5py
+import pdb
 
 import numpy as np
-from igmspec.defs import z_priority, survey_flag
-from igmspec.db_utils import grab_dbfile
 
 from astropy.table import Table, vstack, Column
 from astropy import units as u
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 
+from linetools.spectra.xspectrum1d import XSpectrum1D
+
+from igmspec.defs import z_priority, survey_flag
+from igmspec.db_utils import grab_dbfile
 
 class InterfaceDB(object):
     """ A Class for interfacing with the DB
@@ -66,6 +69,11 @@ class InterfaceDB(object):
         self.hdf = h5py.File(db_file,'r')
         self.db_file = db_file
         self.survey_IDs = None
+        #
+        surveys = self.hdf.keys()
+        surveys.pop(surveys.index('catalog'))
+        self.surveys = surveys
+        print("Available surveys: {}".format(self.surveys))
 
     def grab_meta(self, survey):
         """ Grab meta data for survey
@@ -74,7 +82,33 @@ class InterfaceDB(object):
 
         """
 
-    def stage_data(self, survey, IGMS_IDs):
+    def grab_spec(self, survey, IGMsp_IDs):
+        """ Grab spectra using staged IDs
+
+        Parameters
+        ----------
+        survey
+
+        Returns
+        -------
+
+        """
+        if self.stage_data(survey, IGMsp_IDs):
+            data = self.hdf[survey]['spec'][self.survey_bool]
+        else:
+            print("Staging failed..  Not returning spectra")
+            return
+        # Deal with padding?
+        tmp = np.sum(data['sig'],axis=0)
+        notzero = np.where(tmp != 0.)[0]
+        npix = np.max(notzero)
+        # Generate XSpectrum1D
+        spec = XSpectrum1D(data['wave'][:,:npix], data['flux'][:,:npix],
+                           sig=data['sig'][:,:npix])
+        # Return
+        return spec
+
+    def stage_data(self, survey, IGMsp_IDs):
         """ Stage the spectra for serving
         Mainly checks the memory
 
@@ -96,19 +130,19 @@ class InterfaceDB(object):
         if survey not in self.hdf.keys():
             raise IOError("Survey {:s} not in your DB file {:s}".format(self.db_file))
         # Find IGMS_IDs indices in survey
-        meta = self.hdf[survey]['meta']
-        if 'IGSM_ID' not in meta.keys():
+        meta = self.hdf[survey]['meta'].value
+        if 'IGMsp_ID' not in meta.dtype.names:
             raise ValueError("Meta table in {:s} survey is missing IGSM_ID column!".format(survey))
-        in_survey = np.in1d(IGMS_IDs, meta['IGSM_ID'])
+        in_survey = np.in1d(meta['IGMsp_ID'], IGMsp_IDs)
         nhits = np.sum(in_survey)
         # Memory check (approximate; ignores meta data)
-        spec_bytes = h5py[survey]['spec'][0].nbytes
+        spec_bytes = self.hdf[survey]['spec'][0].nbytes/1e9  # Gb
         new_memory = spec_bytes*nhits
         if new_memory + self.memory_used > self.memory_max:
             warnings.warn("This request would exceed your maximum memory limit of {:g} Gb".format(self.memory_max))
             return False
         else:
-            self.survey_IDs = np.where(in_survey)[0]
+            self.survey_bool = in_survey
             return True
 
 
@@ -125,3 +159,10 @@ class InterfaceDB(object):
         if self.memory_used > self.memory_warning:
             warnings.warn("Your memory usage -- {:g} Gb -- is high".format(self.memory_used))
 
+    def __repr__(self):
+        txt = '<{:s}:  DB_file={:s} \n'.format(self.__class__.__name__,
+                                            self.db_file)
+        # Surveys
+        txt += '   Loaded surveys are {} \n'.format(self.surveys)
+        txt += '>'
+        return (txt)
