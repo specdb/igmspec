@@ -20,7 +20,7 @@ def chk_meta(meta):
     chk = True
     # Required columns
     req_clms = ['IGM_ID', 'RA', 'DEC', 'EPOCH', 'R', 'WV_MIN',
-                'WV_MAX', 'DATE-OBS', 'SURVEY_ID', 'NPIX']
+                'WV_MAX', 'DATE-OBS', 'SURVEY_ID', 'NPIX', 'SPEC_FILE']
     meta_keys = meta.keys()
     for clm in req_clms:
         if clm not in meta_keys:
@@ -33,6 +33,7 @@ def chk_meta(meta):
         except:
             print("Bad or missing DATE-OBS value")
             chk = False
+    # Check for unicode
     # Return
     return chk
 
@@ -75,6 +76,7 @@ def set_resolution(head, instr=None):
         try:
             return Rdicts['HIRES'][head['DECKNAME'].strip()]
         except KeyError:
+            print("Need to add {:s}".format(head['DECKNAME']))
             pdb.set_trace()
     else:
         raise IOError("Not read for this instrument")

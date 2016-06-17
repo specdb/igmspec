@@ -3,6 +3,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 from collections import OrderedDict
+from astropy import units as u
 
 def z_priority():
     """ List of redshift priorities for setting the DB redshift
@@ -18,6 +19,15 @@ def z_priority():
     ]
     return zpri
 
+def get_cat_dict():
+    """ Definitions for the catalog
+    Returns
+    -------
+
+    """
+    cdict = dict(match_toler=2*u.arcsec)
+    return cdict
+
 
 def get_survey_dict():
     """ Return the survey dict
@@ -28,7 +38,8 @@ def get_survey_dict():
     survey_dict = OrderedDict()
     survey_dict['BOSS_DR12'] = 1
     survey_dict['SDSS_DR7'] = 2
-    survey_dict['HD-LLS_DR1'] = 4   # Prochaska et al. 2015
+    survey_dict['KODIAQ_DR1'] = 4   # O'Meara et al. 2016
+    survey_dict['HD-LLS_DR1'] = 8   # Prochaska et al. 2015
     #
     return survey_dict
 
@@ -62,6 +73,8 @@ def get_res_dicts():
     HIRES1 = 36000.*1.148  # https://koa.ipac.caltech.edu/UserGuide/deckname_detail.html
     HIRES_Rdict = {'C1': HIRES1/0.861,
                    'C5': HIRES1/1.148,
+                   'B2': HIRES1/0.574,
+                   'B5': HIRES1/0.861,
                    'E3': HIRES1/0.4,
                    }
     #

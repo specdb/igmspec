@@ -60,7 +60,7 @@ def meta_for_build():
     -------
     meta : Table
     """
-    hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1.fits.gz')
+    hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1/HD-LLS_DR1.fits.gz')
     # Cut down to unique QSOs
     names = np.array([name[0:26] for name in hdlls_meta['Name']])
     uni, uni_idx = np.unique(names, return_index=True)
@@ -70,7 +70,6 @@ def meta_for_build():
     meta = Table()
     meta['RA'] = hdlls_meta['RA']
     meta['DEC'] = hdlls_meta['DEC']
-    meta['EPOCH'] = [2000.]*nqso
     meta['zem'] = hdlls_meta['Z_QSO']
     meta['sig_zem'] = [0.]*nqso
     meta['flag_zem'] = [str('UNKN')]*nqso
@@ -78,7 +77,7 @@ def meta_for_build():
     return meta
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=True):
+def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     """ Append HD-LLS data to the h5 file
 
     Parameters
@@ -112,7 +111,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=True):
     cut_meta = meta_for_build()
     if len(cut_meta) != len(IDs):
         raise ValueError("Wrong sized table..")
-    hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1.fits.gz')
+    hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1/HD-LLS_DR1.fits.gz')
     nlls = len(hdlls_meta)
 
     # Generate ID array from RA/DEC
@@ -263,13 +262,14 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=True):
 
     # Add columns
     meta = hdlls_full[full_idx]
-    pdb.set_trace()
+    nmeta = len(meta)
+    meta.add_column(Column([2000.]*nmeta, name='EPOCH'))
     meta.add_column(Column(npixlist, name='NPIX'))
-    meta.add_column(Column(dateobslist, name='DATE-OBS'))
+    meta.add_column(Column([str(date) for date in dateobslist], name='DATE-OBS'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
-    meta.add_column(Column(np.arange(len(meta),dtype=int)),name='SURVEY_ID')
+    meta.add_column(Column(np.arange(nmeta,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
     if iiu.chk_meta(meta):

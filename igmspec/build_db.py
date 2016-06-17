@@ -8,11 +8,10 @@ import h5py
 import numbers
 import pdb
 
-from igmspec.defs import z_priority, survey_flag
-from igmspec.ingest import boss, hdlls
+from igmspec.defs import z_priority, survey_flag, get_cat_dict
+from igmspec.ingest import boss, hdlls, kodiaq
 
 from astropy.table import Table, vstack, Column
-from astropy import units as u
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 
 
@@ -62,7 +61,7 @@ def chk_maindb_join(maindb, newdb):
     return True
 
 
-def get_new_ids(maindb, newdb, toler=2*u.arcsec, chk=True):
+def get_new_ids(maindb, newdb, chk=True):
     """ Generate new IGM_IDs for an input DB
     Parameters
     ----------
@@ -78,13 +77,14 @@ def get_new_ids(maindb, newdb, toler=2*u.arcsec, chk=True):
       New IDs are generated as needed
 
     """
+    cdict = get_cat_dict()
     IDs = np.zeros(len(newdb), dtype=int)
     # Setup
     c_main = SkyCoord(ra=maindb['RA'], dec=maindb['DEC'], unit='deg')
     c_new = SkyCoord(ra=newdb['RA'], dec=newdb['DEC'], unit='deg')
     # Find new sources
     idx, d2d, d3d = match_coordinates_sky(c_new, c_main, nthneighbor=1)
-    new = d2d > toler
+    new = d2d > cdict['match_toler']
     #
     # Old IDs
     IDs[~new] = -1 * maindb[idx[~new]]['IGM_ID']
@@ -102,6 +102,33 @@ def get_new_ids(maindb, newdb, toler=2*u.arcsec, chk=True):
     # Return
     return IDs
 
+def set_new_ids(maindb, newdb, chk=True):
+    """ Set the new IDs
+    Parameters
+    ----------
+    maindb
+    newdb
+    toler
+    chk
+
+    Returns
+    -------
+    cut_db : Table
+      Cut to the new QSOs
+    new : bool array
+    ids : ID values
+
+    """
+    # IDs
+    ids = get_new_ids(maindb, newdb)  # Includes new and old
+    # Truncate
+    new = ids > 0
+    cut_db = newdb[new]
+    cut_db.add_column(Column(ids[new], name='IGM_ID'))
+    # Reset IDs to all positive
+    ids = np.abs(ids)
+    #
+    return cut_db, new, ids
 
 
 def ver01():
@@ -118,10 +145,11 @@ def ver01():
     zpri = z_priority()
     lenz = [len(zpi) for zpi in zpri]
     dummyf = str('#')*np.max(np.array(lenz))  # For the Table
+    cdict = get_cat_dict()
 
     # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
-    idict = dict(RA=0., DEC=0., IGM_ID=0, EPOCH=2000.,
-                 zem=0., sig_zem=0., flag_zem=dummyf, flag_survey=0)
+    idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
+                 flag_zem=dummyf, flag_survey=0)
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]
     maindb = Table(lst, names=tkeys)
@@ -143,28 +171,38 @@ def ver01():
     maindb = maindb[1:]  # Eliminate dummy line
     # Update hf5 file (TBD)
 
+    ''' KODIAQ DR1 '''
+    sname = 'KODIAQ_DR1'
+    kodiaq_meta = kodiaq.meta_for_build()
+    # IDs
+    kodiaq_cut, new, kodiaq_ids = set_new_ids(maindb, kodiaq_meta)
+    nnew = np.sum(new)
+    # Survey flag
+    flag_s = survey_flag(sname)
+    kodiaq_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+    midx = np.array(maindb['IGM_ID'][kodiaq_ids[~new]])
+    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
+    # Append
+    assert chk_maindb_join(maindb, kodiaq_cut)
+    maindb = vstack([maindb,kodiaq_cut], join_type='exact')
+    # Update hf5 file
+    kodiaq.hdf5_adddata(hdf, kodiaq_ids, sname)
+
     ''' HD-LLS '''
     sname = 'HD-LLS_DR1'
     # Read
     hdlls_meta = hdlls.meta_for_build()
-    nhdlls = len(hdlls_meta)
     # IDs
-    hdlls_ids = get_new_ids(maindb, hdlls_meta)
-    # Truncate
-    new = hdlls_ids > 0
-    hdlls_meta = hdlls_meta[new]
-    nnew = len(hdlls_meta)
-    hdlls_meta.add_column(Column(hdlls_ids[new], name='IGM_ID'))
-    # Reset IDs to all positive
-    hdlls_ids = np.abs(hdlls_ids)
+    hdlls_cut, new, hdlls_ids = set_new_ids(maindb, hdlls_meta)
+    nnew = np.sum(new)
     # Survey flag
     flag_s = survey_flag(sname)
-    hdlls_meta.add_column(Column([flag_s]*nnew, name='flag_survey'))
+    hdlls_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
     midx = np.array(maindb['IGM_ID'][hdlls_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
     # Append
-    assert chk_maindb_join(maindb, hdlls_meta)
-    maindb = vstack([maindb,hdlls_meta], join_type='exact')
+    assert chk_maindb_join(maindb, hdlls_cut)
+    maindb = vstack([maindb,hdlls_cut], join_type='exact')
     # Update hf5 file
     hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
 
