@@ -109,6 +109,8 @@ class InterfaceDB(object):
         """ Grab meta data for survey
         Parameters
         ----------
+        survey : str or list
+        IGM_IDs : int or array
         show : bool, optional
           Show the Meta table (print) in addition to returning
 
@@ -117,6 +119,12 @@ class InterfaceDB(object):
         meta : Table(s)
 
         """
+        #
+        if isinstance(survey, list):
+            all_meta = []
+            for isurvey in survey:
+                all_meta.append(self.grab_meta(isurvey, IGM_IDs))
+            return all_meta
         # Grab IDs then cut
         _ = self.grab_ids(survey, IGM_IDs)
         meta = Table(self.hdf[survey]['meta'].value)[self.survey_bool]
@@ -153,6 +161,7 @@ class InterfaceDB(object):
             for isurvey in survey:
                 all_spec.append(self.grab_spec(isurvey, IGM_IDs))
             return all_spec
+        #
         if self.stage_data(survey, IGM_IDs):
             if verbose:
                 print("Loaded spectra")

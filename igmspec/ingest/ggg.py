@@ -174,7 +174,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
 
     #
     print("Max pix = {:d}".format(maxpix))
-    meta.sort('RA')
     # Add columns
     meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     meta.add_column(Column(speclist, name='SPEC_FILE'))
@@ -182,6 +181,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
+    meta.sort('RA')
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
