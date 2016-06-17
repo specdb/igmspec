@@ -103,8 +103,7 @@ class InterfaceDB(object):
         notzero = np.where(tmp != 0.)[0]
         npix = np.max(notzero)
         # Generate XSpectrum1D
-        spec = XSpectrum1D(data['wave'][:,:npix], data['flux'][:,:npix],
-                           sig=data['sig'][:,:npix])
+        spec = XSpectrum1D(data['wave'], data['flux'], sig=data['sig'], mask_edges=True)
         # Return
         return spec
 

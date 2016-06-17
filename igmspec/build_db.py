@@ -165,7 +165,6 @@ def ver01():
     # Append
     assert chk_maindb_join(maindb, hdlls_meta)
     maindb = vstack([maindb,hdlls_meta], join_type='exact')
-    pdb.set_trace()
     # Update hf5 file
     hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
 

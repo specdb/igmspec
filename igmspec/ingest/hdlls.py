@@ -106,7 +106,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False):
     else:
         nspec = len(hdlls_full)
     max_npix = 210000
-    data = np.empty((1,), #self.npix),  # THIS WILL NOT SCALE FOR BOSS!!
+    data = np.ma.empty((1,), #self.npix),  # THIS WILL NOT SCALE FOR BOSS!!
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
                               (str('sig'),  'float32', (max_npix)),
