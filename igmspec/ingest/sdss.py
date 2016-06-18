@@ -144,6 +144,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=True, chk_meta_only=True):
         if debug:
             if jj > 500:
                 speclist.append(str(fname))
+                if not os.path.isfile(full_file):
+                    raise IOError("SDSS file {:s} does not exist".format(full_file))
                 wvminlist.append(np.min(data['wave'][0][:npix]))
                 wvmaxlist.append(np.max(data['wave'][0][:npix]))
                 npixlist.append(npix)
