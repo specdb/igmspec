@@ -42,7 +42,7 @@ class QueryCatalog(object):
         self.setup()
 
     def load_cat(self, db_file=None):
-        """ Open the DB file
+        """ Open the DB catalog file
         Parameters
         ----------
         db_file
@@ -177,13 +177,28 @@ class QueryCatalog(object):
             print("Your search yielded {:d} match[es]".format(np.sum(good)))
         return self.cat['IGM_ID'][good]
 
+    def get_cat(self, IGM_IDs):
+        """ Grab catalog rows corresponding to the input IDs
+
+        Parameters
+        ----------
+        IGM_IDs : int array
+
+        Returns
+        -------
+        rows : Table
+          Rows of the catalog
+
+        """
+        good = np.in1d(self.cat['IGM_ID'], IGM_IDs)
+        return self.cat[good]
+
     def show_cat(self, IGM_IDs):
         """  Show the catalog
 
         Parameters
         ----------
         IGM_IDs : int array
-          True means show
 
         Returns
         -------

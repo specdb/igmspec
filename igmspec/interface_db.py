@@ -38,7 +38,7 @@ class InterfaceDB(object):
       Used to grab data from a given survey
     """
 
-    def __init__(self, db_file=None, maximum_ram=10.):
+    def __init__(self, db_file=None, maximum_ram=10.,verbose=True):
         """
         Returns
         -------
@@ -49,6 +49,7 @@ class InterfaceDB(object):
         self.memory_warning = 5.  # Gb
         self.memory_max = 10.  # Gb
         self.hdf = None
+        self.verbose = verbose
         # Open DB
         self.open_db(db_file)
         # Check memory
@@ -67,7 +68,8 @@ class InterfaceDB(object):
         if db_file is None:
             db_file = grab_dbfile()
         #
-        print("Using {:s} for the DB file".format(db_file))
+        if self.verbose:
+            print("Using {:s} for the DB file".format(db_file))
         self.hdf = h5py.File(db_file,'r')
         self.db_file = db_file
         self.survey_IDs = None
@@ -75,9 +77,10 @@ class InterfaceDB(object):
         surveys = self.hdf.keys()
         surveys.pop(surveys.index('catalog'))
         self.surveys = surveys
-        print("Available surveys: {}".format(self.surveys))
+        if self.verbose:
+            print("Available surveys: {}".format(self.surveys))
 
-    def grab_ids(self, survey, IGM_IDs, verbose=True, meta=None):
+    def grab_ids(self, survey, IGM_IDs, meta=None):
         """ Grab the survey IDs
 
         Parameters
@@ -86,7 +89,6 @@ class InterfaceDB(object):
           Name of the Survey
         IGM_IDs : int or ndarray
           IGM_ID values
-        verbose
 
         Returns
         -------
@@ -144,7 +146,7 @@ class InterfaceDB(object):
         # Load and return
         return meta
 
-    def grab_spec(self, survey, IGM_IDs, verbose=True):
+    def grab_spec(self, survey, IGM_IDs, verbose=None):
         """ Grab spectra using staged IDs
 
         Parameters
@@ -156,6 +158,8 @@ class InterfaceDB(object):
         -------
 
         """
+        if verbose is None:
+            verbose = self.verbose
         if isinstance(survey, list):
             all_spec = []
             for isurvey in survey:
@@ -178,7 +182,7 @@ class InterfaceDB(object):
         # Return
         return spec
 
-    def stage_data(self, survey, IGM_IDs, verbose=True):
+    def stage_data(self, survey, IGM_IDs, verbose=None):
         """ Stage the spectra for serving
         Mainly checks the memory
 
@@ -196,6 +200,8 @@ class InterfaceDB(object):
           Indices in the survey dataset
 
         """
+        if verbose is None:
+            verbose = self.verbose
         # Checks
         if survey not in self.hdf.keys():
             raise IOError("Survey {:s} not in your DB file {:s}".format(survey, self.db_file))
