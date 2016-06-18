@@ -11,8 +11,8 @@ def parser(options=None):
 
     import argparse
 
-    parser = argparse.ArgumentParser(description='igmspec script')
-    parser.add_argument("obj", type=str, help="Name of the Object,e.g. J081240+320808")
+    parser = argparse.ArgumentParser(description='plot_igmspec script v0.1')
+    parser.add_argument("coord", type=str, help="Coordinates, e.g. J081240+320808")
     parser.add_argument("--toler", default=5., type=float, help="Maximum offset in arcsec [default=5.]")
     parser.add_argument("--meta", default=True, help="Show meta data? [default: True]", action="store_true")
     parser.add_argument("--survey", help="Name of Survey to use")
@@ -29,7 +29,6 @@ def parser(options=None):
 def main(args, unit_test=False):
     """ Run
     """
-    import sys
 
     from astropy import units as u
     from igmspec import query_catalog as iqcat
@@ -38,7 +37,7 @@ def main(args, unit_test=False):
 
     # Query the catalog
     qcat = iqcat.QueryCatalog()
-    ids = qcat.radial_search(args.obj, args.toler*u.arcsec)
+    ids = qcat.radial_search(args.coord, args.toler*u.arcsec)
     if len(ids) == 0:
         print("Try another source...")
     elif len(ids) == 1:
