@@ -116,6 +116,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.rename_column('Z_ERR', 'sig_zem')
     meta.rename_column('RAOBJ', 'RA')
     meta.rename_column('DECOBJ', 'DEC')
+    meta.sort('RA')
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
@@ -187,7 +188,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
-    meta.sort('RA')
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
