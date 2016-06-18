@@ -9,7 +9,7 @@ import numbers
 import pdb
 
 from igmspec import defs
-from igmspec.ingest import boss, hdlls, kodiaq, ggg
+from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -102,6 +102,7 @@ def get_new_ids(maindb, newdb, chk=True):
     # Return
     return IDs
 
+
 def set_new_ids(maindb, newdb, chk=True):
     """ Set the new IDs
     Parameters
@@ -169,7 +170,24 @@ def ver01():
     # Append
     maindb = vstack([maindb,boss_meta], join_type='exact')
     maindb = maindb[1:]  # Eliminate dummy line
+    #maindb = maindb[1:3]  # For testing
 
+    ''' SDSS DR7'''
+    sname = 'SDSS_DR7'
+    sdss_meta = sdss.meta_for_build()
+    # IDs
+    sdss_cut, new, sdss_ids = set_new_ids(maindb, sdss_meta)
+    nnew = np.sum(new)
+    # Survey flag
+    flag_s = defs.survey_flag(sname)
+    sdss_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+    midx = np.array(maindb['IGM_ID'][sdss_ids[~new]])
+    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
+    # Append
+    assert chk_maindb_join(maindb, sdss_cut)
+    maindb = vstack([maindb, sdss_cut], join_type='exact')
+    # Update hf5 file
+    sdss.hdf5_adddata(hdf, sdss_ids, sname)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
