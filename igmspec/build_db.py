@@ -249,7 +249,3 @@ def ver01():
     #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
-
-if __name__ == '__main__':
-    ver01()
-

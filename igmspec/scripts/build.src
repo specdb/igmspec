@@ -1,0 +1,4 @@
+#!/bin/csh -f
+## Simple script to run the build in a queue
+##  e.g.  at -d 5pm build.src   
+scripts/build_igmspec.py -v v01 > ../DB/igmspecDB_v01.log
