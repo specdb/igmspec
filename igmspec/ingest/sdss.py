@@ -114,6 +114,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=True, chk_meta_only=True):
     # Add zem
     meta.rename_column('Z', 'zem')
     meta.rename_column('Z_ERR', 'sig_zem')
+    meta.rename_column('RAOBJ', 'RA')
+    meta.rename_column('DECOBJ', 'DEC')
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
