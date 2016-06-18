@@ -141,7 +141,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     npixlist = []
     speclist = []
     # Loop
-    path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
+    #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
+    path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20160618/'  # BZERO FIXED
     maxpix = 0
     for jj,row in enumerate(meta):
         # Generate full file

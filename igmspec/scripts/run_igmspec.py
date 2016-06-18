@@ -11,12 +11,13 @@ def parser(options=None):
 
     import argparse
 
-    parser = argparse.ArgumentParser(description='igmspec')
+    parser = argparse.ArgumentParser(description='igmspec script')
     parser.add_argument("obj", type=str, help="Name of the Object,e.g. J081240+320808")
-    parser.add_argument("--toler", default=5., type=float, help="Maximum offset in arcsec")
-    parser.add_argument("--meta", default=True, help="Show meta data?", action="store_true")
+    parser.add_argument("--toler", default=5., type=float, help="Maximum offset in arcsec [default=5.]")
+    parser.add_argument("--meta", default=True, help="Show meta data? [default: True]", action="store_true")
     parser.add_argument("--survey", help="Name of Survey to use")
-    parser.add_argument("--select", default=0, type=int, help="Name of Survey to use")
+    parser.add_argument("--select", default=0, type=int, help="Name of Survey to use [default: 0]")
+    parser.add_argument("--mplot", default=False, help="Use simple matplotlib plot [default: False]")
 
     if options is None:
         args = parser.parse_args()
@@ -69,4 +70,7 @@ def main(args, unit_test=False):
     spec = idb.grab_spec(survey, ids)
     spec.select = args.select
     # Show  [may transition to xspec]
-    spec.plot()
+    if args.mplot:
+        spec.plot()
+    else:
+        spec.plot(xspec=True)
