@@ -75,7 +75,7 @@ def meta_for_build():
     return meta
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=True, chk_meta_only=True):
+def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     """ Add SDSS data to the DB
 
     Parameters
