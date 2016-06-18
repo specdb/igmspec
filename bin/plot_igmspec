@@ -9,8 +9,8 @@
 This script runs PYPIT
 """
 
-import igmspec.scripts.run_igmspec as run_igmspec
+import igmspec.scripts.plot_igmspec as plot_igmspec
 
 if __name__ == '__main__':
-    args = run_igmspec.parser()
-    run_igmspec.main(args)
+    args = plot_igmspec.parser()
+    plot_igmspec.main(args)
