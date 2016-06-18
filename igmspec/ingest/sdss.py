@@ -75,7 +75,7 @@ def meta_for_build():
     return meta
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
+def hdf5_adddata(hdf, IDs, sname, debug=True, chk_meta_only=True):
     """ Add SDSS data to the DB
 
     Parameters
@@ -136,13 +136,21 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     # Loop
     maxpix = 0
     for jj,row in enumerate(meta):
-        # Generate full file
         full_file = get_specfil(row)
         # Extract
         print("SDSS: Reading {:s}".format(full_file))
-        spec = lsio.readspec(full_file)
         # Parse name
         fname = full_file.split('/')[-1]
+        if debug:
+            if jj > 500:
+                speclist.append(str(fname))
+                wvminlist.append(np.min(data['wave'][0][:npix]))
+                wvmaxlist.append(np.max(data['wave'][0][:npix]))
+                npixlist.append(npix)
+                Rlist.append(2000.)
+                continue
+        # Generate full file
+        spec = lsio.readspec(full_file)
         # npix
         npix = spec.npix
         if npix > max_npix:
