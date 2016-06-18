@@ -44,6 +44,7 @@ def main(args=None):
     if pargs.version is None:
         build_db.ver01()
     elif pargs.version == 'v01':
+        print("Building v01 of the igmspec DB")
         build_db.ver01()
     else:
         raise IOError("Bad version number")
