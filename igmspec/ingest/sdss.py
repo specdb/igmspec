@@ -28,7 +28,7 @@ def get_specfil(row):
     mjd = str(row['MJD'])
     sfil = path+pnm+'/1d/'+'spSpec-'
     # Finish
-    specfil = sfil+mjd+'-'+pnm+'-'+fnm+'.fit'  # Is usually gzipped
+    specfil = sfil+mjd+'-'+pnm+'-'+fnm+'.fit.gz'  # Is usually gzipped
     return specfil
 
 
