@@ -241,6 +241,7 @@ def ver01():
     # Update hf5 file
     hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
 
+    """
     ''' GGG '''
     sname = 'GGG'
     ggg_meta = ggg.meta_for_build()
@@ -257,6 +258,7 @@ def ver01():
     maindb = vstack([maindb,ggg_cut], join_type='exact')
     # Update hf5 file
     ggg.hdf5_adddata(hdf, ggg_ids, sname)
+    """
 
     # Finish
     hdf['catalog'] = maindb
