@@ -172,23 +172,6 @@ def ver01():
     maindb = maindb[1:]  # Eliminate dummy line
     #maindb = maindb[1:3]  # For testing
 
-    ''' GGG '''
-    sname = 'GGG'
-    ggg_meta = ggg.meta_for_build()
-    # IDs
-    ggg_cut, new, ggg_ids = set_new_ids(maindb, ggg_meta)
-    nnew = np.sum(new)
-    # Survey flag
-    flag_s = defs.survey_flag(sname)
-    ggg_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    midx = np.array(maindb['IGM_ID'][ggg_ids[~new]])
-    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
-    # Append
-    assert chk_maindb_join(maindb, ggg_cut)
-    maindb = vstack([maindb,ggg_cut], join_type='exact')
-    # Update hf5 file
-    ggg.hdf5_adddata(hdf, ggg_ids, sname)
-
     ''' SDSS DR7'''
     sname = 'SDSS_DR7'
     sdss_meta = sdss.meta_for_build()
@@ -204,7 +187,7 @@ def ver01():
     assert chk_maindb_join(maindb, sdss_cut)
     maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
-    #sdss.hdf5_adddata(hdf, sdss_ids, sname)
+    sdss.hdf5_adddata(hdf, sdss_ids, sname)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
@@ -241,7 +224,6 @@ def ver01():
     # Update hf5 file
     hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
 
-    """
     ''' GGG '''
     sname = 'GGG'
     ggg_meta = ggg.meta_for_build()
@@ -258,7 +240,6 @@ def ver01():
     maindb = vstack([maindb,ggg_cut], join_type='exact')
     # Update hf5 file
     ggg.hdf5_adddata(hdf, ggg_ids, sname)
-    """
 
     # Finish
     hdf['catalog'] = maindb
