@@ -127,6 +127,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     gratinglist = []
     telelist = []
     dateobs = []
+    instrlist = []
     # Loop
     path = os.getenv('RAW_IGMSPEC')+'/GGG/'
     maxpix = 0
@@ -160,6 +161,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         telelist.append('Gemini-X')
+        instrlist.append('GMOS-X')
         npixlist.append(npix)
         if 'R400' in fname:
             Rlist.append(833.)
@@ -176,6 +178,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(speclist, name='SPEC_FILE'))
     meta.add_column(Column(gratinglist, name='GRATING'))
     meta.add_column(Column(telelist, name='TELESCOPE'))
+    meta.add_column(Column(instrlist, name='INSTR'))
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))

@@ -175,7 +175,7 @@ def ver01(test=False):
 
     ''' SDSS DR7'''
     sname = 'SDSS_DR7'
-    print('===============\n Doing {:s} \n =============\n'.format(sname))
+    print('===============\n Doing {:s} \n=============\n'.format(sname))
     sdss_meta = sdss.meta_for_build()
     # IDs
     sdss_cut, new, sdss_ids = set_new_ids(maindb, sdss_meta)
@@ -189,12 +189,11 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, sdss_cut)
     maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
-    if not test:
-        sdss.hdf5_adddata(hdf, sdss_ids, sname)
+    sdss.hdf5_adddata(hdf, sdss_ids, sname)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
-    print('===============\n Doing {:s} \n =============\n'.format(sname))
+    print('===============\n Doing {:s} \n==============\n'.format(sname))
     kodiaq_meta = kodiaq.meta_for_build()
     # IDs
     kodiaq_cut, new, kodiaq_ids = set_new_ids(maindb, kodiaq_meta)
@@ -208,12 +207,11 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, kodiaq_cut)
     maindb = vstack([maindb,kodiaq_cut], join_type='exact')
     # Update hf5 file
-    if not test:
-        kodiaq.hdf5_adddata(hdf, kodiaq_ids, sname)
+    kodiaq.hdf5_adddata(hdf, kodiaq_ids, sname)
 
     ''' HD-LLS '''
     sname = 'HD-LLS_DR1'
-    print('===============\n Doing {:s} \n =============\n'.format(sname))
+    print('===============\n Doing {:s} \n==============\n'.format(sname))
     # Read
     hdlls_meta = hdlls.meta_for_build()
     # IDs
@@ -228,12 +226,11 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, hdlls_cut)
     maindb = vstack([maindb,hdlls_cut], join_type='exact')
     # Update hf5 file
-    if not test:
-        hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
+    hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
 
     ''' GGG '''
     sname = 'GGG'
-    print('===============\n Doing {:s} \n =============\n'.format(sname))
+    print('===============\n Doing {:s} \n==============\n'.format(sname))
     ggg_meta = ggg.meta_for_build()
     # IDs
     ggg_cut, new, ggg_ids = set_new_ids(maindb, ggg_meta)

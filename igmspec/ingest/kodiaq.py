@@ -179,7 +179,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
-        pdb.set_trace()
+        if head['XDISPERS'].strip() == 'UV':
+            gratinglist.append('BLUE')
+        else:
+            gratinglist.append('RED')
         npixlist.append(npix)
         try:
             Rlist.append(iiu.set_resolution(head))
@@ -199,6 +202,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
+    meta.add_column(Column(gratinglist, name='GRATING'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5

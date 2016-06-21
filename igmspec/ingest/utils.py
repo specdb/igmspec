@@ -3,7 +3,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import datetime
+import warnings
 import pdb
 
 def chk_meta(meta):
@@ -20,6 +20,7 @@ def chk_meta(meta):
     """
     from igmspec.defs import instruments
     from astropy.time import Time
+    from astropy.table import Column
     # Init
     inst_dict = instruments()
 
@@ -46,6 +47,12 @@ def chk_meta(meta):
         print("Bad instrument in meta data")
         chk = False
     # Check for unicode
+    for key in meta_keys:
+        if 'unicode' in meta[key].dtype.name:
+            warnings.warn("unicode in column {:s}.  Will convert to str for hdf5".format(key))
+            tmp = Column(meta[key].data.astype(str), name=key)
+            meta.remove_column(key)
+            meta[key] = tmp
     # Return
     return chk
 
@@ -73,6 +80,8 @@ def set_resolution(head, instr=None):
         elif 'INSTRUME' in head.keys():
             if 'HIRES' in head['INSTRUME']:
                 instr = 'HIRES'
+            elif 'MagE' in head['INSTRUME']:
+                instr = 'MagE'
         else:
             pass
         if instr is None:
@@ -81,14 +90,20 @@ def set_resolution(head, instr=None):
     # Grab resolution
     if instr == 'ESI':
         try:
-            return Rdicts['ESI'][head['SLMSKNAM']]
+            return Rdicts[instr][head['SLMSKNAM']]
         except KeyError:
             pdb.set_trace()
     elif instr == 'HIRES':
         try:
-            return Rdicts['HIRES'][head['DECKNAME'].strip()]
+            return Rdicts[instr][head['DECKNAME'].strip()]
         except KeyError:
             print("Need to add {:s}".format(head['DECKNAME']))
+            pdb.set_trace()
+    elif instr == 'MagE':
+        try:
+            return Rdicts[instr][head['SLITNAME'].strip()]
+        except KeyError:
+            print("Need to add {:s}".format(head['SLITNAME']))
             pdb.set_trace()
     else:
         raise IOError("Not read for this instrument")
