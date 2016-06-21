@@ -48,7 +48,7 @@ def grab_meta():
     sdss_meta.add_column(Column([2000.]*nspec, name='R'))
     sdss_meta.add_column(Column(['SDSS']*nspec, name='INSTR'))
     sdss_meta.add_column(Column(['BOTH']*nspec, name='GRATING'))
-    sdss_meta.add_column(Column(['SDSS 2.5-M']*nspec, name='TELESCOP'))
+    sdss_meta.add_column(Column(['SDSS 2.5-M']*nspec, name='TELESCOPE'))
     # Rename
     sdss_meta.rename_column('RAOBJ', 'RA')
     sdss_meta.rename_column('DECOBJ', 'DEC')

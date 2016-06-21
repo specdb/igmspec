@@ -25,7 +25,7 @@ def grab_meta():
     boss_meta.add_column(Column(['BOSS']*nboss, name='INSTR'))
     boss_meta.add_column(Column(['BOTH']*nboss, name='GRATING'))
     boss_meta.add_column(Column([2000.]*nboss, name='R'))  # RESOLUTION
-    boss_meta.add_column(Column(['SDSS 2.5-M']*nboss, name='TELESCOP'))
+    boss_meta.add_column(Column(['SDSS 2.5-M']*nboss, name='TELESCOPE'))
     # Redshift logic
     boss_meta['zem'] = boss_meta['Z_PCA']
     boss_meta['sig_zem'] = boss_meta['ERR_ZPCA']

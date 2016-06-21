@@ -2,6 +2,7 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+import numpy as np
 import datetime
 import pdb
 
@@ -17,23 +18,33 @@ def chk_meta(meta):
     chk : bool
 
     """
+    from igmspec.defs import instruments
+    from astropy.time import Time
+    # Init
+    inst_dict = instruments()
+
     chk = True
     # Required columns
     req_clms = ['IGM_ID', 'RA', 'DEC', 'EPOCH', 'zem', 'R', 'WV_MIN',
                 'WV_MAX', 'DATE-OBS', 'SURVEY_ID', 'NPIX', 'SPEC_FILE',
-                'INSTR', 'GRATING', 'TELESCOP']
+                'INSTR', 'GRATING', 'TELESCOPE']
     meta_keys = meta.keys()
     for clm in req_clms:
         if clm not in meta_keys:
             chk = False
             print("Missing column {:s} in meta".format(clm))
     # Check date formatting
-    for row in meta:
-        try:
-            tval = datetime.datetime.strptime(row['DATE-OBS'], '%Y-%b-%d')
-        except:
-            print("Bad or missing DATE-OBS value")
-            chk = False
+    try:
+        tval = Time(list(meta['DATE-OBS'].data), format='iso')
+    except:
+        print("Bad DATE-OBS formatting")
+        chk = False
+    # Check instrument
+    meta_instr = meta['INSTR'].data
+    db_instr = np.array(inst_dict.keys())
+    if not np.all(np.in1d(meta_instr, db_instr)):
+        print("Bad instrument in meta data")
+        chk = False
     # Check for unicode
     # Return
     return chk

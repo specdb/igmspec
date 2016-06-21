@@ -170,11 +170,12 @@ def ver01(test=False):
     # Append
     maindb = vstack([maindb,boss_meta], join_type='exact')
     maindb = maindb[1:]  # Eliminate dummy line
-    #maindb = maindb[1:3]  # For testing
-    pdb.set_trace()
+    #if not test:
+    #    boss.hdf5_adddata(hdf, sdss_ids, sname)
 
     ''' SDSS DR7'''
     sname = 'SDSS_DR7'
+    print('===============\n Doing {:s} \n =============\n'.format(sname))
     sdss_meta = sdss.meta_for_build()
     # IDs
     sdss_cut, new, sdss_ids = set_new_ids(maindb, sdss_meta)
@@ -193,7 +194,7 @@ def ver01(test=False):
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
-    print('Doing {:s}'.format(sname))
+    print('===============\n Doing {:s} \n =============\n'.format(sname))
     kodiaq_meta = kodiaq.meta_for_build()
     # IDs
     kodiaq_cut, new, kodiaq_ids = set_new_ids(maindb, kodiaq_meta)
@@ -212,6 +213,7 @@ def ver01(test=False):
 
     ''' HD-LLS '''
     sname = 'HD-LLS_DR1'
+    print('===============\n Doing {:s} \n =============\n'.format(sname))
     # Read
     hdlls_meta = hdlls.meta_for_build()
     # IDs
@@ -231,6 +233,7 @@ def ver01(test=False):
 
     ''' GGG '''
     sname = 'GGG'
+    print('===============\n Doing {:s} \n =============\n'.format(sname))
     ggg_meta = ggg.meta_for_build()
     # IDs
     ggg_cut, new, ggg_ids = set_new_ids(maindb, ggg_meta)

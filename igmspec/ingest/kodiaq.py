@@ -34,6 +34,7 @@ def grab_meta():
     """
     kodiaq_file = igms_path+'/data/meta/KODIAQ_DR1_summary.ascii'
     kodiaq_meta = Table.read(kodiaq_file, format='ascii', comment='#')
+    nspec = len(kodiaq_meta)
     # Verify DR1
     for row in kodiaq_meta:
         assert row['kodrelease'] == 1
@@ -49,10 +50,15 @@ def grab_meta():
         dec.append(coord.dec.value)
         # DATE
         dvals = row['pi_date'].split('_')
-        dateobs.append(str('{:s}-{:s}-{:02d}'.format(dvals[-1],dvals[1][0:3],int(dvals[2]))))  #%Y-%b-%d
+        tymd = str('{:s}-{:s}-{:02d}'.format(dvals[-1],dvals[1][0:3],int(dvals[2])))
+        tval = datetime.datetime.strptime(tymd, '%Y-%b-%d')
+        dateobs.append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
     kodiaq_meta.add_column(Column(ra, name='RA'))
     kodiaq_meta.add_column(Column(dec, name='DEC'))
     kodiaq_meta.add_column(Column(dateobs, name='DATE-OBS'))
+    #
+    kodiaq_meta.add_column(Column(['HIRES']*nspec, name='INSTR'))
+    kodiaq_meta.add_column(Column(['Keck-I']*nspec, name='TELESCOPE'))
     #
     return kodiaq_meta
 
@@ -140,7 +146,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     Rlist = []
     wvminlist = []
     wvmaxlist = []
-    dateobslist = []
+    gratinglist = []
     npixlist = []
     speclist = []
     # Loop
@@ -173,6 +179,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
+        pdb.set_trace()
         npixlist.append(npix)
         try:
             Rlist.append(iiu.set_resolution(head))

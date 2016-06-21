@@ -30,7 +30,9 @@ def grab_meta():
     # This table has units in it!
     ggg_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/GGG/GGG_catalog.fits')
     nqso = len(ggg_meta)
-    # DATE-OBS -- Pull from FITS header
+    # DATE-OBS -- Pull from FITS header :: CHEATING WITH JUNK FOR NOW
+    t = Time(list(ggg_meta['SMJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    ggg_meta.add_column(Column(t.iso, name='DATE-OBS'))
     # Turn off RA/DEC units
     for key in ['RA', 'DEC']:
         ggg_meta[key].unit = None
@@ -122,6 +124,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     wvmaxlist = []
     npixlist = []
     speclist = []
+    gratinglist = []
+    telelist = []
     dateobs = []
     # Loop
     path = os.getenv('RAW_IGMSPEC')+'/GGG/'
@@ -130,8 +134,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         # Generate full file
         if jj >= nspec//2:
             full_file = path+row['name']+'_R400.fits.gz'
+            gratinglist.append('R400')
         else:
             full_file = path+row['name']+'_B600.fits.gz'
+            gratinglist.append('B400')
         # Extract
         print("GGG: Reading {:s}".format(full_file))
         spec = lsio.readspec(full_file)
@@ -153,8 +159,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
+        telelist.append('Gemini-X')
         npixlist.append(npix)
-        pdb.set_trace()
         if 'R400' in fname:
             Rlist.append(833.)
         else:
@@ -168,6 +174,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     print("Max pix = {:d}".format(maxpix))
     # Add columns
     meta.add_column(Column(speclist, name='SPEC_FILE'))
+    meta.add_column(Column(gratinglist, name='GRATING'))
+    meta.add_column(Column(telelist, name='TELESCOPE'))
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
