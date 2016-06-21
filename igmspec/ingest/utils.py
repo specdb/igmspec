@@ -20,7 +20,8 @@ def chk_meta(meta):
     chk = True
     # Required columns
     req_clms = ['IGM_ID', 'RA', 'DEC', 'EPOCH', 'zem', 'R', 'WV_MIN',
-                'WV_MAX', 'DATE-OBS', 'SURVEY_ID', 'NPIX', 'SPEC_FILE']
+                'WV_MAX', 'DATE-OBS', 'SURVEY_ID', 'NPIX', 'SPEC_FILE',
+                'INSTR', 'GRATING', 'TELESCOP']
     meta_keys = meta.keys()
     for clm in req_clms:
         if clm not in meta_keys:

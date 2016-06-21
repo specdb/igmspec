@@ -132,7 +132,7 @@ def set_new_ids(maindb, newdb, chk=True):
     return cut_db, new, ids
 
 
-def ver01():
+def ver01(test=False):
     """ Build version 0.1
     Returns
     -------
@@ -187,7 +187,8 @@ def ver01():
     assert chk_maindb_join(maindb, sdss_cut)
     maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
-    sdss.hdf5_adddata(hdf, sdss_ids, sname)
+    if not test:
+        sdss.hdf5_adddata(hdf, sdss_ids, sname)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'

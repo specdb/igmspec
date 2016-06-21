@@ -5,6 +5,22 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 from collections import OrderedDict
 from astropy import units as u
 
+def instruments():
+    """ Dict of allowed instruments (and definitions)
+    Includes allowed gratings
+
+    Returns
+    -------
+    inst_dict
+
+    """
+    inst_dict = {
+        # Spectrograph for SDSS-III (BOSS) survey ; https://www.sdss3.org/instruments/boss_spectrograph.php
+        'BOSS': dict(gratings=['BLUE', 'RED', 'BOTH']),
+        # Spectrograph for SDSS-I/II survey; http://classic.sdss.org/dr7/instruments/spectrographs/index.html
+        'SDSS': dict(gratings=['BLUE', 'RED', 'BOTH']),
+    }
+
 def z_priority():
     """ List of redshift priorities for setting the DB redshift
     Returns

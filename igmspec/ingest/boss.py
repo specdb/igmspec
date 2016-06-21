@@ -5,10 +5,43 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import os
 import pdb
+import datetime
 
-from astropy.table import Table
-from astropy.io import fits
+from astropy.table import Table, Column
+from astropy.time import Time
 
+def grab_meta():
+    """ Grab BOSS meta Table
+    Returns
+    -------
+
+    """
+    boss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q.fits')
+    nboss = len(boss_meta)
+    # DATE-OBS
+    dateobs = []
+    for row in boss_meta:
+        t = Time(row['MJD'], format='mjd')
+        tymd = str(t.iso.split(' ')[0])
+        tval = datetime.datetime.strptime(tymd, '%Y-%m-%d')
+        dateobs.append(datetime.datetime.strftime(tval,'%Y-%b-%d'))
+    boss_meta.add_column(Column(dateobs, name='DATE-OBS'))
+    # Add columns
+    boss_meta.add_column(Column(['BOSS']*nboss, name='INSTR'))
+    boss_meta.add_column(Column(['BOTH']*nboss, name='GRATING'))
+    boss_meta.add_column(Column([2000.]*nboss, name='R'))  # RESOLUTION
+    boss_meta.add_column(Column(['SDSS 2.5-M']*nboss, name='TELESCOP'))
+    # Redshift logic
+    boss_meta['zem'] = boss_meta['Z_PCA']
+    boss_meta['sig_zem'] = boss_meta['ERR_ZPCA']
+    boss_meta['flag_zem'] = [str('BOSS_PCA ')]*nboss
+    # Fix bad redshifts
+    bad_pca = boss_meta['Z_PCA'] < 0.
+    boss_meta['zem'][bad_pca] = boss_meta['Z_PIPE'][bad_pca]
+    boss_meta['sig_zem'][bad_pca] = boss_meta['ERR_ZPIPE'][bad_pca]
+    boss_meta['flag_zem'][bad_pca] = str('BOSS_PIPE')
+    #
+    return boss_meta
 
 def meta_for_build():
     """ Load the meta info
@@ -18,22 +51,11 @@ def meta_for_build():
     -------
 
     """
-    boss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q.fits')
-    nqso = len(boss_meta)
-    #
+    boss_meta = grab_meta()
     #
     meta = Table()
-    meta['RA'] = boss_meta['RA']
-    meta['DEC'] = boss_meta['DEC']
-    meta['zem'] = boss_meta['Z_PCA']
-    meta['sig_zem'] = boss_meta['ERR_ZPCA']
-    meta['flag_zem'] = [str('BOSS_PCA ')]*nqso
-    # Fix bad redshifts
-    bad_pca = boss_meta['Z_PCA'] < 0.
-    meta['zem'][bad_pca] = boss_meta['Z_PIPE'][bad_pca]
-    meta['sig_zem'][bad_pca] = boss_meta['ERR_ZPIPE'][bad_pca]
-    meta['flag_zem'][bad_pca] = str('BOSS_PIPE')
-    meta['flag_zem'] = str('BOSS_PCA')
+    for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
+        meta[key] = boss_meta[key]
     # Return
     return meta
 
