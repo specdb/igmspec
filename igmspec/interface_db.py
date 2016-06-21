@@ -92,6 +92,8 @@ class InterfaceDB(object):
 
         Returns
         -------
+        in_survey : ndarray
+          bool array of meta rows matching IGM_IDs
 
         """
         # Check
@@ -105,6 +107,7 @@ class InterfaceDB(object):
         in_survey = np.in1d(meta['IGM_ID'], IGM_IDs)
         # Store and return
         self.survey_bool = in_survey
+        self.meta = meta[in_survey]
         return in_survey
 
     def grab_meta(self, survey, IGM_IDs, show=True):
@@ -173,12 +176,8 @@ class InterfaceDB(object):
         else:
             print("Staging failed..  Not returning spectra")
             return
-        # Deal with padding?
-        tmp = np.sum(data['sig'],axis=0)
-        notzero = np.where(tmp != 0.)[0]
-        npix = np.max(notzero)
         # Generate XSpectrum1D
-        spec = XSpectrum1D(data['wave'], data['flux'], sig=data['sig'], mask_edges=True)
+        spec = XSpectrum1D(data['wave'], data['flux'], sig=data['sig'], masking='edges')
         # Return
         return spec
 
