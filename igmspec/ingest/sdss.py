@@ -41,13 +41,8 @@ def grab_meta():
     sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/SDSS_DR7_qso.fits.gz')
     nspec = len(sdss_meta)
     # DATE
-    dateobs = []
-    for row in sdss_meta:
-        t = Time(row['MJD'], format='mjd')
-        tymd = str(t.iso.split(' ')[0])
-        tval = datetime.datetime.strptime(tymd, '%Y-%m-%d')
-        dateobs.append(datetime.datetime.strftime(tval,'%Y-%b-%d'))
-    sdss_meta.add_column(Column(dateobs, name='DATE-OBS'))
+    t = Time(list(sdss_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    sdss_meta.add_column(Column(t.iso, name='DATE-OBS'))
     # Add a few columns
     sdss_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     sdss_meta.add_column(Column([2000.]*nspec, name='R'))

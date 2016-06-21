@@ -171,6 +171,7 @@ def ver01(test=False):
     maindb = vstack([maindb,boss_meta], join_type='exact')
     maindb = maindb[1:]  # Eliminate dummy line
     #maindb = maindb[1:3]  # For testing
+    pdb.set_trace()
 
     ''' SDSS DR7'''
     sname = 'SDSS_DR7'
@@ -192,6 +193,7 @@ def ver01(test=False):
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
+    print('Doing {:s}'.format(sname))
     kodiaq_meta = kodiaq.meta_for_build()
     # IDs
     kodiaq_cut, new, kodiaq_ids = set_new_ids(maindb, kodiaq_meta)
@@ -205,7 +207,8 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, kodiaq_cut)
     maindb = vstack([maindb,kodiaq_cut], join_type='exact')
     # Update hf5 file
-    kodiaq.hdf5_adddata(hdf, kodiaq_ids, sname)
+    if not test:
+        kodiaq.hdf5_adddata(hdf, kodiaq_ids, sname)
 
     ''' HD-LLS '''
     sname = 'HD-LLS_DR1'
@@ -223,7 +226,8 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, hdlls_cut)
     maindb = vstack([maindb,hdlls_cut], join_type='exact')
     # Update hf5 file
-    hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
+    if not test:
+        hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
 
     ''' GGG '''
     sname = 'GGG'

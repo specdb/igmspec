@@ -19,13 +19,8 @@ def grab_meta():
     boss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q.fits')
     nboss = len(boss_meta)
     # DATE-OBS
-    dateobs = []
-    for row in boss_meta:
-        t = Time(row['MJD'], format='mjd')
-        tymd = str(t.iso.split(' ')[0])
-        tval = datetime.datetime.strptime(tymd, '%Y-%m-%d')
-        dateobs.append(datetime.datetime.strftime(tval,'%Y-%b-%d'))
-    boss_meta.add_column(Column(dateobs, name='DATE-OBS'))
+    t = Time(list(boss_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    boss_meta.add_column(Column(t.iso, name='DATE-OBS'))
     # Add columns
     boss_meta.add_column(Column(['BOSS']*nboss, name='INSTR'))
     boss_meta.add_column(Column(['BOTH']*nboss, name='GRATING'))

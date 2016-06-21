@@ -154,6 +154,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
+        pdb.set_trace()
         if 'R400' in fname:
             Rlist.append(833.)
         else:
