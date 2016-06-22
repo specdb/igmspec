@@ -176,7 +176,7 @@ def ver01(test=False):
 
     ''' SDSS DR7'''
     sname = 'SDSS_DR7'
-    print('===============\n Doing {:s} \n=============\n'.format(sname))
+    print('===============\n Doing {:s} \n===============\n'.format(sname))
     sdss_meta = sdss.meta_for_build()
     # IDs
     sdss_cut, new, sdss_ids = set_new_ids(maindb, sdss_meta)
@@ -190,7 +190,8 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, sdss_cut)
     maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
-    sdss.hdf5_adddata(hdf, sdss_ids, sname)
+    if not test:
+        sdss.hdf5_adddata(hdf, sdss_ids, sname)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
@@ -208,7 +209,8 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, kodiaq_cut)
     maindb = vstack([maindb,kodiaq_cut], join_type='exact')
     # Update hf5 file
-    kodiaq.hdf5_adddata(hdf, kodiaq_ids, sname)
+    if not test:
+        kodiaq.hdf5_adddata(hdf, kodiaq_ids, sname)
 
     ''' HD-LLS '''
     sname = 'HD-LLS_DR1'

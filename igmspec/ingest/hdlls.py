@@ -138,11 +138,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             hdlls_full.add_row(row)
             spec_files.append(spec_file)
             full_IDs.append(meta_IDs[kk])
-    # Trim down
+    # Build
     hdlls_full = hdlls_full[1:]
     hdlls_full.remove_column('SPEC_FILES')
     hdlls_full.add_column(Column(spec_files,name='SPEC_FILE'))
     hdlls_full.add_column(Column(full_IDs, name='IGM_ID'))
+    # Cut on unique SPEC_FILEs
     uni, uni_idx = np.unique(np.array(spec_files), return_index=True)
     hdlls_full = hdlls_full[uni_idx]
     full_coord = SkyCoord(ra=hdlls_full['RA'], dec=hdlls_full['DEC'], unit='deg')
