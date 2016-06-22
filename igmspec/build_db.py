@@ -138,8 +138,9 @@ def ver01(test=False):
     -------
 
     """
+    version = 'ver01'
     # HDF5 file
-    outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_ver01.hdf5'
+    outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     hdf = h5py.File(outfil,'w')
 
     # Defs
@@ -250,6 +251,7 @@ def ver01(test=False):
     hdf['catalog'] = maindb
     hdf['catalog'].attrs['EPOCH'] = 2000.
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
+    hdf['catalog'].attrs['VERSION'] = version
     #hdf['catalog'].attrs['CAT_DICT'] = cdict
     #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
     hdf.close()
