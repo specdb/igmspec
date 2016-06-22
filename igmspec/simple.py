@@ -13,7 +13,7 @@ from igmspec import interface_db as igidb
 
 from astropy import units as u
 
-def spec_from_coord(coord, toler=5.*u.arcsec, isurvey=None):
+def spec_from_coord(coord, toler=5.*u.arcsec, isurvey=None, **kwargs):
     """ Radial search for spectra around given coordinate
     Best for single searches (i.e. slower than other approaches)
 
@@ -25,8 +25,9 @@ def spec_from_coord(coord, toler=5.*u.arcsec, isurvey=None):
       Search radius
     isurvey : str or list, optional
       One or more surveys to include
-    show_meta : bool, optional
-      Show meta data?
+    kwargs :
+      fed to grab_spec
+
 
     Returns
     -------
@@ -55,5 +56,5 @@ def spec_from_coord(coord, toler=5.*u.arcsec, isurvey=None):
     idb = igidb.InterfaceDB(verbose=False)
 
     # Load spectra
-    spec = idb.grab_spec(surveys, ids)
+    spec = idb.grab_spec(surveys, ids, **kwargs)
     return spec, idb.meta
