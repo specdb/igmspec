@@ -146,7 +146,7 @@ def ver01(test=False):
     zpri = defs.z_priority()
     lenz = [len(zpi) for zpi in zpri]
     dummyf = str('#')*np.max(np.array(lenz))  # For the Table
-    cdict = defs.get_cat_dict()
+    #cdict = defs.get_cat_dict()
 
     # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
     idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
