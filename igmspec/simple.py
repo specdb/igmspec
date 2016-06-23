@@ -13,6 +13,7 @@ from igmspec import interface_db as igidb
 
 from astropy import units as u
 
+
 def spec_from_coord(coord, toler=5.*u.arcsec, isurvey=None, **kwargs):
     """ Radial search for spectra around given coordinate
     Best for single searches (i.e. slower than other approaches)
