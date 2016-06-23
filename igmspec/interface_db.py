@@ -116,12 +116,13 @@ class InterfaceDB(object):
         self.meta = meta[match_survey]
         return match_survey
 
-    def grab_meta(self, survey, IGM_IDs, show=True):
+    def grab_meta(self, survey, IGM_IDs=None, show=True):
         """ Grab meta data for survey
         Parameters
         ----------
         survey : str or list
-        IGM_IDs : int or array
+        IGM_IDs : int or array, optional
+          Return full table if None
         show : bool, optional
           Show the Meta table (print) in addition to returning
 
@@ -137,8 +138,12 @@ class InterfaceDB(object):
                 all_meta.append(self.grab_meta(isurvey, IGM_IDs))
             return all_meta
         # Grab IDs then cut
-        _ = self.grab_ids(survey, IGM_IDs)
-        meta = Table(self.hdf[survey]['meta'].value)[self.survey_bool]
+        meta = Table(self.hdf[survey]['meta'].value)
+        if IGM_IDs is not None:
+            _ = self.grab_ids(survey, IGM_IDs)
+            meta = meta[self.survey_bool]
+        else:
+            return meta
         self.meta = meta
         self.meta['RA'].format = '7.3f'
         self.meta['DEC'].format = '7.3f'
