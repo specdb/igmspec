@@ -62,6 +62,7 @@ class QueryCatalog(object):
         hdf = h5py.File(db_file,'r')
         self.cat = Table(hdf['catalog'].value)
         self.db_file = db_file
+        hdf.close()
 
     def in_surveys(self, input_surveys, return_list=True):
         """ Return a list of input surveys that are in the DB
