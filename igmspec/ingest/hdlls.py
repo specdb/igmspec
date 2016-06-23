@@ -145,6 +145,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     hdlls_full.add_column(Column(full_IDs, name='IGM_ID'))
     # Cut on unique SPEC_FILEs
     uni, uni_idx = np.unique(np.array(spec_files), return_index=True)
+    if sname == 'HD-LLS_DR1':
+        # REMOVE ONE FILE (A DUPLICATE) BY HAND
+        mt = uni != 'HD-LLS_J130756.70+042215.0_MIKE.fits'
+        uni_idx = uni_idx[mt]
     hdlls_full = hdlls_full[uni_idx]
     full_coord = SkyCoord(ra=hdlls_full['RA'], dec=hdlls_full['DEC'], unit='deg')
 

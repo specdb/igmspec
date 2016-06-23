@@ -195,7 +195,7 @@ def ver01(test=False):
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
-    print('===============\n Doing {:s} \n==============\n'.format(sname))
+    print('==================\n Doing {:s} \n==================\n'.format(sname))
     kodiaq_meta = kodiaq.meta_for_build()
     # IDs
     kodiaq_cut, new, kodiaq_ids = set_new_ids(maindb, kodiaq_meta)
