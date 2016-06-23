@@ -35,7 +35,6 @@ class IgmSpec(object):
         assert self.idb.db_file == self.qcat.db_file
         for survey in self.idb.surveys:
             assert survey in self.qcat.surveys
-        self.dumb = 2
 
     def spec_from_coord(self, coord, toler=5.*u.arcsec, isurvey=None, **kwargs):
         """ Radial search for spectra around given coordinate
