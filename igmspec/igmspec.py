@@ -4,7 +4,9 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 #import numpy as np
 import pdb
+import warnings
 
+from astropy import units as u
 
 from igmspec.query_catalog import QueryCatalog
 from igmspec.interface_db import InterfaceDB
@@ -60,8 +62,7 @@ class IgmSpec(object):
 
         """
         # Catalog
-        qcat = iqcat.QueryCatalog()
-        ids = qcat.radial_search(coord, toler)
+        ids = self.qcat.radial_search(coord, toler)
         if len(ids) == 0:
             warnings.warn("No sources found at your coordinate.  Returning none")
             return None
@@ -70,16 +71,13 @@ class IgmSpec(object):
 
         # Surveys
         if isurvey is None:
-            surveys = qcat.surveys
+            surveys = self.qcat.surveys
         else:
-            surveys = qcat.in_surveys(isurvey)
-
-        # Grab all the spectra in the survey(s)
-        idb = igidb.InterfaceDB(verbose=False)
+            surveys = self.qcat.in_surveys(isurvey)
 
         # Load spectra
-        spec = idb.grab_spec(surveys, ids, **kwargs)
-        return spec, idb.meta
+        spec = self.idb.grab_spec(surveys, ids, **kwargs)
+        return spec, self.idb.meta
 
     def __getattr__(self, k):
         """ Overload attributes using the underlying classes
