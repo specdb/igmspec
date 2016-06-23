@@ -39,7 +39,8 @@ def main(args, unit_test=False):
     qcat = iqcat.QueryCatalog()
     ids = qcat.radial_search(args.coord, args.toler*u.arcsec)
     if len(ids) == 0:
-        print("Try another source...")
+        print("None found, try another location...")
+        return
     elif len(ids) == 1:
         # Grab catalog entry
         row = qcat.get_cat(ids)

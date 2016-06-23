@@ -80,8 +80,8 @@ class InterfaceDB(object):
         if self.verbose:
             print("Available surveys: {}".format(self.surveys))
 
-    def grab_ids(self, survey, IGM_IDs, meta=None):
-        """ Grab the survey IDs
+    def grab_ids(self, survey, IGM_IDs, meta=None, match_meta=None):
+        """ Grab the rows in a survey matching IGM_IDs
 
         Parameters
         ----------
@@ -89,9 +89,15 @@ class InterfaceDB(object):
           Name of the Survey
         IGM_IDs : int or ndarray
           IGM_ID values
+        meta : Table, optional
+          Meta data for the survey (usually read from hdf)
+        match_meta : dict, optional
+          key/value to filter spec with, e.g. {'INSTR': HIRES}
 
         Returns
-        -------
+        ------
+        match_survey : ndarray
+          bool array of meta rows from the survey matching IGM_IDs
 
         """
         # Check
@@ -100,12 +106,15 @@ class InterfaceDB(object):
         # Find IGMS_IDs indices in survey
         if meta is None:
             meta = self.hdf[survey]['meta'].value
-        if 'IGM_ID' not in meta.dtype.names:
-            raise ValueError("Meta table in {:s} survey is missing IGSM_ID column!".format(survey))
-        in_survey = np.in1d(meta['IGM_ID'], IGM_IDs)
+        match_survey = np.in1d(meta['IGM_ID'], IGM_IDs)
+        # Match meta?
+        if match_meta is not None:
+            for key,value in match_meta.items():
+                match_survey = match_survey & (meta[key] == value)
         # Store and return
-        self.survey_bool = in_survey
-        return in_survey
+        self.survey_bool = match_survey
+        self.meta = meta[match_survey]
+        return match_survey
 
     def grab_meta(self, survey, IGM_IDs, show=True):
         """ Grab meta data for survey
@@ -146,7 +155,7 @@ class InterfaceDB(object):
         # Load and return
         return meta
 
-    def grab_spec(self, survey, IGM_IDs, verbose=None):
+    def grab_spec(self, survey, IGM_IDs, verbose=None, **kwargs):
         """ Grab spectra using staged IDs
 
         Parameters
@@ -163,26 +172,22 @@ class InterfaceDB(object):
         if isinstance(survey, list):
             all_spec = []
             for isurvey in survey:
-                all_spec.append(self.grab_spec(isurvey, IGM_IDs))
+                all_spec.append(self.grab_spec(isurvey, IGM_IDs, **kwargs))
             return all_spec
-        #
-        if self.stage_data(survey, IGM_IDs):
+        # Grab IDs
+        if self.stage_data(survey, IGM_IDs, **kwargs):
             if verbose:
                 print("Loaded spectra")
             data = self.hdf[survey]['spec'][self.survey_bool]
         else:
             print("Staging failed..  Not returning spectra")
             return
-        # Deal with padding?
-        tmp = np.sum(data['sig'],axis=0)
-        notzero = np.where(tmp != 0.)[0]
-        npix = np.max(notzero)
         # Generate XSpectrum1D
-        spec = XSpectrum1D(data['wave'], data['flux'], sig=data['sig'], mask_edges=True)
+        spec = XSpectrum1D(data['wave'], data['flux'], sig=data['sig'], masking='edges')
         # Return
         return spec
 
-    def stage_data(self, survey, IGM_IDs, verbose=None):
+    def stage_data(self, survey, IGM_IDs, verbose=None, **kwargs):
         """ Stage the spectra for serving
         Mainly checks the memory
 
@@ -205,8 +210,9 @@ class InterfaceDB(object):
         # Checks
         if survey not in self.hdf.keys():
             raise IOError("Survey {:s} not in your DB file {:s}".format(survey, self.db_file))
-        in_survey = self.grab_ids(survey, IGM_IDs)
-        nhits = np.sum(in_survey)
+        match_survey = self.grab_ids(survey, IGM_IDs, **kwargs)
+        # Meta?
+        nhits = np.sum(match_survey)
         # Memory check (approximate; ignores meta data)
         spec_Gb = self.hdf[survey]['spec'][0].nbytes/1e9  # Gb
         new_memory = spec_Gb*nhits
