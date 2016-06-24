@@ -145,7 +145,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     hdlls_full.add_column(Column(full_IDs, name='IGM_ID'))
     # Cut on unique SPEC_FILEs
     uni, uni_idx = np.unique(np.array(spec_files), return_index=True)
-    pdb.set_trace()
     if sname == 'HD-LLS_DR1':
         # REMOVE ONE FILE (A DUPLICATE) BY HAND
         mt = uni != 'HD-LLS_J130756.70+042215.0_MIKE.fits'
@@ -258,9 +257,16 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
                     pdb.set_trace()
             dateobslist.append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
         elif 'MIKE' in fname:  # APPROXIMATE
-            instrlist.append('MIKE')
+            if 'MIKEr' in fname:
+                instrlist.append('MIKEr')
+                gratinglist.append('RED')
+            elif 'MIKEb' in fname:
+                instrlist.append('MIKEb')
+                gratinglist.append('BLUE')
+            else:
+                instrlist.append('MIKE')
+                gratinglist.append('BOTH')
             telelist.append('Magellan')
-            gratinglist.append('BOTH')
             sep = full_coord[mt[0]].separation(mike_coord)
             imin = np.argmin(sep)
             if sep[imin] > 1.*u.arcsec:

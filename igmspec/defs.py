@@ -26,8 +26,8 @@ def instruments():
         'ESI': dict(gratings=['ECH']),
         # Magellan MIKE spectrometer
         'MIKE': dict(gratings=['BOTH']),   # HD-LLS spliced blue and red
-        'MIKEb': dict(gratings=['blue']),
-        'MIKEr': dict(gratings=['red']),
+        'MIKEb': dict(gratings=['BLUE']),
+        'MIKEr': dict(gratings=['RED']),
         # Magellan MagE spectrometer
         'MagE': dict(gratings=['N/A']),
         # Gemini GMOS spectrometer
