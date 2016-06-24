@@ -306,7 +306,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(instrlist, name='INSTR'))
     meta.add_column(Column(telelist, name='TELESCOPE'))
     meta.rename_column('Z_QSO', 'zem')
-    pdb.set_trace()
 
     # Add HDLLS meta to hdf5
     if iiu.chk_meta(meta):
