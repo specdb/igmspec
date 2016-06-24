@@ -145,6 +145,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     hdlls_full.add_column(Column(full_IDs, name='IGM_ID'))
     # Cut on unique SPEC_FILEs
     uni, uni_idx = np.unique(np.array(spec_files), return_index=True)
+    pdb.set_trace()
     if sname == 'HD-LLS_DR1':
         # REMOVE ONE FILE (A DUPLICATE) BY HAND
         mt = uni != 'HD-LLS_J130756.70+042215.0_MIKE.fits'
@@ -299,6 +300,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(instrlist, name='INSTR'))
     meta.add_column(Column(telelist, name='TELESCOPE'))
     meta.rename_column('Z_QSO', 'zem')
+    pdb.set_trace()
 
     # Add HDLLS meta to hdf5
     if iiu.chk_meta(meta):
