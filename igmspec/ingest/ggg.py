@@ -4,20 +4,16 @@ Worseck et al. 2014
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+
 import numpy as np
 import pdb
 import os
-import glob
 import imp
 import datetime
 
 from astropy.table import Table, Column, vstack
-from astropy.coordinates import SkyCoord, match_coordinates_sky
-from astropy import units as u
-from astropy.io import fits
 from astropy.time import Time
 
-from linetools import utils as ltu
 from linetools.spectra import io as lsio
 
 from igmspec.ingest import utils as iiu
@@ -33,18 +29,19 @@ def grab_meta():
     """
     # This table has units in it!
     ggg_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/GGG/GGG_catalog.fits')
-    # RA/DEC, DATE
-    dateobs = []
-    for row in ggg_meta:
-        # DATE
-        t = Time(row['RMJD'], format='mjd')
-        tymd = str(t.iso.split(' ')[0])
-        tval = datetime.datetime.strptime(tymd, '%Y-%m-%d')
-        dateobs.append(datetime.datetime.strftime(tval,'%Y-%b-%d'))
-    ggg_meta.add_column(Column(dateobs, name='DATE-OBS'))
-    # Turn off units
+    nqso = len(ggg_meta)
+    # DATE-OBS -- Pull from FITS header :: CHEATING WITH JUNK FOR NOW
+    t = Time(list(ggg_meta['SMJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    ggg_meta.add_column(Column(t.iso, name='DATE-OBS'))
+    # Turn off RA/DEC units
     for key in ['RA', 'DEC']:
         ggg_meta[key].unit = None
+    #
+    # Add zem
+    ggg_meta['zem'] = ggg_meta['z_gmos']
+    ggg_meta['sig_zem'] = ggg_meta['zerror_gmos']
+    ggg_meta['flag_zem'] = [str('GGG')]*nqso
+    ggg_meta.add_column(Column([2000.]*nqso, name='EPOCH'))
     #
     return ggg_meta
 
@@ -63,11 +60,8 @@ def meta_for_build():
     nqso = len(ggg_meta)
     #
     meta = Table()
-    meta['RA'] = ggg_meta['RA']
-    meta['DEC'] = ggg_meta['DEC']
-    meta['zem'] = ggg_meta['z_gmos']
-    meta['sig_zem'] = ggg_meta['zerror_gmos']
-    meta['flag_zem'] = [str('GGG')]*nqso
+    for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
+        meta[key] = ggg_meta[key]
     # Return
     return meta
 
@@ -108,8 +102,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta_IDs = IDs
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
-    # Add zem
-    meta['zem'] = meta['z_gmos']
 
     # Double up for the two gratings
     meta = vstack([meta,meta])
@@ -132,6 +124,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     wvmaxlist = []
     npixlist = []
     speclist = []
+    gratinglist = []
+    telelist = []
+    dateobs = []
+    instrlist = []
     # Loop
     path = os.getenv('RAW_IGMSPEC')+'/GGG/'
     maxpix = 0
@@ -139,8 +135,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         # Generate full file
         if jj >= nspec//2:
             full_file = path+row['name']+'_R400.fits.gz'
+            gratinglist.append('R400')
         else:
             full_file = path+row['name']+'_B600.fits.gz'
+            gratinglist.append('B400')
         # Extract
         print("GGG: Reading {:s}".format(full_file))
         spec = lsio.readspec(full_file)
@@ -162,6 +160,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
+        telelist.append('Gemini-X')
+        instrlist.append('GMOS-X')
         npixlist.append(npix)
         if 'R400' in fname:
             Rlist.append(833.)
@@ -175,8 +175,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     #
     print("Max pix = {:d}".format(maxpix))
     # Add columns
-    meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     meta.add_column(Column(speclist, name='SPEC_FILE'))
+    meta.add_column(Column(gratinglist, name='GRATING'))
+    meta.add_column(Column(telelist, name='TELESCOPE'))
+    meta.add_column(Column(instrlist, name='INSTR'))
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))

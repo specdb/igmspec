@@ -39,15 +39,23 @@ def grab_meta():
     meta
     """
     sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/SDSS_DR7_qso.fits.gz')
-    nqso = len(sdss_meta)
+    nspec = len(sdss_meta)
     # DATE
-    dateobs = []
-    for row in sdss_meta:
-        t = Time(row['MJD'], format='mjd')
-        tymd = str(t.iso.split(' ')[0])
-        tval = datetime.datetime.strptime(tymd, '%Y-%m-%d')
-        dateobs.append(datetime.datetime.strftime(tval,'%Y-%b-%d'))
-    sdss_meta.add_column(Column(dateobs, name='DATE-OBS'))
+    t = Time(list(sdss_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    sdss_meta.add_column(Column(t.iso, name='DATE-OBS'))
+    # Add a few columns
+    sdss_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
+    sdss_meta.add_column(Column([2000.]*nspec, name='R'))
+    sdss_meta.add_column(Column(['SDSS']*nspec, name='INSTR'))
+    sdss_meta.add_column(Column(['BOTH']*nspec, name='GRATING'))
+    sdss_meta.add_column(Column(['SDSS 2.5-M']*nspec, name='TELESCOPE'))
+    # Rename
+    sdss_meta.rename_column('RAOBJ', 'RA')
+    sdss_meta.rename_column('DECOBJ', 'DEC')
+    sdss_meta.rename_column('Z', 'zem')          # Some of these were corrected by QPQ
+    sdss_meta.rename_column('Z_ERR', 'sig_zem')
+    # Sort
+    sdss_meta.sort('RA')
     # Return
     return sdss_meta
 
@@ -66,10 +74,8 @@ def meta_for_build():
     #
     #
     meta = Table()
-    meta['RA'] = sdss_meta['RAOBJ']
-    meta['DEC'] = sdss_meta['DECOBJ']
-    meta['zem'] = sdss_meta['Z'] # Some of these were corrected by QPQ
-    meta['sig_zem'] = sdss_meta['Z_ERR']
+    for key in ['RA', 'DEC', 'zem', 'sig_zem']:
+        meta[key] = sdss_meta[key]
     meta['flag_zem'] = [str('SDSS')]*nqso  # QPQ too
     # Return
     return meta
@@ -112,11 +118,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
     # Add zem
-    meta.rename_column('Z', 'zem')
-    meta.rename_column('Z_ERR', 'sig_zem')
-    meta.rename_column('RAOBJ', 'RA')
-    meta.rename_column('DECOBJ', 'DEC')
-    meta.sort('RA')
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
@@ -131,7 +132,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
-    Rlist = []
     wvminlist = []
     wvmaxlist = []
     npixlist = []
@@ -152,7 +152,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
                 wvminlist.append(np.min(data['wave'][0][:npix]))
                 wvmaxlist.append(np.max(data['wave'][0][:npix]))
                 npixlist.append(npix)
-                Rlist.append(2000.)
                 continue
         # Generate full file
         spec = lsio.readspec(full_file)
@@ -173,7 +172,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
-        Rlist.append(2000.)
         # Only way to set the dataset correctly
         if chk_meta_only:
             continue
@@ -182,12 +180,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     #
     print("Max pix = {:d}".format(maxpix))
     # Add columns
-    meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     meta.add_column(Column(speclist, name='SPEC_FILE'))
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    meta.add_column(Column(Rlist, name='R'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
