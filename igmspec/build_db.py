@@ -132,21 +132,22 @@ def set_new_ids(maindb, newdb, chk=True):
     return cut_db, new, ids
 
 
-def ver01():
+def ver01(test=False):
     """ Build version 0.1
     Returns
     -------
 
     """
+    version = 'ver01'
     # HDF5 file
-    outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_ver01.hdf5'
+    outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     hdf = h5py.File(outfil,'w')
 
     # Defs
     zpri = defs.z_priority()
     lenz = [len(zpi) for zpi in zpri]
     dummyf = str('#')*np.max(np.array(lenz))  # For the Table
-    cdict = defs.get_cat_dict()
+    #cdict = defs.get_cat_dict()
 
     # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
     idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
@@ -170,10 +171,12 @@ def ver01():
     # Append
     maindb = vstack([maindb,boss_meta], join_type='exact')
     maindb = maindb[1:]  # Eliminate dummy line
-    #maindb = maindb[1:3]  # For testing
+    #if not test:
+    #    boss.hdf5_adddata(hdf, sdss_ids, sname)
 
     ''' SDSS DR7'''
     sname = 'SDSS_DR7'
+    print('===============\n Doing {:s} \n===============\n'.format(sname))
     sdss_meta = sdss.meta_for_build()
     # IDs
     sdss_cut, new, sdss_ids = set_new_ids(maindb, sdss_meta)
@@ -187,10 +190,12 @@ def ver01():
     assert chk_maindb_join(maindb, sdss_cut)
     maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
-    sdss.hdf5_adddata(hdf, sdss_ids, sname)
+    if not test:
+        sdss.hdf5_adddata(hdf, sdss_ids, sname)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
+    print('==================\n Doing {:s} \n==================\n'.format(sname))
     kodiaq_meta = kodiaq.meta_for_build()
     # IDs
     kodiaq_cut, new, kodiaq_ids = set_new_ids(maindb, kodiaq_meta)
@@ -204,10 +209,12 @@ def ver01():
     assert chk_maindb_join(maindb, kodiaq_cut)
     maindb = vstack([maindb,kodiaq_cut], join_type='exact')
     # Update hf5 file
-    kodiaq.hdf5_adddata(hdf, kodiaq_ids, sname)
+    if not test:
+        kodiaq.hdf5_adddata(hdf, kodiaq_ids, sname)
 
     ''' HD-LLS '''
     sname = 'HD-LLS_DR1'
+    print('===============\n Doing {:s} \n==============\n'.format(sname))
     # Read
     hdlls_meta = hdlls.meta_for_build()
     # IDs
@@ -226,6 +233,7 @@ def ver01():
 
     ''' GGG '''
     sname = 'GGG'
+    print('===============\n Doing {:s} \n==============\n'.format(sname))
     ggg_meta = ggg.meta_for_build()
     # IDs
     ggg_cut, new, ggg_ids = set_new_ids(maindb, ggg_meta)
@@ -245,6 +253,7 @@ def ver01():
     hdf['catalog'] = maindb
     hdf['catalog'].attrs['EPOCH'] = 2000.
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
+    hdf['catalog'].attrs['VERSION'] = version
     #hdf['catalog'].attrs['CAT_DICT'] = cdict
     #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
     hdf.close()

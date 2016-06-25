@@ -5,6 +5,36 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 from collections import OrderedDict
 from astropy import units as u
 
+def instruments():
+    """ Dict of allowed instruments (and definitions)
+
+    Includes allowed gratings
+
+    Returns
+    -------
+    inst_dict
+
+    """
+    inst_dict = {
+        # Spectrograph for SDSS-III (BOSS) survey ; https://www.sdss3.org/instruments/boss_spectrograph.php
+        'BOSS': dict(gratings=['BLUE', 'RED', 'BOTH']),
+        # Spectrograph for SDSS-I/II survey; http://classic.sdss.org/dr7/instruments/spectrographs/index.html
+        'SDSS': dict(gratings=['BLUE', 'RED', 'BOTH']),
+        # Keck/HIRES spectrometer -- BLUE/RED refer to the cross-disperser
+        'HIRES': dict(gratings=['BLUE', 'RED', 'BOTH']),
+        # Keck/ESI spectrometer -- ECH
+        'ESI': dict(gratings=['ECH']),
+        # Magellan MIKE spectrometer
+        'MIKE': dict(gratings=['BOTH']),   # HD-LLS spliced blue and red
+        'MIKEb': dict(gratings=['BLUE']),
+        'MIKEr': dict(gratings=['RED']),
+        # Magellan MagE spectrometer
+        'MagE': dict(gratings=['N/A']),
+        # Gemini GMOS spectrometer
+        'GMOS-X': dict(gratings=['R400', 'B600']),
+    }
+    return inst_dict
+
 def z_priority():
     """ List of redshift priorities for setting the DB redshift
     Returns
@@ -79,7 +109,8 @@ def get_res_dicts():
                    'B5': HIRES1/0.861,
                    'E3': HIRES1/0.4,
                    }
+    MagE_Rdict = {'0.70': 4100./0.7}
     #
-    Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict)
+    Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict, MagE=MagE_Rdict)
     #
     return Rdicts

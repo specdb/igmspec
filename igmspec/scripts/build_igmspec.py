@@ -17,6 +17,7 @@ def parser(options=None):
     parser = argparse.ArgumentParser(
         description='Build the igmspec DB')
     parser.add_argument("-v", "--version", help="DB version to generate")
+    parser.add_argument("-t", "--test", default=False, action='store_true', help="Test?")
     #parser.add_argument("-llist", default='ISM', action='store_true', help="Name of LineList:  ISM, HI, H2, CO, etc.")
 
     if options is None:
@@ -43,10 +44,10 @@ def main(args=None):
 
     # Run
     if pargs.version is None:
-        build_db.ver01()
+        build_db.ver01(test=pargs.test)
     elif pargs.version == 'v01':
         print("Building v01 of the igmspec DB")
-        build_db.ver01()
+        build_db.ver01(test=pargs.test)
     else:
         raise IOError("Bad version number")
 
