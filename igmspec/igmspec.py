@@ -54,9 +54,9 @@ class IgmSpec(object):
 
         Returns
         -------
-        spec : XSpectrum1D
+        spec : XSpectrum1D or list of XSpectrum1D
           One or more spectra satisfying the radial search
-        meta : Table
+        meta : Table or list of Tables
           Meta data related to spec
 
         """
@@ -74,9 +74,13 @@ class IgmSpec(object):
         else:
             surveys = self.qcat.in_surveys(isurvey)
 
+        # Pop BOSS_DR12 for now
+        if 'BOSS_DR12' in surveys:
+            surveys.pop(surveys.index('BOSS_DR12'))
+
         # Load spectra
-        spec = self.idb.grab_spec(surveys, ids, **kwargs)
-        return spec, self.idb.meta
+        spec, meta = self.idb.grab_spec(surveys, ids, **kwargs)
+        return spec, meta
 
     def __getattr__(self, k):
         """ Overload attributes using the underlying classes
