@@ -39,7 +39,7 @@ def meta_for_build():
 
 
 def qsos_dr12():
-    """
+    """  Supplemental too
     for the data model
     Returns
     -------
