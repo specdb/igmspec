@@ -204,6 +204,9 @@ class InterfaceDB(object):
         ----------
         meta_keys : list, optional
           Keys for display
+        imeta : Table, optional
+          Meta data for the survey (or a subset of it)
+          Is pulled from self.meta if not input
         """
         if imeta is None:
             imeta = self.meta

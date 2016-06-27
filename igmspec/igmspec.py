@@ -36,7 +36,7 @@ class IgmSpec(object):
         for survey in self.idb.surveys:
             assert survey in self.qcat.surveys
 
-    def spec_from_coord(self, coord, toler=5.*u.arcsec, isurvey=None, **kwargs):
+    def spec_from_coord(self, coord, tol=5.*u.arcsec, isurvey=None, **kwargs):
         """ Radial search for spectra around given coordinate
         Best for single searches (i.e. slower than other approaches)
 
@@ -44,7 +44,7 @@ class IgmSpec(object):
         ----------
         coord : str, tuple, SkyCoord
           See linetools.utils.radec_to_coord
-        toler : Angle or Quantity
+        tol : Angle or Quantity, optional
           Search radius
         isurvey : str or list, optional
           One or more surveys to include

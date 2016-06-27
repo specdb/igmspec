@@ -11,7 +11,7 @@ def parser(options=None):
 
     parser = argparse.ArgumentParser(description='plot_igmspec script v0.1')
     parser.add_argument("coord", type=str, help="Coordinates, e.g. J081240+320808")
-    parser.add_argument("--toler", default=5., type=float, help="Maximum offset in arcsec [default=5.]")
+    parser.add_argument("--tol", default=5., type=float, help="Maximum offset in arcsec [default=5.]")
     parser.add_argument("--meta", default=True, help="Show meta data? [default: True]", action="store_true")
     parser.add_argument("--survey", help="Name of Survey to use")
     parser.add_argument("--select", default=0, type=int, help="Name of Survey to use [default: 0]")
@@ -36,7 +36,7 @@ def main(args, unit_test=False):
     igsmp = IgmSpec()
 
     # Grab
-    all_spec, all_meta = igsmp.spec_from_coord(args.coord, toler=args.toler*u.arcsec, isurvey=args.survey)
+    all_spec, all_meta = igsmp.spec_from_coord(args.coord, tol=args.tol*u.arcsec, isurvey=args.survey)
 
     # Outcome
     if len(all_meta) == 0:
