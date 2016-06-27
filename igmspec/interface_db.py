@@ -105,7 +105,8 @@ class InterfaceDB(object):
             raise IOError("Survey {:s} not in your DB file {:s}".format(survey, self.db_file))
         # Find IGMS_IDs indices in survey
         if meta is None:
-            meta = self.hdf[survey]['meta'].value
+            meta = Table(self.hdf[survey]['meta'].value)  # This could be too slow..
+            meta.meta = dict(survey=survey)
         match_survey = np.in1d(meta['IGM_ID'], IGM_IDs)
         # Match meta?
         if match_meta is not None:
@@ -116,12 +117,13 @@ class InterfaceDB(object):
         self.meta = meta[match_survey]
         return match_survey
 
-    def grab_meta(self, survey, IGM_IDs, show=True):
+    def grab_meta(self, survey, IGM_IDs=None, show=True):
         """ Grab meta data for survey
         Parameters
         ----------
         survey : str or list
-        IGM_IDs : int or array
+        IGM_IDs : int or array, optional
+          Return full table if None
         show : bool, optional
           Show the Meta table (print) in addition to returning
 
@@ -137,21 +139,19 @@ class InterfaceDB(object):
                 all_meta.append(self.grab_meta(isurvey, IGM_IDs))
             return all_meta
         # Grab IDs then cut
-        _ = self.grab_ids(survey, IGM_IDs)
-        meta = Table(self.hdf[survey]['meta'].value)[self.survey_bool]
+        meta = Table(self.hdf[survey]['meta'].value)
+        if IGM_IDs is not None:
+            _ = self.grab_ids(survey, IGM_IDs)
+            meta = meta[self.survey_bool]
+        else:
+            return meta
         self.meta = meta
         self.meta['RA'].format = '7.3f'
         self.meta['DEC'].format = '7.3f'
         self.meta['zem'].format = '6.3f'
         self.meta['WV_MIN'].format = '6.1f'
         self.meta['WV_MAX'].format = '6.1f'
-        # Show?
-        if show:
-            meta_keys = ['IGM_ID', 'RA', 'DEC', 'zem', 'SPEC_FILE']
-            for key in meta.keys():
-                if key not in meta_keys:
-                    meta_keys += [key]
-            meta[meta_keys].pprint(max_width=120)
+
         # Load and return
         return meta
 
@@ -165,27 +165,61 @@ class InterfaceDB(object):
 
         Returns
         -------
+        spec
+        meta
 
         """
         if verbose is None:
             verbose = self.verbose
         if isinstance(survey, list):
             all_spec = []
+            all_meta = []
             for isurvey in survey:
-                all_spec.append(self.grab_spec(isurvey, IGM_IDs, **kwargs))
-            return all_spec
+                spec, meta = self.grab_spec(isurvey, IGM_IDs, **kwargs)
+                if spec is not None:
+                    all_spec.append(spec.copy())
+                    all_meta.append(meta.copy())
+            return all_spec, all_meta
         # Grab IDs
         if self.stage_data(survey, IGM_IDs, **kwargs):
-            if verbose:
-                print("Loaded spectra")
-            data = self.hdf[survey]['spec'][self.survey_bool]
+            if np.sum(self.survey_bool) == 0:
+                if verbose:
+                    print("No spectra matching in survey {:s}".format(survey))
+                return None, None
+            else:
+                if verbose:
+                    print("Loaded spectra")
+                data = self.hdf[survey]['spec'][self.survey_bool]
         else:
             print("Staging failed..  Not returning spectra")
             return
         # Generate XSpectrum1D
         spec = XSpectrum1D(data['wave'], data['flux'], sig=data['sig'], masking='edges')
         # Return
-        return spec
+        return spec, self.meta
+
+    def show_meta(self, imeta=None, meta_keys=None):
+        """ Nicely format and show the meta table
+        Parameters
+        ----------
+        meta_keys : list, optional
+          Keys for display
+        imeta : Table, optional
+          Meta data for the survey (or a subset of it)
+          Is pulled from self.meta if not input
+        """
+        if imeta is None:
+            imeta = self.meta
+        if meta_keys is None:
+            mkeys = ['IGM_ID', 'RA', 'DEC', 'zem', 'SPEC_FILE']
+        else:
+            mkeys = meta_keys
+        #
+        for key in imeta.keys():
+            if key not in mkeys:
+                mkeys += [key]
+        imeta[mkeys].pprint(max_width=120)
+        return
 
     def stage_data(self, survey, IGM_IDs, verbose=None, **kwargs):
         """ Stage the spectra for serving
@@ -209,7 +243,10 @@ class InterfaceDB(object):
             verbose = self.verbose
         # Checks
         if survey not in self.hdf.keys():
-            raise IOError("Survey {:s} not in your DB file {:s}".format(survey, self.db_file))
+            if survey == 'BOSS_DR12':
+                return True
+            else:
+                raise IOError("Survey {:s} not in your DB file {:s}".format(survey, self.db_file))
         match_survey = self.grab_ids(survey, IGM_IDs, **kwargs)
         # Meta?
         nhits = np.sum(match_survey)
