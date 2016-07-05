@@ -11,6 +11,7 @@ List of Surveys
 
 Below is the list of surveys included in igmspec v1.0
 
+* :doc:`boss`
 
 Overview
 ========
@@ -28,7 +29,7 @@ the data products.  The following keys are required for
 inclusion in igmspec:
 
 ==========  ======== ============================================
-Key         Type           Description
+Key         Type     Description
 ==========  ======== ============================================
 IGM_ID      int      Unique igmspec identifier
 zem         float    Emission redshift of background source
