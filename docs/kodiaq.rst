@@ -22,21 +22,21 @@ Meta Data
 The meta data provided with KODIAQ follows from Table 1 of
 O'Meara et al. (2015).  These are:
 
-==========  ====== =========================================
-Key         Type   Description
-==========  ====== =========================================
-pi_date     str    PI and Observation Date
-spec_prefix str    Spectrum prefix
-redux_setup str    Reduction setup
-targname    str    Target name set by observer
-deckname    str    Name of the HIRES decker used
-elaptime    str    Description of the total exposure time
-qaflag      str    Description of the data reduction process
-kodetime    int    ??
-kodwblue    int    ??
-kodwred     int    ??
-kodrelease  int    ??
-==========  ====== =========================================
+============  ====== =========================================
+Key           Type   Description
+============  ====== =========================================
+pi_date       str    PI and Observation Date
+spec_prefix   str    Spectrum prefix
+redux_setup   str    Reduction setup
+targname      str    Target name set by observer
+deckname      str    Name of the HIRES decker used
+elaptime      str    Description of the total exposure time
+qaflag        str    Description of the data reduction process
+kodetime      int    ??
+kodwblue      int    ??
+kodwred       int    ??
+kodrelease    int    ??
+============  ====== =========================================
 
 
 Spectra
