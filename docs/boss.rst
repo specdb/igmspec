@@ -24,7 +24,7 @@ Meta Data
 =========
 
 See the links provided above to see the full set of meta data
-provided with BOSS catalogs.
+provided with BOSS catalogs.  It is quite extensive.
 
 
 Spectra
