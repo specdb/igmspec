@@ -132,7 +132,7 @@ def set_new_ids(maindb, newdb, chk=True):
     return cut_db, new, ids
 
 
-def ver01(test=False):
+def ver01(test=True):
     """ Build version 0.1
     Returns
     -------
