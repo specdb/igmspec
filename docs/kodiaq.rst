@@ -32,10 +32,10 @@ targname      str    Target name set by observer
 deckname      str    Name of the HIRES decker used
 elaptime      str    Description of the total exposure time
 qaflag        str    Description of the data reduction process
-kodetime      int    ??
-kodwblue      int    ??
-kodwred       int    ??
-kodrelease    int    ??
+kodetime      int    Total exposure time of the co-added spectrum (seconds)
+kodwblue      int    Starting wavelength (Ang)
+kodwred       int    Ending wavelength (Ang)
+kodrelease    int    KODIAQ data release (1=DR1)
 ============  ====== =========================================
 
 
