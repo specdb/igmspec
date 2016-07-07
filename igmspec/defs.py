@@ -31,7 +31,8 @@ def instruments():
         # Magellan MagE spectrometer
         'MagE': dict(gratings=['N/A']),
         # Gemini GMOS spectrometer
-        'GMOS-X': dict(gratings=['R400', 'B600']),
+        'GMOS-S': dict(gratings=['R400', 'B600']),
+        'GMOS-N': dict(gratings=['R400', 'B600']),
     }
     return inst_dict
 
