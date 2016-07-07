@@ -28,7 +28,7 @@ def grab_meta():
 
     """
     # This table has units in it!
-    ggg_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/GGG/GGG_catalog.fits')
+    ggg_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/GGG/GGG_catalog.fits.gz')
     nqso = len(ggg_meta)
     # Turn off RA/DEC units
     for key in ['RA', 'DEC']:
