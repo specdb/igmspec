@@ -19,6 +19,8 @@ Contents
 
    installing
    datasets
+   usage
+   scripts
 
 
 Indices and tables
