@@ -192,6 +192,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             pdb.set_trace()
         hdf[sname]['meta'] = meta
     else:
+        pdb.set_trace()
         raise ValueError("meta file failed")
     #
     return
