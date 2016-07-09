@@ -14,6 +14,7 @@ Below is the list of surveys included in igmspec v1.0
 * :doc:`boss`
 * :doc:`hdlls`
 * :doc:`kodiaq`
+* :doc:`sdss`
 
 Overview
 ========
