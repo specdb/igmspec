@@ -77,7 +77,8 @@ def meta_for_build():
     return meta
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
+def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
+                 mk_test_file=False):
     """ Append HD-LLS data to the h5 file
 
     Parameters
@@ -89,6 +90,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
       Survey name
     chk_meta_only : bool, optional
       Only check meta file;  will not write
+    mk_test_file : bool, optional
+      Generate the debug test file for Travis??
 
     Returns
     -------
@@ -153,6 +156,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     full_coord = SkyCoord(ra=hdlls_full['RA'], dec=hdlls_full['DEC'], unit='deg')
 
     # Build spectra (and parse for meta)
+    if mk_test_file:
+        hdlls_full = hdlls_full[0:3]
     nspec = len(hdlls_full)
     max_npix = 210000  # Just needs to be large enough
     data = np.ma.empty((1,),
@@ -184,6 +189,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         # Parse name
         fname = f.split('/')[-1]
         mt = np.where(hdlls_full['SPEC_FILE'] == fname)[0]
+        if mk_test_file and (jj>=3):
+            continue
         if len(mt) != 1:
             pdb.set_trace()
             raise ValueError("HD-LLS: No match to spectral file?!")
