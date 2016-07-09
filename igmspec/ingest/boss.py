@@ -17,7 +17,7 @@ def grab_meta():
 
     """
     #http://www.sdss.org/dr12/algorithms/boss-dr12-quasar-catalog/
-    boss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q.fits')
+    boss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q.fits.gz')
     nboss = len(boss_meta)
     # DATE-OBS
     t = Time(list(boss_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
