@@ -12,6 +12,7 @@ List of Surveys
 Below is the list of surveys included in igmspec v1.0
 
 * :doc:`boss`
+* :doc:`hdlls`
 * :doc:`kodiaq`
 
 Overview

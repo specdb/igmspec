@@ -1,8 +1,8 @@
 .. highlight:: rest
 
-***************
-HD-LLS Dataaset
-***************
+**************
+HD-LLS Dataset
+**************
 
 This document describes the HD-LLS dataset.
 
@@ -20,29 +20,20 @@ for such analysis (ie. bright).
 Meta Data
 =========
 
-The meta data provided with KODIAQ follows from Table 1 of
-O'Meara et al. (2015).  These are:
+The meta data provided with HD-LLS includes information on the
+LLS analyzed:
 
-============  ====== =========================================
-Key           Type   Description
-============  ====== =========================================
-pi_date       str    PI and Observation Date
-spec_prefix   str    Spectrum prefix
-redux_setup   str    Reduction setup
-targname      str    Target name set by observer
-deckname      str    Name of the HIRES decker used
-elaptime      str    Description of the total exposure time
-qaflag        str    Description of the data reduction process
-kodetime      int    Total exposure time of the co-added spectrum (seconds)
-kodwblue      int    Starting wavelength (Ang)
-kodwred       int    Ending wavelength (Ang)
-kodrelease    int    KODIAQ data release (1=DR1)
-============  ====== =========================================
+============  ======== =========================================
+Key           Type     Description
+============  ======== =========================================
+Z_LLS         float    Absorption redshift of the LLS
+log_NHI       float    log10 of the HI column density
+sig(log_NHI)  float(2) log10 of the HI column density uncertainty (lower/upper)
+============  ======== =========================================
 
 
 Spectra
 =======
 
-In igmspec v1.0 are all of the spectra released in DR1 of
-KODIAQ.  These were modified, however, to no longer include
-the BZERO header card.
+These are the DR1 data release of HD-LLS.
+See also: `HD-LLS DR1 <http://www.ucolick.org/~xavier/HD-LLS/DR1/>`_
