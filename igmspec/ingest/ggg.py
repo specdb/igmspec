@@ -28,11 +28,8 @@ def grab_meta():
 
     """
     # This table has units in it!
-    ggg_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/GGG/GGG_catalog.fits')
+    ggg_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/GGG/GGG_catalog.fits.gz')
     nqso = len(ggg_meta)
-    # DATE-OBS -- Pull from FITS header :: CHEATING WITH JUNK FOR NOW
-    t = Time(list(ggg_meta['SMJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
-    ggg_meta.add_column(Column(t.iso, name='DATE-OBS'))
     # Turn off RA/DEC units
     for key in ['RA', 'DEC']:
         ggg_meta[key].unit = None
@@ -126,7 +123,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     speclist = []
     gratinglist = []
     telelist = []
-    dateobs = []
+    dateobslist = []
     instrlist = []
     # Loop
     path = os.getenv('RAW_IGMSPEC')+'/GGG/'
@@ -157,11 +154,14 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
         # Meta
+        head = spec.header
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
-        telelist.append('Gemini-X')
-        instrlist.append('GMOS-X')
+        telelist.append(head['OBSERVAT'])
+        instrlist.append(head['INSTRUME'])
+        tval = Time(head['DATE'], format='isot', out_subfmt='date')
+        dateobslist.append(tval.iso)
         npixlist.append(npix)
         if 'R400' in fname:
             Rlist.append(833.)
@@ -179,6 +179,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(gratinglist, name='GRATING'))
     meta.add_column(Column(telelist, name='TELESCOPE'))
     meta.add_column(Column(instrlist, name='INSTR'))
+    meta.add_column(Column(dateobslist, name='DATE-OBS'))
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
