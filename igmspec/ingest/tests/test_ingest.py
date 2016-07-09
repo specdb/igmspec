@@ -16,5 +16,5 @@ def test_hdlls():
         return
     #
     meta = meta_for_build()
-    assert len(meta) == 157
+    assert len(meta) == 129
 
