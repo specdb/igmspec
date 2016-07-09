@@ -18,6 +18,9 @@ Contents
    :maxdepth: 2
 
    installing
+   datasets
+   usage
+   scripts
 
 
 Indices and tables

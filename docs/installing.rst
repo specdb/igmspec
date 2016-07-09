@@ -35,7 +35,7 @@ to install and/or update these packages.
 
 If you are using Anaconda, you can check the presence of these packages with::
 
-	conda list "^python$|numpy|astropy$|scipy$|matplotlib|PyQT"
+	conda list "^python|numpy|astropy|scipy|matplotlib|PyQT"
 
 If the packages have been installed, this command should print
 out all the packages and their version numbers.
@@ -80,13 +80,14 @@ Downloading the DataBase (DB)
 =============================
 
 The igmspec package comes with a script for downloading the
-latest version of the DB (or previous verions).  It is named
+latest version of the DB (or previous versions).  It is named
 `get_igmspec`.  To grab the latest version, go to the directory
 where you want it (especially if you already have a version) and do::
 
     get_igmspec
 
-It will launch a wget command.  You will then need to set the
+It will launch a wget command.  The size of iIGMspec_DB_ver01.hdf5
+is 5.8Gb.  You will then need to set the
 IGMSPEC_DB environmental variable (if you have not already done so),
 e.g.::
 
