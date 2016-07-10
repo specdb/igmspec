@@ -22,6 +22,7 @@ try:
 except NameError:  # For Python 3
     basestring = str
 
+
 class QueryCatalog(object):
     """ A Class for querying the IGMspec catalog
 
