@@ -266,7 +266,7 @@ def ver01(test=False, mk_test_file=False):
     assert chk_maindb_join(maindb, ggg_cut)
     maindb = vstack([maindb,ggg_cut], join_type='exact')
     # Update hf5 file
-    if not test:
+    if not mk_test_file:
         ggg.hdf5_adddata(hdf, ggg_ids, sname)
 
     # Finish
