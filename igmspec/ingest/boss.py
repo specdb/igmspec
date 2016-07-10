@@ -52,6 +52,7 @@ def meta_for_build():
     meta = Table()
     for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
         meta[key] = boss_meta[key]
+    meta['STYPE'] = [str('QSO')]*len(meta)
     # Return
     return meta
 

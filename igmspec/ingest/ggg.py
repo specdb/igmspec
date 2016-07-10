@@ -60,6 +60,7 @@ def meta_for_build():
     meta = Table()
     for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
         meta[key] = ggg_meta[key]
+    meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
 

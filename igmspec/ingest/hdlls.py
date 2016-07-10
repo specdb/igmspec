@@ -72,6 +72,7 @@ def meta_for_build():
     meta['zem'] = hdlls_meta['Z_QSO']
     meta['sig_zem'] = [0.]*nqso
     meta['flag_zem'] = [str('UNKN')]*nqso
+    meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
 

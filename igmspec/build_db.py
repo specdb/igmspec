@@ -160,11 +160,14 @@ def ver01(test=False, mk_test_file=False):
     zpri = defs.z_priority()
     lenz = [len(zpi) for zpi in zpri]
     dummyf = str('#')*np.max(np.array(lenz))  # For the Table
+    stypes = defs.list_of_stypes()
+    lens = [len(stype) for stype in stypes]
+    dummys = str('#')*np.max(np.array(lens))  # For the Table
     #cdict = defs.get_cat_dict()
 
     # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
     idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
-                 flag_zem=dummyf, flag_survey=0)
+                 flag_zem=dummyf, flag_survey=0, STYPE=dummys)
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]
     maindb = Table(lst, names=tkeys)

@@ -81,6 +81,7 @@ def meta_for_build():
     meta['zem'] = kodiaq_meta['zem']
     meta['sig_zem'] = [0.]*nqso
     meta['flag_zem'] = [str('SIMBAD')]*nqso
+    meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
 

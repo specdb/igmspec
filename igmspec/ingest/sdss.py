@@ -34,7 +34,8 @@ def get_specfil(row):
 
 
 def grab_meta():
-    """ Grab GGG meta Table
+    """ Grab SDSS meta Table
+
     Returns
     -------
     meta
@@ -77,7 +78,8 @@ def meta_for_build():
     meta = Table()
     for key in ['RA', 'DEC', 'zem', 'sig_zem']:
         meta[key] = sdss_meta[key]
-    meta['flag_zem'] = [str('SDSS')]*nqso  # QPQ too
+    meta['flag_zem'] = [str('SDSS')]*nqso
+    meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
 

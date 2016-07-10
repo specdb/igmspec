@@ -36,6 +36,19 @@ def instruments():
     }
     return inst_dict
 
+def list_of_stypes():
+    """ List of source types
+    Returns
+    -------
+    stypes : list
+
+    """
+    stypes = [
+        str('QSO'),        # Quasars
+        str('GRB'),        # Gamma ray burst
+    ]
+    return stypes
+
 def z_priority():
     """ List of redshift priorities for setting the DB redshift
     Returns
