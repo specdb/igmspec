@@ -10,8 +10,9 @@ import pdb
 import datetime
 
 from astropy.table import Table, Column
-from astropy.io import fits
 from astropy.time import Time
+from astropy.coordinates import SkyCoord, match_coordinates_sky
+from astropy import units as u
 
 from linetools.spectra import io as lsio
 from linetools import utils as ltu
@@ -72,9 +73,22 @@ def meta_for_build():
 
     """
     sdss_meta = grab_meta()
+    # Cut down to unique sources
+    coord = SkyCoord(ra=sdss_meta['RA'], dec=sdss_meta['DEC'], unit='deg')
+    idx, d2d, d3d = match_coordinates_sky(coord, coord, nthneighbor=2)
+    not_dup = d2d > 0.5*u.arcsec
+    sdss_meta = sdss_meta[not_dup]
+    # Cut one more (pair of QSOs)
+    bad_dup_c = SkyCoord(ra=193.96678*u.deg, dec=37.099741*u.deg)
+    coord = SkyCoord(ra=sdss_meta['RA'], dec=sdss_meta['DEC'], unit='deg')
+    sep = bad_dup_c.separation(coord)
+    assert np.sum(sep < 2*u.arcsec) == 2
+    badi = np.argmin(bad_dup_c.separation(coord))
+    keep = np.array([True]*len(sdss_meta))
+    keep[badi] = False
+    sdss_meta = sdss_meta[keep]
+    #
     nqso = len(sdss_meta)
-    #
-    #
     meta = Table()
     for key in ['RA', 'DEC', 'zem', 'sig_zem']:
         meta[key] = sdss_meta[key]

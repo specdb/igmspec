@@ -13,6 +13,7 @@ from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
+from astropy import units as u
 
 
 def add_to_flag(cur_flag, add_flag):
@@ -61,8 +62,32 @@ def chk_maindb_join(maindb, newdb):
     return True
 
 
+def chk_for_duplicates(maindb):
+    """ Generate new IGM_IDs for an input DB
+
+    Parameters
+    ----------
+    maindb : Table
+
+    Return
+    ------
+    result : bool
+      * True = pass
+      * False = fail
+    """
+    c_main = SkyCoord(ra=maindb['RA'], dec=maindb['DEC'], unit='deg')
+    # Find candidate dups
+    idx, d2d, d3d = match_coordinates_sky(c_main, c_main, nthneighbor=2)
+    cand_dups = d2d < 2*u.arcsec
+    # Finish
+    if np.sum(cand_dups) > 0:
+        return False
+    else:
+        return True
+
 def get_new_ids(maindb, newdb, chk=True):
     """ Generate new IGM_IDs for an input DB
+
     Parameters
     ----------
     maindb : Table
@@ -271,6 +296,12 @@ def ver01(test=False, mk_test_file=False):
     # Update hf5 file
     if not mk_test_file:
         ggg.hdf5_adddata(hdf, ggg_ids, sname)
+
+    # Check for duplicates
+    if not chk_for_duplicates(maindb):
+        raise ValueError("Failed duplicates")
+
+    # Check for junk
 
     # Finish
     hdf['catalog'] = maindb
