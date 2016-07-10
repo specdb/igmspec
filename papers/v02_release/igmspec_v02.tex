@@ -1,0 +1,418 @@
+\documentclass[12pt,preprint]{aastex}
+\usepackage{natbib,amsmath}
+\special{papersize=8.5in,11in}
+\begin{document}
+
+
+\def\nhdlls{154}
+\def\ntot{16X}
+\def\nslls{99}
+\def\hub{h_{72}^{-1}}
+\def\umfp{{\hub \, \rm Mpc}}
+\def\mew{W_\lambda}
+\def\ew{$\mew$}
+\def\mzq{z_q}
+\def\mfmin{f_{\rm min}}
+\def\fmin{$\mfmin$}
+\def\zabs{$z_{\rm abs}$}
+\def\mzabs{z_{\rm abs}}
+\def\msna{{\rm S/N}^{\rm A}_{912}}
+\def\sna{S/N$^{\rm A}_{912}$}
+\def\mnull{\nu_{\rm 912}}
+\def\nnull{$\nu_{\rm 912}$}
+\def\intl{\int\limits}
+\def\nstatqso{193}
+\def\maxoff{0.4}
+\def\clls{1.9 \pm 0.2}
+\def\alls{5.2 \pm 1.5}
+\def\blls{-0.9^{+0.4}_{-0.05}}
+\def\cmma{\;\;\; ,}
+\def\perd{\;\;\; .}
+\def\ltk{\left [ \,}
+\def\ltp{\left ( \,}
+\def\ltb{\left \{ \,}
+\def\rtk{\, \right  ] }
+\def\rtp{\, \right  ) }
+\def\rtb{\, \right \} }
+\def\sci#1{{\; \times \; 10^{#1}}}
+\def \rAA {\rm \AA}
+\def \zem {$z_{\rm em}$}
+\def \mzem {z_{\rm em}}
+\def \mzlls {z_{\rm LLS}}
+\def \zlls {$z_{\rm LLS}$}
+\def \mzpeak {\mzlls^{\rm peak}}
+\def \zpeak {$\mzpeak$}
+\def \mzend {z_{\rm end}}
+\def \zend {$z_{\rm end}$}
+\def \mzstrtt {z_{\rm start}^{\rm S/N^A=2}}
+\def \zstrtt {$z_{\rm start}^{\rm S/N^A=2}$}
+\def \zstrto {$z_{\rm start}^{\rm S/N^A=1}$}
+\def \mzstrto {z_{\rm start}^{\rm S/N^A=1}}
+\def \zstrt {$z_{\rm start}$}
+\def \mzstrt {z_{\rm start}}
+\def\smm{\sum\limits}
+\def \lll  {$\lambda_{\rm 912}$}
+\def \mlll  {\lambda_{\rm 912}}
+\def \mtll  {\tau_{\rm 912}}
+\def \tll  {$\tau_{\rm 912}$}
+\def \mavtll  {<\mtll>}
+\def \tigm  {$\tau_{\rm IGM}$}
+\def \mtigm  {\tau_{\rm IGM}}
+\def \cmm  {cm$^{-2}$}
+\def \cmmm {cm$^{-3}$}
+\def \kms  {km~s$^{-1}$}
+\def \mkms  {{\rm km~s^{-1}}}
+\def \lyaf {Ly$\alpha$ forest}
+\def \Lya  {Ly$\alpha$}
+\def \lya  {Ly$\alpha$}
+\def \mlya  {Ly\alpha}
+\def \Lyb  {Ly$\beta$}
+\def \lyb  {Ly$\beta$}
+\def \lyg  {Ly$\gamma$}
+\def \ly5  {Ly-5}
+\def \ly6  {Ly-6}
+\def \ly7  {Ly-7}
+\def \nhi  {$N_{\rm HI}$}
+\def \mnhi  {N_{\rm HI}}
+%\def \mtotnhi  {\mnhi^{\rm TOT}}
+%\def \totnhi  {$\mtotnhi$}
+\def \lnhi {$\log N_{HI}$}
+\def \mlnhi {\log N_{HI}}
+\def \etal {\textit{et al.}}
+\def \ob {$\Omega_b$}
+\def \obh {$\Omega_bh^{-2}$}
+\def \om {$\Omega_m$}
+\def \ol {$\Omega_{\Lambda}$}
+\def \gz {$g(z)$}
+\def \mgz {g(z)}
+\def \lyaf {Lyman--$\alpha$ forest}
+\def \fnhi {$f(\mnhi,X)$}
+\def \mfnhi {f(\mnhi,X)}
+\def \myfnhi {f_{\rm Ly\alpha}(\mnhi,X)}
+\def \yfnhi {$f_{\rm Ly\alpha}(\mnhi,X)$}
+\def \lfnhi {$f_{\rm LLS}(\mnhi,X)$}
+\def \dfnhi {$f_{\rm DLA}(\mnhi,X)$}
+\def \sfnhi {$f_{\rm SLLS}(\mnhi,X)$}
+\def \mlfnhi {f_{\rm LLS}(\mnhi,X)}
+\def \mdfnhi {f_{\rm DLA}(\mnhi,X)}
+\def \msfnhi {f_{\rm SLLS}(\mnhi,X)}
+\def \ztot {$\Delta z_{\rm TOT}$}
+\def \mztot {\Delta z_{\rm TOT}}
+\def \mlplls {\ell_{\rm{PLLS}}(z)}
+\def \lplls {$\ell_{\rm{PLLS}}(z)$}
+\def \mlzlls {\ell_{\rm{LLS}}(z)}
+\def \lzlls {$\ell_{\rm{LLS}}(z)$}
+\def \mllls {\ell_{\rm{LLS}}(X)}
+\def \llls {$\ell_{\rm{LLS}}(X)$}
+\def \ldla {$\ell_{\rm{DLA}}(X)$}
+\def \lslls{$\ell_{\rm{SLLS}}(X)$}
+\def \mlslls{\ell_{\rm{SLLS}}(X)}
+\def \nlls {$n_{\rm LLS}$}
+\def \slls {$\sigma_{\rm LLS}$}
+\def \mnlls {n_{\rm LLS}}
+\def \mslls {\sigma_{\rm LLS}}
+\def \drlls {$\Delta r_{\rm LLS}$}
+\def \mdrlls {\Delta r_{\rm LLS}}
+\def \mlmfp {\lambda_{\rm mfp}^{912}}
+\def \lmfp {$\lambda_{\rm mfp}^{912}$}
+\def \mbplls {\beta_{\rm pLLS}}
+\def \bplls {$\beta_{\rm pLLS}$}
+\def \btlls {$\beta_{\rm LLS}$}
+\def \mbtlls {\beta_{\rm LLS}}
+\def \lteff {$\tau_{\rm eff,LL}$}
+\def \teff {$\tau_{\rm eff,LL}$}
+\def \tlya {$\tau_{\rm eff}^{\rm Ly\alpha}$}
+\def \mtlya {\tau_{\rm eff}^{\rm Ly\alpha}}
+\def \mteff {\tau_{\rm eff}}
+\def \mllteff {\mteff^{912}}
+\def \llteff {$\mteff^{912}$}
+%\def \llsteff {$\tilde\mtll$}
+%\def \mllsteff {\tilde\mtll}
+\def \mnmin {\mnhi^{\rm min}}
+\def \nmin {$\mnhi^{\rm min}$}
+\def \O {${\mathcal O}(N,X)$}
+\newcommand{\cm}[1]{\, {\rm cm^{#1}}}
+\def\N#1{{N({\rm #1})}}
+\def\psol#1#2#3#4{$\{ {\rm #1}^{#2}/{\rm #3}^{#4}\}$}
+\def\pxh{$\{ {\rm X/H} \}$}
+\def \snrlim {SNR$_{lim}$}
+\def\mglls {\gamma_{\rm LLS}}
+\def\mavgt {<\mtll>}
+
+\title{igmspec ver02 
+[v1.0]}
+
+\author{
+J. Xavier Prochaska\altaffilmark{1}, 
+%John M. O'Meara\altaffilmark{2}, 
+%Michele Fumagalli
+%Rebecca A. Bernstein\altaffilmark{1} 
+%Scott Burles\altaffilmark{3},
+}
+\altaffiltext{1}{Department of Astronomy and Astrophysics, UCO/Lick Observatory, University of California, 1156 High Street, Santa Cruz, CA 95064}
+%\altaffiltext{2}{Department of Chemistry and Physics, Saint Michael's College.
+%One Winooski Park, Colchester, VT 05439}
+%\altaffiltext{3}{Visiting Astronomer, Las Campanas Observatory}
+
+\begin{abstract}
+igmspec 
+\end{abstract}
+
+
+%\keywords{absorption lines -- intergalactic medium -- Lyman limit systems -- SDSS}
+
+\section{Introduction}
+\label{sec:intro}
+
+Shortly after the discovery of quasars by \cite{schmidt6X},
+astronomers idenfitied absorption-line features in the quasar
+spectra suggesting the presence of intergalactic gas
+\citep{burbidge,bahcall}.  [Gunn Peterson?]
+The community quickly recognized both the value of these
+data to cosmology and galaxy formation \cite{bahcall,spitzer}.
+In decades that followed, the observationalists gathered
+spectra of increasingly higher quality of several tens of
+high-$z$ sources to analyze the IGM 
+\citep{sargent,young,tytler,wolfe,lanzetta,bergeron}.
+These were obtained primarily with private observatories and
+the actual spectra were rarely made available
+\citep[see][for a few exceptions]{dodorico_hdf}.
+The obvious exception was the data archive of the
+{\it IUE} and {\it HST} but even these were difficult to 
+collate and combine \citep{jannuzi,bechtold}.
+[VLT public too]
+
+The past $\approx 10$\,years, however, have witnessed the
+rise of large, public spectral datasets \citep{york,2dF}.
+This includes the spectra of several hundred thousand quasars
+probing the IGM \citep{sdss_dr7Q,boss_dr12Q}.
+These surveys have, in part, stimulated the public release
+of smaller spectroscopic surveys with higher quality
+(S/N, resolution) and/or complimentary sources.
+Accessing both the large survey datasets (SDSS, BOSS)
+and these modest datasets of IGM spectroscopy
+has remained a challenge, in part due to the lack of a
+uniform standard in data distribution within the astronomical
+community\footnote{This speaks to a general failure of the
+Virtual Observatory.}
+This holds despite the fact that the reduced and calibrated
+spectra probing the IGM comprise less than 10\,Gb of disk space.
+
+Therefore, as a service to the IGM researchers, ourselves, and the
+broader community, we have initiated an effort to collate 
+all of the published surveys of IGM spectroscopy and distribute
+them along with a simple set of software for accessing and
+[managing] the data.  Termed {\it igmspec}, this database
+is intended to grow with future surveys (e.g. DESI)
+and to ingest other historical datasets that come to light in
+the public domain.  In addition, we provide 
+software to generate completely private databases in tandem
+with {\it igmspec}.  This may be of interest for surveys 
+under construction and prior to publication.
+
+[outilne]
+
+
+
+
+\section{{\it igmspec} Catalog}
+\label{sec:catalog}
+
+At the heart of {\it igmspec} is a catalog of all the sources
+included, each of which uniquely probes the IGM.
+Each source is assigned a unique {\it igmspec}~ID to be
+preserved in all future versions of the database.
+
+To construct the catalog, we followed these steps:
+
+\begin{enumerate}
+\item Ingest all quasars from the BOSS DR12 survey.
+\item Add all quasars from the SDSS DR7 survey not observed by BOSS defined
+as any source with $\theta > 2''$ angular separation.
+\item Add any additional, unique sources from the {\it igmspec} datasets
+\item Examine each pair of sources within $\theta \le 10''$ to establish
+if these are truly unique
+\end{enumerate}
+
+The {\it igmspec} catalog includes a bare minimum of meta data
+to limit its size and maximize search speed.
+These ``keys'' are listed in Table~\ref{tab:cat_keys}.
+
+ 
+ 
+\clearpage
+\begin{deluxetable}{lcl}
+%\rotate
+\tablewidth{0pc}
+\tablecaption{CATALOG META DATA KEYS\label{tab:cat_keys}}
+\tabletypesize{\scriptsize}
+\tablehead{\colhead{Key} & \colhead{Type} 
+& \colhead{Description}
+}
+\startdata
+RA           & float64 & Right Ascension in J2000 (degrees) \\
+DEC          & float64 & Declination in J2000 (degrees) \\
+IGM\_ID      & int     & Unique {\it igmspec} identifier \\
+flavor       & str     & Type of source (quasar, GRB, galaxy) \\
+zem          & float64 & Redshift of the source \\
+sig\_zem     & float64 & Uncertainty in the source redshift \\
+flag\_zem    & int     & Flag describing the redshift measurement \\
+flag\_survey & int     & Bitwise flag indicating the surveys covering the source \\
+\enddata
+%\tablecomments{All column densities are log$_{10}$. When the reported $\sigma=+9.99$, }
+\end{deluxetable}
+
+\section{{\it igmspec} Datasets}
+\label{sec:datasets}
+
+This manuscript describes the second version of the {\it igmspec}
+database and represents our first comprehensive effort to collate
+spectra probing the IGM at UV and optical wavebands at all
+redshifts.  Future efforts will extend to other wavebands and/or
+additional types of sources 
+\citep[e.g. star-forming galaxies][]{rubin+14,rubin+16}.
+
+Table~\ref{tab:datasets} lists the surveys included in
+{\it igmspec\_v02} and briefly summarizes key aspects
+of each survey.  The {\it igmspec} documentation and 
+the original references provide greater detail on the meta data
+and spectra included with each survey but the following
+sub-sections also provide a brief description.
+
+\subsection{BOSS DR12}
+
+The Baryonic Oscillations Spectroscopic Survey (BOSS)
+observed several hundred thousand quasars as part of its
+primary survey.  With its final, complete data release
+(DR12), the BOSS team provided several catalogs of quasars
+observed in the main survey.  We have drawn from the three
+catalogs at this website: 
+
+The BOSS spectra bundled in {\it igmspec\_v02} were pulled
+from the main data server and correspond to vXX data reduction.
+
+In addition to the calibrated spectra, we include a
+continuum estimate for each quasar.  For wavelengths
+long-ward of the quasar's \lya\ emission we adopt
+the model generated by G. Zhu 
+\citep[see][for details on the algorithm]{zhu15}.
+For XXX quasars analyzed by \cite{lee1X} for an assessment
+of the flux probability distribution function of the 
+\lya\ forest, we adopt their mean-flux-regulated continua
+\citep{lee1Xb}.
+
+\subsection{SDSS DR7}
+
+The Sloan Digital Sky Survey observed over 100,000 quasars
+as part of the SDSS-I survey.  These were primarily targeted
+based on their optical photometry.  In 2011, one of us
+performed an SQL query of the SDSS database to retrieve
+all spectroscopic sources classified as a QSO or HIZ\_QSO. 
+This generated a list of 102,418 sources some of which 
+were later determined to be erroneously classified.
+
+To restrict to bona-fide quasars, we cross-matched this
+sample against the \cite{meyers1X} quasar catalog.
+
+%\input{Tables/tab_HIRES.tex}
+
+\section{{\it igmspec} Architecture}
+\label{sec:arch}
+
+The {\it igmspec} database is provided as a single HDF5 file
+containing both its catalog and all of the survey 
+data.  Each survey comprises an HDF5 Group
+with a {\it meta} Dataset and a {\it spec} Dataset.
+The former is a {\tt numpy.ndarray} **Table** with
+one entry per spectrum in the survey.
+The latter is a masked {\tt numpy.ndarray} 
+with **column** names `wave', `flux', and `sig'
+and an optional column `co' for an estimate of the source
+continuum.  
+
+The HDF5 format enables rapid access to the data without
+reading the entire database into memory.  Regarding
+performance, ...
+
+Figure~\ref{fig:arch} illustrates the 
+architecture of the {\it igmspec} database.
+
+
+\section{{\it igmspec} Software}
+\label{sec:software}
+
+A modest set of Python modules and scripts are provided
+with the {\it igmspec} database.  This includes a simple
+script {\tt get\_igmspec} to download the latest
+(or any previous) version of the database.
+Additional software enables the user to plot an
+input source or ...
+
+The IgmSpec class provides a lightweight object for
+interfacing with the catalog and spectroscopic datasets
+from within Python.  See the iPython Notebook
+http:// for simple usage cases.
+
+All of the software is provided in a git repository
+(http://)
+and is being actively developed by the community.
+
+\section{Concluding Remarks}
+\label{sec:end}
+
+With {\it igmspec}, it is our goal to provide (nearly)
+all of the published spectral datasets that effectively
+probe the IGM.  Hopefully, this effort will
+enable new, unforeseen research on the IGM as well
+as the greater diffusion of difficult to access spectral
+datasets.  
+
+For {\it igmspec\_v03}, we plan to include at least the following:
+(1) additional near-IR spectroscopy;
+(2) radio absorption spectra \citep[e.g. 21\,cm][]{kanekar1X};
+(3) galaxy spectra probing the IGM \citep[e.g.][]{rubin+16}.
+Community members interested in guiding the future development
+of {\it igmspec} are encouraged to contribute via github
+(https://github.com/pyigm/igmspec).
+
+To enable IGM cross-correlation analyses with galaxies
+and the large-scale structures that trace,
+we intend the future release of {\it exgalspec}
+in the coming year.  This database will have -- at
+the minimum -- a catalog of (nearly) all spectroscopically
+confirmed galaxies and, where feasiable, their associated
+spectra.  See https://github.com/pyigm/exgalspec
+to contribute to that effort.
+
+
+\acknowledgments
+
+J. X. P. was supported by NSF grant AST-1412981.
+We thank JMO, GW, JR, NM
+%J.X.P and G.W. are partially supported
+%by an NSF CAREER grant (AST--0548180), and 
+%by NSF grant AST-0908910.
+
+
+\bibliographystyle{/u/xavier/paper/Bibli/apj}
+\bibliography{/u/xavier/paper/Bibli/allrefs}
+
+%\input{Tables/tab_HIRES.tex}
+%\input{Tables/tab_MIKE.tex}
+
+
+
+\begin{figure}
+%\includegraphics[width=6in]{Figures/fig_HI_SLLS.pdf}
+\caption{\ion{H}{1} \lya\ (top row) and \lyb\ (bottom row)
+  profiles for three LLS with $\mnhi
+  \ge 10^{19} \cm{-2}$.  The damping wings of \lya\ are well-resolved
+  in these SLLS and the blue curves indicate for the best-estimats and
+  uncertainty of the \nhi\ values.  
+  These are well constrained, even in poor S/N data.
+}
+\label{fig:HI_SLLS}
+\end{figure}
+
+
+\end{document}
