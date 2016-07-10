@@ -4,11 +4,10 @@ Prochaska et al. 2015
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+
 import numpy as np
 import pdb
-import os
-import glob
-import imp
+import os, json, glob, imp
 import datetime
 
 from astropy.table import Table, Column
@@ -321,6 +320,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         hdf[sname]['meta'] = meta
     else:
         raise ValueError("meta file failed")
+    # References
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2015ApJS..221....2P',
+                 bib='prochaska+15'),
+            ]
+    jrefs = ltu.jsonify(refs)
+    hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return
 

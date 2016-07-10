@@ -4,7 +4,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 
 import numpy as np
-import os
+import os, json
 import pdb
 
 import datetime
@@ -14,6 +14,7 @@ from astropy.io import fits
 from astropy.time import Time
 
 from linetools.spectra import io as lsio
+from linetools import utils as ltu
 
 from igmspec.ingest import utils as iiu
 
@@ -193,5 +194,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         hdf[sname]['meta'] = meta
     else:
         raise ValueError("meta file failed")
+    # References
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2010AJ....139.2360S',
+                 bib='sdss_qso_dr7'),
+            ]
+    jrefs = ltu.jsonify(refs)
+    hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return
