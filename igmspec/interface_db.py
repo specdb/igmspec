@@ -71,7 +71,7 @@ class InterfaceDB(object):
         self.db_file = db_file
         self.survey_IDs = None
         #
-        surveys = self.hdf.keys()
+        surveys = list(self.hdf.keys())
         surveys.pop(surveys.index('catalog'))
         self.surveys = surveys
         if self.verbose:
