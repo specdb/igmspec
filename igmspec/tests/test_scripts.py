@@ -10,7 +10,7 @@ import os
 
 from ..scripts import plot_igmspec
 
-version = 'ver01'
+version = 'v01'
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')

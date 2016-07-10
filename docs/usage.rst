@@ -28,12 +28,12 @@ The main class of igmspec is simply instantiated::
 This loads the database catalog::
 
     igmsp.qcat
-    <QueryCatalog:  DB_file=/u/xavier/local/Python/igmspec/DB/IGMspec_DB_ver01.hdf5 with 377018 sources Loaded surveys are [u'BOSS_DR12', u'GGG', u'HD-LLS_DR1', u'KODIAQ_DR1', u'SDSS_DR7'] >
+    <QueryCatalog:  DB_file=/u/xavier/local/Python/igmspec/DB/IGMspec_DB_v01.hdf5 with 377018 sources Loaded surveys are [u'BOSS_DR12', u'GGG', u'HD-LLS_DR1', u'KODIAQ_DR1', u'SDSS_DR7'] >
 
 and opens the hdf5 file (without loading the data)::
 
     igmsp.idb
-    <InterfaceDB:  DB_file=/u/xavier/local/Python/igmspec/DB/IGMspec_DB_ver01.hdf5 Loaded surveys are [u'GGG', u'HD-LLS_DR1', u'KODIAQ_DR1', u'SDSS_DR7']>
+    <InterfaceDB:  DB_file=/u/xavier/local/Python/igmspec/DB/IGMspec_DB_v01.hdf5 Loaded surveys are [u'GGG', u'HD-LLS_DR1', u'KODIAQ_DR1', u'SDSS_DR7']>
 
 
 Grabbing Spectra

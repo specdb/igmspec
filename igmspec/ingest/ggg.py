@@ -9,12 +9,13 @@ import numpy as np
 import pdb
 import os
 import imp
-import datetime
+import json
 
 from astropy.table import Table, Column, vstack
 from astropy.time import Time
 
 from linetools.spectra import io as lsio
+from linetools import utils as ltu
 
 from igmspec.ingest import utils as iiu
 
@@ -193,6 +194,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         hdf[sname]['meta'] = meta
     else:
         raise ValueError("meta file failed")
+
+    # References
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2014MNRAS.445.1745W',
+                 bib='worseck+14')]
+    jrefs = ltu.jsonify(refs)
+    hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return
 

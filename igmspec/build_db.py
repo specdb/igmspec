@@ -133,7 +133,7 @@ def set_new_ids(maindb, newdb, chk=True):
 
 
 def ver01(test=False, mk_test_file=False):
-    """ Build version 0.1
+    """ Build version 1.0
     Parameters
     ----------
     test : bool, optional
@@ -146,7 +146,7 @@ def ver01(test=False, mk_test_file=False):
     -------
 
     """
-    version = 'ver01'
+    version = 'v01'
     # HDF5 file
     if mk_test_file:
         outfil = igmspec.__path__[0]+'/tests/files/IGMspec_DB_{:s}_debug.hdf5'.format(version)
