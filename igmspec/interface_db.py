@@ -2,7 +2,7 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-import os, glob, imp
+import os
 import psutil
 import warnings
 import h5py
@@ -10,13 +10,10 @@ import pdb
 
 import numpy as np
 
-from astropy.table import Table, vstack, Column
-from astropy import units as u
-from astropy.coordinates import SkyCoord, match_coordinates_sky
+from astropy.table import Table
 
 from linetools.spectra.xspectrum1d import XSpectrum1D
 
-from igmspec.defs import z_priority, survey_flag
 from igmspec.db_utils import grab_dbfile
 
 class InterfaceDB(object):
