@@ -76,8 +76,15 @@ def meta_for_build():
     # Cut down to unique sources
     coord = SkyCoord(ra=sdss_meta['RA'], dec=sdss_meta['DEC'], unit='deg')
     idx, d2d, d3d = match_coordinates_sky(coord, coord, nthneighbor=2)
-    not_dup = d2d > 0.5*u.arcsec
-    sdss_meta = sdss_meta[not_dup]
+    dups = np.where(d2d < 0.5*u.arcsec)[0]
+    keep = np.array([True]*len(sdss_meta))
+    for idup in dups:
+        dcoord = SkyCoord(ra=sdss_meta['RA'][idup], dec=sdss_meta['DEC'][idup], unit='deg')
+        sep = dcoord.separation(coord)
+        isep = np.where(sep < 0.5*u.arcsec)[0]
+        keep[isep] = False
+        keep[np.min(isep)] = True  # Only keep 1
+    sdss_meta = sdss_meta[keep]
     # Cut one more (pair of QSOs)
     bad_dup_c = SkyCoord(ra=193.96678*u.deg, dec=37.099741*u.deg)
     coord = SkyCoord(ra=sdss_meta['RA'], dec=sdss_meta['DEC'], unit='deg')
@@ -131,6 +138,14 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         raise ValueError("Wrong sized table..")
 
     # Generate ID array from RA/DEC
+    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
+    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
+    # Find new sources
+    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
+    if np.sum(d2d > 1.2*u.arcsec):  # There is one system offset by 1.1"
+        raise ValueError("Bad matches in SDSS")
+    meta_IDs = IDs[idx]
+
     meta_IDs = IDs
     try:
         meta.add_column(Column(meta_IDs, name='IGM_ID'))
