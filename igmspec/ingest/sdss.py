@@ -132,7 +132,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
 
     # Generate ID array from RA/DEC
     meta_IDs = IDs
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
+    try:
+        meta.add_column(Column(meta_IDs, name='IGM_ID'))
+    except:
+        pdb.set_trace()
 
     # Add zem
 
