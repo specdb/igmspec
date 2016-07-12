@@ -3,3 +3,7 @@ The DataBase file(s) should go here if you can write
 
 Either way,  $IGMSPEC_DB needs to point to where the files are located
 
+Run the script:
+
+get_igmspec
+
