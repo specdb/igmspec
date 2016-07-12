@@ -13,6 +13,7 @@ from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
+from astropy import units as u
 
 
 def add_to_flag(cur_flag, add_flag):
@@ -61,8 +62,32 @@ def chk_maindb_join(maindb, newdb):
     return True
 
 
+def chk_for_duplicates(maindb):
+    """ Generate new IGM_IDs for an input DB
+
+    Parameters
+    ----------
+    maindb : Table
+
+    Return
+    ------
+    result : bool
+      * True = pass
+      * False = fail
+    """
+    c_main = SkyCoord(ra=maindb['RA'], dec=maindb['DEC'], unit='deg')
+    # Find candidate dups
+    idx, d2d, d3d = match_coordinates_sky(c_main, c_main, nthneighbor=2)
+    cand_dups = d2d < 2*u.arcsec
+    # Finish
+    if np.sum(cand_dups) > 0:
+        return False
+    else:
+        return True
+
 def get_new_ids(maindb, newdb, chk=True):
     """ Generate new IGM_IDs for an input DB
+
     Parameters
     ----------
     maindb : Table
@@ -132,26 +157,42 @@ def set_new_ids(maindb, newdb, chk=True):
     return cut_db, new, ids
 
 
-def ver01(test=False):
-    """ Build version 0.1
+def ver01(test=False, mk_test_file=False):
+    """ Build version 1.0
+    Parameters
+    ----------
+    test : bool, optional
+      Run test only
+    mk_test_file : bool, optional
+      Generate the test file for Travis tests?
+      Writes catalog and HD-LLS dataset only
+
     Returns
     -------
 
     """
-    version = 'ver01'
+    version = 'v01'
     # HDF5 file
-    outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    if mk_test_file:
+        outfil = igmspec.__path__[0]+'/tests/files/IGMspec_DB_{:s}_debug.hdf5'.format(version)
+        print("Building debug file: {:s}".format(outfil))
+        test = True
+    else:
+        outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     hdf = h5py.File(outfil,'w')
 
     # Defs
     zpri = defs.z_priority()
     lenz = [len(zpi) for zpi in zpri]
     dummyf = str('#')*np.max(np.array(lenz))  # For the Table
+    stypes = defs.list_of_stypes()
+    lens = [len(stype) for stype in stypes]
+    dummys = str('#')*np.max(np.array(lens))  # For the Table
     #cdict = defs.get_cat_dict()
 
     # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
     idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
-                 flag_zem=dummyf, flag_survey=0)
+                 flag_zem=dummyf, flag_survey=0, STYPE=dummys)
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]
     maindb = Table(lst, names=tkeys)
@@ -170,7 +211,10 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, boss_meta)
     # Append
     maindb = vstack([maindb,boss_meta], join_type='exact')
-    maindb = maindb[1:]  # Eliminate dummy line
+    if mk_test_file:
+        maindb = maindb[1:100]  # Eliminate dummy line
+    else:
+        maindb = maindb[1:]  # Eliminate dummy line
     #if not test:
     #    boss.hdf5_adddata(hdf, sdss_ids, sname)
 
@@ -188,6 +232,8 @@ def ver01(test=False):
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
     # Append
     assert chk_maindb_join(maindb, sdss_cut)
+    if mk_test_file:
+        sdss_cut = sdss_cut[0:100]
     maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
     if not test:
@@ -229,7 +275,8 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, hdlls_cut)
     maindb = vstack([maindb,hdlls_cut], join_type='exact')
     # Update hf5 file
-    hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
+    if (not test) or mk_test_file:
+        hdlls.hdf5_adddata(hdf, hdlls_ids, sname, mk_test_file=mk_test_file)
 
     ''' GGG '''
     sname = 'GGG'
@@ -247,7 +294,14 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, ggg_cut)
     maindb = vstack([maindb,ggg_cut], join_type='exact')
     # Update hf5 file
-    ggg.hdf5_adddata(hdf, ggg_ids, sname)
+    if not mk_test_file:
+        ggg.hdf5_adddata(hdf, ggg_ids, sname)
+
+    # Check for duplicates
+    if not chk_for_duplicates(maindb):
+        raise ValueError("Failed duplicates")
+
+    # Check for junk
 
     # Finish
     hdf['catalog'] = maindb

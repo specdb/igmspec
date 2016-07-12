@@ -86,7 +86,7 @@ where you want it (especially if you already have a version) and do::
 
     get_igmspec
 
-It will launch a wget command.  The size of iIGMspec_DB_ver01.hdf5
+It will launch a wget command.  The size of iIGMspec_DB_v01.hdf5
 is 5.8Gb.  You will then need to set the
 IGMSPEC_DB environmental variable (if you have not already done so),
 e.g.::

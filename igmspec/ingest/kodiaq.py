@@ -7,8 +7,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import pdb
-import os
-import glob
+import os, json
 import imp
 
 import datetime
@@ -82,6 +81,7 @@ def meta_for_build():
     meta['zem'] = kodiaq_meta['zem']
     meta['sig_zem'] = [0.]*nqso
     meta['flag_zem'] = [str('SIMBAD')]*nqso
+    meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
 
@@ -212,6 +212,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         hdf[sname]['meta'] = meta
     else:
         raise ValueError("meta file failed")
+    # References
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2015AJ....150..111O',
+                 bib='kodiaq')
+            ]
+    jrefs = ltu.jsonify(refs)
+    hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return
 
