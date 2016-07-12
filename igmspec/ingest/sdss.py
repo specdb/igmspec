@@ -145,12 +145,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     if np.sum(d2d > 1.2*u.arcsec):  # There is one system offset by 1.1"
         raise ValueError("Bad matches in SDSS")
     meta_IDs = IDs[idx]
-
-    meta_IDs = IDs
-    try:
-        meta.add_column(Column(meta_IDs, name='IGM_ID'))
-    except:
-        pdb.set_trace()
+    meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
     # Add zem
 
