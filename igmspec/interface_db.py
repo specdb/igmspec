@@ -37,6 +37,9 @@ class InterfaceDB(object):
 
     def __init__(self, db_file=None, maximum_ram=10.,verbose=True):
         """
+        Parameters
+        ----------
+        db_file : str, optional
         Returns
         -------
 
