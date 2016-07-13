@@ -9,7 +9,7 @@ import numbers
 import pdb
 
 from igmspec import defs
-from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss
+from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -110,9 +110,8 @@ def get_new_ids(maindb, newdb, chk=True):
     # Find new sources
     idx, d2d, d3d = match_coordinates_sky(c_new, c_main, nthneighbor=1)
     new = d2d > cdict['match_toler']
-    #
     # Old IDs
-    IDs[~new] = -1 * maindb[idx[~new]]['IGM_ID']
+    IDs[~new] = -1 * maindb['IGM_ID'][idx[~new]]
     nnew = np.sum(new)
     # New IDs
     if nnew > 0:
@@ -314,7 +313,7 @@ def ver01(test=False, mk_test_file=False):
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
 
-def ver02(test=False, mk_test_file=False):
+def ver02(test=False, mk_test_file=False, skip_copy=True):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -333,9 +332,9 @@ def ver02(test=False, mk_test_file=False):
     # Read v1.X
 
     # v01 file
-    v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'.format(version)
+    v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'
     v01hdf = h5py.File(v01file,'r')
-    maindb = v01hdf['catalog']
+    maindb = v01hdf['catalog'].value
 
     # Start new file
     version = 'v02'
@@ -347,4 +346,39 @@ def ver02(test=False, mk_test_file=False):
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     hdf = h5py.File(outfil,'w')
 
+    # Copy over the old stuff
+    if (not test) and (not skip_copy):
+        for key in v01hdf.keys():
+            if key == 'catalog':
+                continue
+            else:
+                v01hdf.copy(key, hdf)
+
+    ''' HST_z2 '''
+    sname = 'HST_z2'
+    print('===============\n Doing {:s} \n==============\n'.format(sname))
+    # Read
+    hstz2_meta = hst_z2.meta_for_build()
+    # IDs
+    hstz2_cut, new, hstz2_ids = set_new_ids(maindb, hstz2_meta)
+    nnew = np.sum(new)
+    if nnew > 0:
+        raise ValueError("All of these should be in SDSS")
+    # Survey flag
+    flag_s = defs.survey_flag(sname)
+    midx = np.array(maindb['IGM_ID'][hstz2_ids[~new]])
+    maindb['flag_survey'][midx] += flag_s
+    # Update hf5 file
+    if (not test) or mk_test_file:
+        hst_z2.hdf5_adddata(hdf, hstz2_ids, sname, mk_test_file=mk_test_file)
+
     # Finish
+    hdf['catalog'] = maindb
+    hdf['catalog'].attrs['EPOCH'] = 2000.
+    zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
+    hdf['catalog'].attrs['Z_PRIORITY'] = zpri
+    hdf['catalog'].attrs['VERSION'] = version
+    #hdf['catalog'].attrs['CAT_DICT'] = cdict
+    #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
+    hdf.close()
+    print("Wrote {:s} DB file".format(outfil))

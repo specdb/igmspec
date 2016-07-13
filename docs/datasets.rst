@@ -16,6 +16,7 @@ Below is the list of surveys included in igmspec v1.0
 * :doc:`kodiaq` [KODIAQ_DR1]
 * :doc:`sdss`   [SDSS_DR7]
 * :doc:`ggg`   [GGG]
+* :doc:`hst_z2`   [HST_z2]
 
 Overview
 ========
