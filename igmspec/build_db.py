@@ -159,6 +159,7 @@ def set_new_ids(maindb, newdb, chk=True):
 
 def ver01(test=False, mk_test_file=False):
     """ Build version 1.0
+
     Parameters
     ----------
     test : bool, optional
@@ -312,3 +313,38 @@ def ver01(test=False, mk_test_file=False):
     #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
+
+def ver02(test=False, mk_test_file=False):
+    """ Build version 2.X
+
+    Reads previous datasets from v1.X
+
+    Parameters
+    ----------
+    test : bool, optional
+      Run test only
+    mk_test_file : bool, optional
+      Generate the test file for Travis tests?
+      Writes catalog and HD-LLS dataset only
+
+    Returns
+    -------
+    """
+    # Read v1.X
+
+    # v01 file
+    v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'.format(version)
+    v01hdf = h5py.File(v01file,'r')
+    maindb = v01hdf['catalog']
+
+    # Start new file
+    version = 'v02'
+    if mk_test_file:
+        outfil = igmspec.__path__[0]+'/tests/files/IGMspec_DB_{:s}_debug.hdf5'.format(version)
+        print("Building debug file: {:s}".format(outfil))
+        test = True
+    else:
+        outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    hdf = h5py.File(outfil,'w')
+
+    # Finish

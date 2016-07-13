@@ -8,7 +8,7 @@ matplotlib.use('agg')  # For Travis
 import pytest
 import os
 
-from ..scripts import plot_igmspec
+from ..scripts import plot_igmspec, sdss_igmspec
 
 version = 'v01'
 
@@ -21,3 +21,10 @@ def test_plot_spec():
     pargs = plot_igmspec.parser(['J000345.00-232346.5', '-s=HD-LLS_DR1'])
     db_file = data_path('IGMspec_DB_{:s}_debug.hdf5'.format(version))
     plot_igmspec.main(pargs, db_file=db_file, unit_test=True)
+
+"""  NEED TO INCLUDE AN SDSS FILE
+def test_sdss():
+    pargs = sdss_igmspec.parser(['434', '555'])
+    db_file = data_path('IGMspec_DB_{:s}_debug.hdf5'.format(version))
+    plot_igmspec.main(pargs, db_file=db_file, unit_test=True)
+"""
