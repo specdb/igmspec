@@ -23,6 +23,7 @@ def test_plot_spec():
     db_file = data_path('IGMspec_DB_{:s}_debug.hdf5'.format(version))
     plot_igmspec.main(pargs, db_file=db_file, unit_test=True)
 
+
 def test_sdss():
     pargs = sdss_igmspec.parser(['751', '354'])
     db_file = data_path('IGMspec_DB_{:s}_debug.hdf5'.format(version))
