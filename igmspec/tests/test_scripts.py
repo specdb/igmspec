@@ -10,7 +10,8 @@ import os
 
 from ..scripts import plot_igmspec, sdss_igmspec
 
-version = 'v01'
+#version = 'v01'
+version = 'v02'
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -22,9 +23,7 @@ def test_plot_spec():
     db_file = data_path('IGMspec_DB_{:s}_debug.hdf5'.format(version))
     plot_igmspec.main(pargs, db_file=db_file, unit_test=True)
 
-"""  NEED TO INCLUDE AN SDSS FILE
 def test_sdss():
-    pargs = sdss_igmspec.parser(['434', '555'])
+    pargs = sdss_igmspec.parser(['751', '354'])
     db_file = data_path('IGMspec_DB_{:s}_debug.hdf5'.format(version))
-    plot_igmspec.main(pargs, db_file=db_file, unit_test=True)
-"""
+    sdss_igmspec.main(pargs, db_file=db_file, unit_test=True)

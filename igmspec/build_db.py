@@ -333,6 +333,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=True):
 
     # v01 file
     v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'
+    v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     v01hdf = h5py.File(v01file,'r')
     maindb = v01hdf['catalog'].value
 
@@ -353,24 +354,46 @@ def ver02(test=False, mk_test_file=False, skip_copy=True):
                 continue
             else:
                 v01hdf.copy(key, hdf)
+    if mk_test_file:
+        v01hdf_debug = h5py.File(v01file_debug,'r')
+        # Copy orginal
+        for key in v01hdf_debug.keys():
+            if key == 'catalog':
+                dmaindb = v01hdf_debug[key].value
+            else:
+                v01hdf_debug.copy(key, hdf)
+        # Add some SDSS for script test
+        bsdssi = np.where(maindb['flag_survey'] == 3)[0][0:10]
+        sdss_meta = v01hdf['SDSS_DR7']['meta']
+        sdssi = np.in1d(maindb['IGM_ID'][bsdssi], sdss_meta['IGM_ID'])
+        hdf.create_group('SDSS_DR7')
+        ibool = np.array([False]*len(sdss_meta))
+        ibool[sdssi] = True
+        # Generate
+        hdf['SDSS_DR7']['meta'] = sdss_meta[ibool]
+        hdf['SDSS_DR7']['spec'] = v01hdf['SDSS_DR7']['spec'][ibool]
+        # Finish
+        test = True
+        maindb = dmaindb
 
     ''' HST_z2 '''
-    sname = 'HST_z2'
-    print('===============\n Doing {:s} \n==============\n'.format(sname))
-    # Read
-    hstz2_meta = hst_z2.meta_for_build()
-    # IDs
-    hstz2_cut, new, hstz2_ids = set_new_ids(maindb, hstz2_meta)
-    nnew = np.sum(new)
-    if nnew > 0:
-        raise ValueError("All of these should be in SDSS")
-    # Survey flag
-    flag_s = defs.survey_flag(sname)
-    midx = np.array(maindb['IGM_ID'][hstz2_ids[~new]])
-    maindb['flag_survey'][midx] += flag_s
-    # Update hf5 file
-    if (not test) or mk_test_file:
-        hst_z2.hdf5_adddata(hdf, hstz2_ids, sname, mk_test_file=mk_test_file)
+    if not mk_test_file:
+        sname = 'HST_z2'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        hstz2_meta = hst_z2.meta_for_build()
+        # IDs
+        hstz2_cut, new, hstz2_ids = set_new_ids(maindb, hstz2_meta)
+        nnew = np.sum(new)
+        if nnew > 0:
+            raise ValueError("All of these should be in SDSS")
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        midx = np.array(maindb['IGM_ID'][hstz2_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Update hf5 file
+        if (not test):# or mk_test_file:
+            hst_z2.hdf5_adddata(hdf, hstz2_ids, sname, mk_test_file=mk_test_file)
 
     # Finish
     hdf['catalog'] = maindb
