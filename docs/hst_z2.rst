@@ -30,4 +30,5 @@ Spectra
 
 These are the wavelength and flux calibrated spectra using
 only Beam A from the observations. See O'Meara et al. (2011)
-for full details.
+for full details.  The data are written in flambda units
+(erg/s/cm^2/Ang) with a 1e-17 scaling.
