@@ -44,8 +44,6 @@ def grab_meta():
     hstz2_meta.add_column(Column(dec, name='DEC'))
     # RENAME
     hstz2_meta.rename_column('obsdate','DATE-OBS')
-    warnings.warn("Need to remove the following line!!")
-    hstz2_meta['DATE-OBS'] = '2016-07-13'
     hstz2_meta.rename_column('tel','TELESCOPE')
     hstz2_meta.rename_column('inst','INSTR')
     hstz2_meta.rename_column('grating','GRATING')

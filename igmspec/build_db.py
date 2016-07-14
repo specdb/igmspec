@@ -313,7 +313,8 @@ def ver01(test=False, mk_test_file=False):
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
 
-def ver02(test=False, mk_test_file=False, skip_copy=True):
+
+def ver02(test=False, mk_test_file=False, skip_copy=False):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -325,15 +326,16 @@ def ver02(test=False, mk_test_file=False, skip_copy=True):
     mk_test_file : bool, optional
       Generate the test file for Travis tests?
       Writes catalog and HD-LLS dataset only
+    skip_copy : bool, optional
+      Skip copying the data from v01
 
     Returns
     -------
     """
     # Read v1.X
-
-    # v01 file
     v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'
     v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
+    print("Loading v01")
     v01hdf = h5py.File(v01file,'r')
     maindb = v01hdf['catalog'].value
 
