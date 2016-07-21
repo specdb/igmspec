@@ -7,12 +7,15 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import pdb
-import os
+import os, glob
 import imp
 import json
 
+from astropy.coordinates import SkyCoord, match_coordinates_sky
 from astropy.table import Table, Column, vstack
 from astropy.time import Time
+from astropy.io import fits
+from astropy import units as u
 
 from linetools.spectra import io as lsio
 from linetools import utils as ltu
@@ -24,20 +27,51 @@ igms_path = imp.find_module('igmspec')[1]
 
 def grab_meta():
     """ Grab XQ-100 meta Table
+
     Returns
     -------
 
     """
     # This table has units in it!
-    xq100_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/XQ-100/XQ100_v1_2.fits')
-    nqso = len(xq100_meta)
-    # Turn off RA/DEC units
-    for key in ['RA', 'DEC']:
-        xq100_meta[key].unit = None
+    xq100_table = Table.read(os.getenv('RAW_IGMSPEC')+'/XQ-100/XQ100_v1_2.fits')
+    nqso = len(xq100_table)
+    # Spectral files
+    spec_files = glob.glob(os.getenv('RAW_IGMSPEC')+'/XQ-100/ADP.*')
+    # Dummy column
+    xq100_coords = SkyCoord(ra=xq100_table['RA'], dec=xq100_table['DEC'], unit='deg')
+    matches = []
+    sv_spec_files = []
+    for spec_file in spec_files:
+        if 'ADP.2016-07-15T08:22:40.682.fits' in spec_file:
+            print("XQ-100: Skipping summary file")
+            continue
+        # Match
+        hdu = fits.open(spec_file)
+        head0 = hdu[0].header
+        if head0['DISPELEM'] == 'UVB,VIS,NIR':
+            print("XQ-100: Skipping merged spectrum file")
+            continue
+        try:
+            coord = SkyCoord(ra=head0['RA'], dec=head0['DEC'], unit='deg')
+        except KeyError:
+            pdb.set_trace()
+        sep = coord.separation(xq100_coords)
+        imt = np.argmin(sep)
+        if sep[imt] > 0.1*u.arcsec:
+            pdb.set_trace()
+            raise ValueError("Bad offset")
+        # Save
+        matches.append(imt)
+        sv_spec_files.append(spec_file)
+    #
+    xq100_meta = xq100_table[np.array(matches)]
+    nspec = len(xq100_meta)
+    # Add spec_files
+    xq100_meta['SPEC_FILE'] = sv_spec_files
     # Add zem
     xq100_meta['zem'] = xq100_meta['Z_QSO']
     xq100_meta['sig_zem'] = xq100_meta['ERR_ZQSO']
-    xq100_meta['flag_zem'] = [str('XQ-100')]*nqso
+    xq100_meta['flag_zem'] = [str('XQ-100')]*nspec
     # DATE-OBS
     meanmjd = []
     for row in xq100_meta:
@@ -46,18 +80,20 @@ def grab_meta():
     t = Time(meanmjd, format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
     xq100_meta.add_column(Column(t.iso, name='DATE-OBS'))
     #
-    xq100_meta.add_column(Column([2000.]*nqso, name='EPOCH'))
-    #
+    xq100_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
+    # Sort
+    xq100_meta.sort('RA')
     return xq100_meta
 
 
-def meta_for_build():
+def meta_for_build(xq100_meta=None):
     """ Generates the meta data needed for the IGMSpec build
     Returns
     -------
     meta : Table
     """
-    xq100_meta = grab_meta()
+    if xq100_meta is None:
+        xq100_meta = grab_meta()
     # Cut down to unique QSOs
     names = np.array([name[0:20] for name in xq100_meta['OBJ_NAME']])
     uni, uni_idx = np.unique(names, return_index=True)
@@ -91,10 +127,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     """
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
-    ggg_grp = hdf.create_group(sname)
+    xq100_grp = hdf.create_group(sname)
     # Load up
     meta = grab_meta()
-    bmeta = meta_for_build()
+    bmeta = meta_for_build(xq100_meta=meta)
     # Checks
     if sname != 'XQ-100':
         raise IOError("Expecting XQ-100!!")
@@ -105,16 +141,18 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         raise ValueError("Wrong sized table..")
 
     # Generate ID array from RA/DEC
-    meta_IDs = IDs
+    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
+    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
+    # Find new sources
+    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
+    if np.sum(d2d > 0.1*u.arcsec):
+        raise ValueError("Bad matches in XQ-100")
+    meta_IDs = IDs[idx]
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
-
-
-    # Double up for the two gratings
-    meta = vstack([meta,meta])
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 1600  # Just needs to be large enough
+    max_npix = 20000  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -132,24 +170,15 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     speclist = []
     gratinglist = []
     telelist = []
-    dateobslist = []
     instrlist = []
     # Loop
-    path = os.getenv('RAW_IGMSPEC')+'/GGG/'
     maxpix = 0
     for jj,row in enumerate(meta):
-        # Generate full file
-        if jj >= nspec//2:
-            full_file = path+row['name']+'_R400.fits.gz'
-            gratinglist.append('R400')
-        else:
-            full_file = path+row['name']+'_B600.fits.gz'
-            gratinglist.append('B400')
-        # Extract
-        print("GGG: Reading {:s}".format(full_file))
-        spec = lsio.readspec(full_file)
+        #
+        print("XQ-100: Reading {:s}".format(row['SPEC_FILE']))
+        spec = lsio.readspec(row['SPEC_FILE'])
         # Parse name
-        fname = full_file.split('/')[-1]
+        fname = row['SPEC_FILE'].split('/')[-1]
         # npix
         npix = spec.npix
         if npix > max_npix:
@@ -161,21 +190,25 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             data[key] = 0.  # Important to init (for compression too)
         data['flux'][0][:npix] = spec.flux.value
         data['sig'][0][:npix] = spec.sig.value
-        data['wave'][0][:npix] = spec.wavelength.value
+        data['wave'][0][:npix] = spec.wavelength.to('AA').value
         # Meta
         head = spec.header
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
-        telelist.append(head['OBSERVAT'])
+        telelist.append(head['TELESCOP'])
         instrlist.append(head['INSTRUME'])
-        tval = Time(head['DATE'], format='isot', out_subfmt='date')
-        dateobslist.append(tval.iso)
+        gratinglist.append(head['DISPELEM'])
         npixlist.append(npix)
-        if 'R400' in fname:
-            Rlist.append(833.)
+        if gratinglist[-1] == 'NIR':
+            Rlist.append(5000.)
+        elif gratinglist[-1] == 'VIS':
+            Rlist.append(5000.)
+        elif gratinglist[-1] == 'UVB':
+            Rlist.append(5000.)
         else:
-            Rlist.append(940.)
+            pdb.set_trace()
+            raise ValueError("UH OH")
         # Only way to set the dataset correctly
         if chk_meta_only:
             continue
@@ -184,11 +217,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     #
     print("Max pix = {:d}".format(maxpix))
     # Add columns
-    meta.add_column(Column(speclist, name='SPEC_FILE'))
     meta.add_column(Column(gratinglist, name='GRATING'))
     meta.add_column(Column(telelist, name='TELESCOPE'))
     meta.add_column(Column(instrlist, name='INSTR'))
-    meta.add_column(Column(dateobslist, name='DATE-OBS'))
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
@@ -204,8 +235,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         raise ValueError("meta file failed")
 
     # References
-    refs = [dict(url='http://adsabs.harvard.edu/abs/2014MNRAS.445.1745W',
-                 bib='worseck+14')]
+    refs = [dict(url='',
+                 bib='lopez+16')]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #

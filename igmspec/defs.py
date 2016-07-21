@@ -36,6 +36,8 @@ def instruments():
         # HST
         'ACS': dict(gratings=['PR200L']),
         'WFC3': dict(gratings=['G280']),
+        # VLT
+        'XSHOOTER': dict(gratings=['UVB,VIS,NIR']),
     }
     return inst_dict
 
