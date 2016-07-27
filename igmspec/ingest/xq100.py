@@ -200,12 +200,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         instrlist.append(head['INSTRUME'])
         gratinglist.append(head['DISPELEM'])
         npixlist.append(npix)
-        if gratinglist[-1] == 'NIR':
-            Rlist.append(5000.)
+        if gratinglist[-1] == 'NIR':  # FROM Lopez+16
+            Rlist.append(4350.)
         elif gratinglist[-1] == 'VIS':
-            Rlist.append(5000.)
+            Rlist.append(7450.)
         elif gratinglist[-1] == 'UVB':
-            Rlist.append(5000.)
+            Rlist.append(5300.)
         else:
             pdb.set_trace()
             raise ValueError("UH OH")
