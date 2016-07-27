@@ -200,7 +200,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         instrlist.append(head['INSTRUME'])
         gratinglist.append(head['DISPELEM'])
         npixlist.append(npix)
-        if gratinglist[-1] == 'NIR':  # FROM Lopez+16
+        if gratinglist[-1] == 'NIR':  # From Lopez+16
             Rlist.append(4350.)
         elif gratinglist[-1] == 'VIS':
             Rlist.append(7450.)
