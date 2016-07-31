@@ -35,9 +35,10 @@ def meta_for_build():
     names = []
     ra = []
     dec = []
-    for coord in hdla100.coord:
+    coords = hdla100.coord
+    for coord in coords[0]:  # Funny but true
         # Load
-        names.append('J{:s}{s}'.format(coord.ra.to_string(unit=u.hour, sep='', pad=True, precision=2),
+        names.append('J{:s}{:s}'.format(coord.ra.to_string(unit=u.hour, sep='', pad=True, precision=2),
                                        coord.dec.to_string(sep='', pad=True, precision=1)))
         # RA/DEC
         ra.append(coord.ra.value)
@@ -83,7 +84,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     hdlls_grp = hdf.create_group(sname)
     # Load up
     Rdicts = defs.get_res_dicts()
-    mike_meta = grab_meta_mike()
     mike_coord = SkyCoord(ra=mike_meta['RA'], dec=mike_meta['DEC'], unit='deg')
     # Checks
     if sname != 'HD-LLS_DR1':
