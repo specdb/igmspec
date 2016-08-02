@@ -21,7 +21,7 @@ def instruments():
         # Spectrograph for SDSS-I/II survey; http://classic.sdss.org/dr7/instruments/spectrographs/index.html
         'SDSS': dict(gratings=['BLUE', 'RED', 'BOTH']),
         # Keck/HIRES spectrometer -- BLUE/RED refer to the cross-disperser
-        'HIRES': dict(gratings=['BLUE', 'RED', 'BOTH']),
+        'HIRES': dict(gratings=['UV', 'RED', 'BOTH']),
         # Keck/ESI spectrometer -- ECH
         'ESI': dict(gratings=['ECH']),
         # Magellan MIKE spectrometer
@@ -95,6 +95,7 @@ def get_survey_dict():
     survey_dict['GGG'] = 16         # Worseck et al. 201X
     survey_dict['HST_z2'] = 2**5    # O'Meara et al. 2011
     survey_dict['XQ-100'] = 2**6    # Lopez et al. 2016
+    survey_dict['HDLA100'] = 2**7   # Neeleman et al. 2013
     #
     return survey_dict
 
@@ -128,6 +129,7 @@ def get_res_dicts():
     HIRES1 = 36000.*1.148  # https://koa.ipac.caltech.edu/UserGuide/deckname_detail.html
     HIRES_Rdict = {'C1': HIRES1/0.861,
                    'C5': HIRES1/1.148,
+                   'D1': HIRES1/1.148,
                    'B2': HIRES1/0.574,
                    'B5': HIRES1/0.861,
                    'E3': HIRES1/0.4,

@@ -384,7 +384,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         sname = 'HDLA100'
         print('===============\n Doing {:s} \n==============\n'.format(sname))
         # Read
-        hdla100_meta = hdla100.meta_for_build()
+        hdla100_meta, _ = hdla100.meta_for_build()
         # IDs
         hdla100_cut, new, hdla100_ids = set_new_ids(maindb, hdla100_meta)
         nnew = np.sum(new)
