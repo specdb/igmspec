@@ -199,6 +199,7 @@ def ver01(test=False, mk_test_file=False):
 
     ''' BOSS_DR12 '''
     # Read
+    sname = 'BOSS_DR12'
     boss_meta = boss.meta_for_build()
     nboss = len(boss_meta)
     # IDs
@@ -215,8 +216,8 @@ def ver01(test=False, mk_test_file=False):
         maindb = maindb[1:100]  # Eliminate dummy line
     else:
         maindb = maindb[1:]  # Eliminate dummy line
-    #if not test:
-    #    boss.hdf5_adddata(hdf, sdss_ids, sname)
+    if not test:
+        boss.hdf5_adddata(hdf, boss_ids, sname)
 
     ''' SDSS DR7'''
     sname = 'SDSS_DR7'
