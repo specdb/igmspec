@@ -26,9 +26,12 @@ def grab_meta():
     """
     #http://www.sdss.org/dr12/algorithms/boss-dr12-quasar-catalog/
     boss_dr12 = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q.fits.gz')
+    boss_dr12['CAT'] = ['DR12Q']*len(boss_dr12)
     #
     boss_sup = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q_sup.fits.gz')
+    boss_sup['CAT'] = ['SUPGD']*len(boss_sup)
     boss_supbad = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q_supbad.fits.gz')
+    boss_supbad['CAT'] = ['SUPBD']*len(boss_supbad)
     # Collate
     boss_meta = vstack([boss_dr12, boss_sup, boss_supbad], join_type='outer')
     #
@@ -39,7 +42,8 @@ def grab_meta():
     # Add columns
     boss_meta.add_column(Column(['BOSS']*nboss, name='INSTR'))
     boss_meta.add_column(Column(['BOTH']*nboss, name='GRATING'))
-    boss_meta.add_column(Column([2000.]*nboss, name='R'))  # RESOLUTION
+    #http://www.sdss.org/instruments/boss_spectrograph/
+    boss_meta.add_column(Column([2100.]*nboss, name='R'))  # RESOLUTION
     boss_meta.add_column(Column(['SDSS 2.5-M']*nboss, name='TELESCOPE'))
     # Redshift logic
     boss_meta['zem'] = boss_meta['Z_PCA']
@@ -71,6 +75,27 @@ def meta_for_build():
     return meta
 
 
+def get_specfil(row):
+    """Grab the BOSS file name + path
+    """
+    # Generate file name (DR4 is different)
+    pnm = '{0:04d}'.format(row['PLATE'])
+    fnm = '{0:04d}'.format(row['FIBERID'])
+    mjd = str(row['MJD'])
+    path = os.getenv('RAW_IGMSPEC')+'/BOSS/'
+    #
+    if row['CAT'] == 'SUPGD':
+        path += 'Sup12/'
+        specfil = path+'spec-{:04d}-{:d}-{:04d}.fits.gz'.format(row['PLATE'], row['MJD'], row['FIBERID'])
+    elif row['CAT'] == 'SUPBD':
+        path += 'SupBad/'
+        specfil = path+'spec-{:04d}-{:d}-{:04d}.fits.gz'.format(row['PLATE'], row['MJD'], row['FIBERID'])
+    else:
+        specfil = 'None'
+    # Finish
+    return specfil
+
+
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     """ Add BOSS data to the DB
 
@@ -95,7 +120,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta = grab_meta()
     bmeta = meta_for_build()
     # Checks
-    if sname != 'SDSS_DR7':
+    if sname != 'BOSS_DR12':
         raise IOError("Not expecting this survey..")
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")
@@ -109,7 +134,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     # Find new sources
     idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
     if np.sum(d2d > 1.2*u.arcsec):  # There is one system offset by 1.1"
-        raise ValueError("Bad matches in SDSS")
+        raise ValueError("Bad matches in BOSS")
     meta_IDs = IDs[idx]
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
@@ -117,7 +142,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 4000  # Just needs to be large enough
+    max_npix = 4650  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -130,26 +155,18 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     spec_set.resize((nspec,))
     wvminlist = []
     wvmaxlist = []
-    npixlist = []
     speclist = []
+    npixlist = []
     # Loop
     maxpix = 0
     for jj,row in enumerate(meta):
-        pdb.set_trace()
         full_file = get_specfil(row)
+        if full_file == 'None':
+            continue
         # Extract
-        print("SDSS: Reading {:s}".format(full_file))
+        print("BOSS: Reading {:s}".format(full_file))
         # Parse name
         fname = full_file.split('/')[-1]
-        if debug:
-            if jj > 500:
-                speclist.append(str(fname))
-                if not os.path.isfile(full_file):
-                    raise IOError("SDSS file {:s} does not exist".format(full_file))
-                wvminlist.append(np.min(data['wave'][0][:npix]))
-                wvmaxlist.append(np.max(data['wave'][0][:npix]))
-                npixlist.append(npix)
-                continue
         # Generate full file
         spec = lsio.readspec(full_file)
         # npix
@@ -191,10 +208,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     else:
         raise ValueError("meta file failed")
     # References
-    refs = [dict(url='http://adsabs.harvard.edu/abs/2010AJ....139.2360S',
-                 bib='boss_qso_dr7'),
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2015ApJS..219...12A',
+                 bib='boss_qso_dr12'),
             ]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
+    pdb.set_trace()
     #
     return
