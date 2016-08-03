@@ -1,21 +1,19 @@
-""" Module to ingest SDSS II (aka SDSS) data products
+""" Module to ingest 2dF/6dF quasars
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 
 import numpy as np
-import os, json
+import os
 import pdb
 
 import datetime
 
 from astropy.table import Table, Column
+from astropy.io import fits
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, match_coordinates_sky
-from astropy import units as u
 
 from linetools.spectra import io as lsio
-from linetools import utils as ltu
 
 from igmspec.ingest import utils as iiu
 
@@ -35,7 +33,8 @@ def get_specfil(row):
 
 
 def grab_meta():
-    """ Grab SDSS meta Table
+    """ Grab GGG meta Table
+    Catalog -- http://www.2dfquasar.org/Spec_Cat/catalogue.html
 
     Returns
     -------
@@ -73,34 +72,13 @@ def meta_for_build():
 
     """
     sdss_meta = grab_meta()
-    # Cut down to unique sources
-    coord = SkyCoord(ra=sdss_meta['RA'], dec=sdss_meta['DEC'], unit='deg')
-    idx, d2d, d3d = match_coordinates_sky(coord, coord, nthneighbor=2)
-    dups = np.where(d2d < 0.5*u.arcsec)[0]
-    keep = np.array([True]*len(sdss_meta))
-    for idup in dups:
-        dcoord = SkyCoord(ra=sdss_meta['RA'][idup], dec=sdss_meta['DEC'][idup], unit='deg')
-        sep = dcoord.separation(coord)
-        isep = np.where(sep < 0.5*u.arcsec)[0]
-        keep[isep] = False
-        keep[np.min(isep)] = True  # Only keep 1
-    sdss_meta = sdss_meta[keep]
-    # Cut one more (pair of QSOs)
-    bad_dup_c = SkyCoord(ra=193.96678*u.deg, dec=37.099741*u.deg)
-    coord = SkyCoord(ra=sdss_meta['RA'], dec=sdss_meta['DEC'], unit='deg')
-    sep = bad_dup_c.separation(coord)
-    assert np.sum(sep < 2*u.arcsec) == 2
-    badi = np.argmin(bad_dup_c.separation(coord))
-    keep = np.array([True]*len(sdss_meta))
-    keep[badi] = False
-    sdss_meta = sdss_meta[keep]
-    #
     nqso = len(sdss_meta)
+    #
+    #
     meta = Table()
     for key in ['RA', 'DEC', 'zem', 'sig_zem']:
         meta[key] = sdss_meta[key]
-    meta['flag_zem'] = [str('SDSS')]*nqso
-    meta['STYPE'] = [str('QSO')]*nqso
+    meta['flag_zem'] = [str('SDSS')]*nqso  # QPQ too
     # Return
     return meta
 
@@ -138,13 +116,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         raise ValueError("Wrong sized table..")
 
     # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 1.2*u.arcsec):  # There is one system offset by 1.1"
-        raise ValueError("Bad matches in SDSS")
-    meta_IDs = IDs[idx]
+    meta_IDs = IDs
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
     # Add zem
@@ -223,11 +195,5 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         hdf[sname]['meta'] = meta
     else:
         raise ValueError("meta file failed")
-    # References
-    refs = [dict(url='http://adsabs.harvard.edu/abs/2010AJ....139.2360S',
-                 bib='sdss_qso_dr7'),
-            ]
-    jrefs = ltu.jsonify(refs)
-    hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return

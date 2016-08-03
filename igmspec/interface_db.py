@@ -2,7 +2,7 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-import os, glob, imp
+import os
 import psutil
 import warnings
 import h5py
@@ -10,13 +10,10 @@ import pdb
 
 import numpy as np
 
-from astropy.table import Table, vstack, Column
-from astropy import units as u
-from astropy.coordinates import SkyCoord, match_coordinates_sky
+from astropy.table import Table
 
 from linetools.spectra.xspectrum1d import XSpectrum1D
 
-from igmspec.defs import z_priority, survey_flag
 from igmspec.db_utils import grab_dbfile
 
 class InterfaceDB(object):
@@ -40,6 +37,9 @@ class InterfaceDB(object):
 
     def __init__(self, db_file=None, maximum_ram=10.,verbose=True):
         """
+        Parameters
+        ----------
+        db_file : str, optional
         Returns
         -------
 
@@ -74,14 +74,14 @@ class InterfaceDB(object):
         self.db_file = db_file
         self.survey_IDs = None
         #
-        surveys = self.hdf.keys()
+        surveys = list(self.hdf.keys())
         surveys.pop(surveys.index('catalog'))
         self.surveys = surveys
         if self.verbose:
             print("Available surveys: {}".format(self.surveys))
 
-    def grab_ids(self, survey, IGM_IDs, meta=None):
-        """ Grab the survey IDs
+    def grab_ids(self, survey, IGM_IDs, meta=None, match_meta=None):
+        """ Grab the rows in a survey matching IGM_IDs
 
         Parameters
         ----------
@@ -89,9 +89,15 @@ class InterfaceDB(object):
           Name of the Survey
         IGM_IDs : int or ndarray
           IGM_ID values
+        meta : Table, optional
+          Meta data for the survey (usually read from hdf)
+        match_meta : dict, optional
+          key/value to filter spec with, e.g. {'INSTR': HIRES}
 
         Returns
-        -------
+        ------
+        match_survey : ndarray
+          bool array of meta rows from the survey matching IGM_IDs
 
         """
         # Check
@@ -99,20 +105,25 @@ class InterfaceDB(object):
             raise IOError("Survey {:s} not in your DB file {:s}".format(survey, self.db_file))
         # Find IGMS_IDs indices in survey
         if meta is None:
-            meta = self.hdf[survey]['meta'].value
-        if 'IGM_ID' not in meta.dtype.names:
-            raise ValueError("Meta table in {:s} survey is missing IGSM_ID column!".format(survey))
-        in_survey = np.in1d(meta['IGM_ID'], IGM_IDs)
+            meta = Table(self.hdf[survey]['meta'].value)  # This could be too slow..
+            meta.meta = dict(survey=survey)
+        match_survey = np.in1d(meta['IGM_ID'], IGM_IDs)
+        # Match meta?
+        if match_meta is not None:
+            for key,value in match_meta.items():
+                match_survey = match_survey & (meta[key] == value)
         # Store and return
-        self.survey_bool = in_survey
-        return in_survey
+        self.survey_bool = match_survey
+        self.meta = meta[match_survey]
+        return match_survey
 
-    def grab_meta(self, survey, IGM_IDs, show=True):
+    def grab_meta(self, survey, IGM_IDs=None, show=True):
         """ Grab meta data for survey
         Parameters
         ----------
         survey : str or list
-        IGM_IDs : int or array
+        IGM_IDs : int or array, optional
+          Return full table if None
         show : bool, optional
           Show the Meta table (print) in addition to returning
 
@@ -128,25 +139,23 @@ class InterfaceDB(object):
                 all_meta.append(self.grab_meta(isurvey, IGM_IDs))
             return all_meta
         # Grab IDs then cut
-        _ = self.grab_ids(survey, IGM_IDs)
-        meta = Table(self.hdf[survey]['meta'].value)[self.survey_bool]
+        meta = Table(self.hdf[survey]['meta'].value)
+        if IGM_IDs is not None:
+            _ = self.grab_ids(survey, IGM_IDs)
+            meta = meta[self.survey_bool]
+        else:
+            return meta
         self.meta = meta
         self.meta['RA'].format = '7.3f'
         self.meta['DEC'].format = '7.3f'
         self.meta['zem'].format = '6.3f'
         self.meta['WV_MIN'].format = '6.1f'
         self.meta['WV_MAX'].format = '6.1f'
-        # Show?
-        if show:
-            meta_keys = ['IGM_ID', 'RA', 'DEC', 'zem', 'SPEC_FILE']
-            for key in meta.keys():
-                if key not in meta_keys:
-                    meta_keys += [key]
-            meta[meta_keys].pprint(max_width=120)
+
         # Load and return
         return meta
 
-    def grab_spec(self, survey, IGM_IDs, verbose=None):
+    def grab_spec(self, survey, IGM_IDs, verbose=None, **kwargs):
         """ Grab spectra using staged IDs
 
         Parameters
@@ -156,33 +165,63 @@ class InterfaceDB(object):
 
         Returns
         -------
+        spec
+        meta
 
         """
         if verbose is None:
             verbose = self.verbose
         if isinstance(survey, list):
             all_spec = []
+            all_meta = []
             for isurvey in survey:
-                all_spec.append(self.grab_spec(isurvey, IGM_IDs))
-            return all_spec
-        #
-        if self.stage_data(survey, IGM_IDs):
-            if verbose:
-                print("Loaded spectra")
-            data = self.hdf[survey]['spec'][self.survey_bool]
+                spec, meta = self.grab_spec(isurvey, IGM_IDs, **kwargs)
+                if spec is not None:
+                    all_spec.append(spec.copy())
+                    all_meta.append(meta.copy())
+            return all_spec, all_meta
+        # Grab IDs
+        if self.stage_data(survey, IGM_IDs, **kwargs):
+            if np.sum(self.survey_bool) == 0:
+                if verbose:
+                    print("No spectra matching in survey {:s}".format(survey))
+                return None, None
+            else:
+                if verbose:
+                    print("Loaded spectra")
+                data = self.hdf[survey]['spec'][self.survey_bool]
         else:
             print("Staging failed..  Not returning spectra")
             return
-        # Deal with padding?
-        tmp = np.sum(data['sig'],axis=0)
-        notzero = np.where(tmp != 0.)[0]
-        npix = np.max(notzero)
         # Generate XSpectrum1D
-        spec = XSpectrum1D(data['wave'], data['flux'], sig=data['sig'], mask_edges=True)
+        spec = XSpectrum1D(data['wave'], data['flux'], sig=data['sig'], masking='edges')
         # Return
-        return spec
+        return spec, self.meta
 
-    def stage_data(self, survey, IGM_IDs, verbose=None):
+    def show_meta(self, imeta=None, meta_keys=None):
+        """ Nicely format and show the meta table
+        Parameters
+        ----------
+        meta_keys : list, optional
+          Keys for display
+        imeta : Table, optional
+          Meta data for the survey (or a subset of it)
+          Is pulled from self.meta if not input
+        """
+        if imeta is None:
+            imeta = self.meta
+        if meta_keys is None:
+            mkeys = ['IGM_ID', 'RA', 'DEC', 'zem', 'SPEC_FILE']
+        else:
+            mkeys = meta_keys
+        #
+        for key in imeta.keys():
+            if key not in mkeys:
+                mkeys += [key]
+        imeta[mkeys].pprint(max_width=120)
+        return
+
+    def stage_data(self, survey, IGM_IDs, verbose=None, **kwargs):
         """ Stage the spectra for serving
         Mainly checks the memory
 
@@ -204,9 +243,13 @@ class InterfaceDB(object):
             verbose = self.verbose
         # Checks
         if survey not in self.hdf.keys():
-            raise IOError("Survey {:s} not in your DB file {:s}".format(survey, self.db_file))
-        in_survey = self.grab_ids(survey, IGM_IDs)
-        nhits = np.sum(in_survey)
+            if survey == 'BOSS_DR12':
+                return True
+            else:
+                raise IOError("Survey {:s} not in your DB file {:s}".format(survey, self.db_file))
+        match_survey = self.grab_ids(survey, IGM_IDs, **kwargs)
+        # Meta?
+        nhits = np.sum(match_survey)
         # Memory check (approximate; ignores meta data)
         spec_Gb = self.hdf[survey]['spec'][0].nbytes/1e9  # Gb
         new_memory = spec_Gb*nhits

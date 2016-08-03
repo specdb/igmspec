@@ -17,6 +17,12 @@ from igmspec import db_utils as idbu
 
 from linetools import utils as ltu
 
+try:
+    basestring
+except NameError:  # For Python 3
+    basestring = str
+
+
 class QueryCatalog(object):
     """ A Class for querying the IGMspec catalog
 
@@ -27,6 +33,8 @@ class QueryCatalog(object):
     ----------
     cat : Table
       Astropy Table holding the IGMspec catalog
+    surveys : list
+      List of surveys included in the catalog
     """
 
     def __init__(self, db_file=None, maximum_ram=10.):
@@ -36,6 +44,8 @@ class QueryCatalog(object):
 
         """
         # Init
+        self.cat = None
+        self.surveys = None
         # Load catalog
         self.load_cat(db_file)
         # Setup
@@ -58,19 +68,56 @@ class QueryCatalog(object):
         hdf = h5py.File(db_file,'r')
         self.cat = Table(hdf['catalog'].value)
         self.db_file = db_file
+        hdf.close()
 
-    def cut_on_surveys(self, surveys, IGM_IDs):
-        """
+    def in_surveys(self, input_surveys, return_list=True):
+        """ Return a list of input surveys that are in the DB
+
         Parameters
         ----------
+        in_surveys : list or str
+          List of one or more surveys
+          If str, converted to list
         surveys : list
-        IGM_IDs : int array
-          True means show
+          List of surveys to compare against
+        return_list : bool, optional
+          Return input survey(s) as a list?
 
         Returns
         -------
+        out_surveys : list
+          List of overlapping surveys between input and DB
+
+        """
+        # Checks
+        if isinstance(input_surveys, basestring):
+            isurveys = [input_surveys]
+        elif isinstance(input_surveys, list):
+            isurveys = input_surveys
+        else:
+            raise IOError("input_surveys must be str or list")
+        #
+        fsurveys = []
+        for isurvey in isurveys:
+            if isurvey in self.surveys:
+                fsurveys.append(isurvey)
+        # Return
+        return fsurveys
+
+    def cutid_on_surveys(self, surveys, IGM_IDs):
+        """ Find the subset of IGM_IDs within a survey list
+
+        Parameters
+        ----------
+        surveys : list
+          List of surveys to consider, e.g. ['BOSS-DR12', 'SDSS_DR7']
+        IGM_IDs : int array
+
+        Returns
+        -------
+
         msk : bool array
-          True mean in survey
+          True indicates in survey
 
         """
         good = np.in1d(self.cat['IGM_ID'], IGM_IDs)

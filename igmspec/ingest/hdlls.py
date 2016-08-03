@@ -4,11 +4,10 @@ Prochaska et al. 2015
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+
 import numpy as np
 import pdb
-import os
-import glob
-import imp
+import os, json, glob, imp
 import datetime
 
 from astropy.table import Table, Column
@@ -60,8 +59,8 @@ def meta_for_build():
     -------
     meta : Table
     """
-    hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1/HD-LLS_DR1.fits.gz')
     # Cut down to unique QSOs
+    hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1/HD-LLS_DR1.fits.gz')
     names = np.array([name[0:26] for name in hdlls_meta['Name']])
     uni, uni_idx = np.unique(names, return_index=True)
     hdlls_meta = hdlls_meta[uni_idx]
@@ -73,11 +72,13 @@ def meta_for_build():
     meta['zem'] = hdlls_meta['Z_QSO']
     meta['sig_zem'] = [0.]*nqso
     meta['flag_zem'] = [str('UNKN')]*nqso
+    meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
+def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
+                 mk_test_file=False):
     """ Append HD-LLS data to the h5 file
 
     Parameters
@@ -89,6 +90,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
       Survey name
     chk_meta_only : bool, optional
       Only check meta file;  will not write
+    mk_test_file : bool, optional
+      Generate the debug test file for Travis??
 
     Returns
     -------
@@ -111,6 +114,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     cut_meta = meta_for_build()
     if len(cut_meta) != len(IDs):
         raise ValueError("Wrong sized table..")
+    # DR1 Table by LLS, not spectrum
     hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1/HD-LLS_DR1.fits.gz')
     nlls = len(hdlls_meta)
 
@@ -137,16 +141,23 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             hdlls_full.add_row(row)
             spec_files.append(spec_file)
             full_IDs.append(meta_IDs[kk])
-    # Trim down
+    # Build
     hdlls_full = hdlls_full[1:]
     hdlls_full.remove_column('SPEC_FILES')
     hdlls_full.add_column(Column(spec_files,name='SPEC_FILE'))
     hdlls_full.add_column(Column(full_IDs, name='IGM_ID'))
+    # Cut on unique SPEC_FILEs
     uni, uni_idx = np.unique(np.array(spec_files), return_index=True)
+    if sname == 'HD-LLS_DR1':
+        # REMOVE ONE FILE (A DUPLICATE) BY HAND
+        mt = uni != 'HD-LLS_J130756.70+042215.0_MIKE.fits'
+        uni_idx = uni_idx[mt]
     hdlls_full = hdlls_full[uni_idx]
     full_coord = SkyCoord(ra=hdlls_full['RA'], dec=hdlls_full['DEC'], unit='deg')
 
     # Build spectra (and parse for meta)
+    if mk_test_file:
+        hdlls_full = hdlls_full[0:3]
     nspec = len(hdlls_full)
     max_npix = 210000  # Just needs to be large enough
     data = np.ma.empty((1,),
@@ -165,6 +176,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     wvmaxlist = []
     dateobslist = []
     npixlist = []
+    instrlist = []
+    gratinglist = []
+    telelist = []
     # Loop
     members = glob.glob(os.getenv('RAW_IGMSPEC')+'/{:s}/*fits'.format(sname))
     for jj,member in enumerate(members):
@@ -175,6 +189,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         # Parse name
         fname = f.split('/')[-1]
         mt = np.where(hdlls_full['SPEC_FILE'] == fname)[0]
+        if mk_test_file and (jj>=3):
+            continue
         if len(mt) != 1:
             pdb.set_trace()
             raise ValueError("HD-LLS: No match to spectral file?!")
@@ -197,6 +213,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
         if 'HIRES' in fname:
+            instrlist.append('HIRES')
+            telelist.append('Keck-I')
+            gratinglist.append('BOTH')
             try:
                 Rlist.append(iiu.set_resolution(head))
             except ValueError:
@@ -226,8 +245,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
                     pdb.set_trace()
             else:
                 tval = datetime.datetime.strptime(head['DATE-OBS'], '%Y-%m-%d')
-            dateobslist.append(datetime.datetime.strftime(tval,'%Y-%b-%d'))
+            dateobslist.append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
         elif 'ESI' in fname:
+            instrlist.append('ESI')
+            telelist.append('Keck-II')
+            gratinglist.append('ECH')
             try:
                 Rlist.append(iiu.set_resolution(head))
             except ValueError:
@@ -240,19 +262,36 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
                     tval = datetime.datetime.strptime('2004-09-11', '%Y-%m-%d')
                 else:
                     pdb.set_trace()
-            dateobslist.append(datetime.datetime.strftime(tval,'%Y-%b-%d'))
+            dateobslist.append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
         elif 'MIKE' in fname:  # APPROXIMATE
+            if 'MIKEr' in fname:
+                instrlist.append('MIKEr')
+                gratinglist.append('RED')
+            elif 'MIKEb' in fname:
+                instrlist.append('MIKEb')
+                gratinglist.append('BLUE')
+            else:
+                instrlist.append('MIKE')
+                gratinglist.append('BOTH')
+            telelist.append('Magellan')
             sep = full_coord[mt[0]].separation(mike_coord)
             imin = np.argmin(sep)
             if sep[imin] > 1.*u.arcsec:
                 pdb.set_trace()
                 raise ValueError("Bad separation in MIKE")
+            # R and Date
             Rlist.append(25000. / mike_meta['Slit'][imin])
-            dateobslist.append(mike_meta['DATE-OBS'][imin])
+            tval = datetime.datetime.strptime(mike_meta['DATE-OBS'][imin], '%Y-%b-%d')
+            dateobslist.append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
         elif 'MAGE' in fname:  # APPROXIMATE
-            print("NEED TO SET R and DATE-OBS for {:s}".format(fname))
-            Rlist.append(5000.)
-            dateobslist.append('2016-Jul-17')
+            instrlist.append('MagE')
+            if 'Clay' in head['TELESCOP']:
+                telelist.append('Magellan/Clay')
+            else:
+                telelist.append('Magellan/Baade')
+            gratinglist.append('N/A')
+            Rlist.append(iiu.set_resolution(head))
+            dateobslist.append(head['DATE-OBS'])
         else:  # MagE
             raise ValueError("UH OH")
         # Only way to set the dataset correctly
@@ -270,6 +309,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
     meta.add_column(Column(np.arange(nmeta,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(gratinglist, name='GRATING'))
+    meta.add_column(Column(instrlist, name='INSTR'))
+    meta.add_column(Column(telelist, name='TELESCOPE'))
     meta.rename_column('Z_QSO', 'zem')
 
     # Add HDLLS meta to hdf5
@@ -279,6 +321,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         hdf[sname]['meta'] = meta
     else:
         raise ValueError("meta file failed")
+    # References
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2015ApJS..221....2P',
+                 bib='prochaska+15'),
+            ]
+    jrefs = ltu.jsonify(refs)
+    hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return
 

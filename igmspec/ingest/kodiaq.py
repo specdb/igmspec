@@ -4,11 +4,13 @@ O'Meara et al. 2016
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+
 import numpy as np
 import pdb
-import os
-import glob
+import os, json
 import imp
+
+import datetime
 
 from astropy.table import Table, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -31,6 +33,7 @@ def grab_meta():
     """
     kodiaq_file = igms_path+'/data/meta/KODIAQ_DR1_summary.ascii'
     kodiaq_meta = Table.read(kodiaq_file, format='ascii', comment='#')
+    nspec = len(kodiaq_meta)
     # Verify DR1
     for row in kodiaq_meta:
         assert row['kodrelease'] == 1
@@ -46,10 +49,15 @@ def grab_meta():
         dec.append(coord.dec.value)
         # DATE
         dvals = row['pi_date'].split('_')
-        dateobs.append(str('{:s}-{:s}-{:02d}'.format(dvals[-1],dvals[1][0:3],int(dvals[2]))))  #%Y-%b-%d
+        tymd = str('{:s}-{:s}-{:02d}'.format(dvals[-1],dvals[1][0:3],int(dvals[2])))
+        tval = datetime.datetime.strptime(tymd, '%Y-%b-%d')
+        dateobs.append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
     kodiaq_meta.add_column(Column(ra, name='RA'))
     kodiaq_meta.add_column(Column(dec, name='DEC'))
     kodiaq_meta.add_column(Column(dateobs, name='DATE-OBS'))
+    #
+    kodiaq_meta.add_column(Column(['HIRES']*nspec, name='INSTR'))
+    kodiaq_meta.add_column(Column(['Keck-I']*nspec, name='TELESCOPE'))
     #
     return kodiaq_meta
 
@@ -73,6 +81,7 @@ def meta_for_build():
     meta['zem'] = kodiaq_meta['zem']
     meta['sig_zem'] = [0.]*nqso
     meta['flag_zem'] = [str('SIMBAD')]*nqso
+    meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
 
@@ -137,7 +146,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     Rlist = []
     wvminlist = []
     wvmaxlist = []
-    dateobslist = []
+    gratinglist = []
     npixlist = []
     speclist = []
     # Loop
@@ -170,6 +179,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
+        if head['XDISPERS'].strip() == 'UV':
+            gratinglist.append('BLUE')
+        else:
+            gratinglist.append('RED')
         npixlist.append(npix)
         try:
             Rlist.append(iiu.set_resolution(head))
@@ -189,6 +202,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
+    meta.add_column(Column(gratinglist, name='GRATING'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
@@ -198,6 +212,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         hdf[sname]['meta'] = meta
     else:
         raise ValueError("meta file failed")
+    # References
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2015AJ....150..111O',
+                 bib='kodiaq')
+            ]
+    jrefs = ltu.jsonify(refs)
+    hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return
 
