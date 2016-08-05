@@ -17,6 +17,7 @@ def add_to_hdf(hdf):
     ----------
     hdf : HDF5 file
     """
+    print("Adding Meyers catalog")
     # Load
     ADM_qso, date = load()
     # Add
