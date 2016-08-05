@@ -3,19 +3,17 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import igmspec
+import os, glob
 import h5py
-import numbers
 import pdb
 
 from igmspec import defs
-from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2
 
 from astropy.table import Table, vstack, Column
-from astropy.coordinates import SkyCoord, match_coordinates_sky
-from astropy import units as u
+#from astropy import units as u
 
-def grab_files(tree_root):
+
+def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
     """ Generate a list of FITS files within the file tree
 
     Parameters
@@ -26,11 +24,46 @@ def grab_files(tree_root):
     Returns
     -------
     files : list
-      List of files
+      List of FITS files
+    skip_files : tuple
+      List of file roots to skip as primary files when ingesting
 
     """
+    walk = os.walk(tree_root)
+    folders = ['.']
+    pfiles = []
+    while len(folders) > 0:
+        # Search for fits files
+        ofiles = []
+        for folder in folders:
+            ofiles += glob.glob(tree_root+folder+'/*.fits*')
+            # Eliminate error and continua files
+            for ofile in ofiles:
+                flg = True
+                # Ugly loop
+                for skip_file in skip_files:
+                    if skip_file in ofile:
+                        flg = False
+                if flg:
+                    pfiles.append(ofile)
+            # walk
+        folders = next(walk)[1]
+    # Return
+    return pfiles
 
-def meta(files):
+def mk_meta(files):
+    """ Generate a meta Table from an input list of files
+
+    Parameters
+    ----------
+    files : list
+      List of FITS files
+
+    Returns
+    -------
+    meta : Table
+      Meta table
+    """
 
 def ver01(test=False, mk_test_file=False):
     """ Build version 1.0
@@ -94,90 +127,6 @@ def ver01(test=False, mk_test_file=False):
     #if not test:
     #    boss.hdf5_adddata(hdf, sdss_ids, sname)
 
-    ''' SDSS DR7'''
-    sname = 'SDSS_DR7'
-    print('===============\n Doing {:s} \n===============\n'.format(sname))
-    sdss_meta = sdss.meta_for_build()
-    # IDs
-    sdss_cut, new, sdss_ids = set_new_ids(maindb, sdss_meta)
-    nnew = np.sum(new)
-    # Survey flag
-    flag_s = defs.survey_flag(sname)
-    sdss_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    midx = np.array(maindb['IGM_ID'][sdss_ids[~new]])
-    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
-    # Append
-    assert chk_maindb_join(maindb, sdss_cut)
-    if mk_test_file:
-        sdss_cut = sdss_cut[0:100]
-    maindb = vstack([maindb, sdss_cut], join_type='exact')
-    # Update hf5 file
-    if not test:
-        sdss.hdf5_adddata(hdf, sdss_ids, sname)
-
-    ''' KODIAQ DR1 '''
-    sname = 'KODIAQ_DR1'
-    print('==================\n Doing {:s} \n==================\n'.format(sname))
-    kodiaq_meta = kodiaq.meta_for_build()
-    # IDs
-    kodiaq_cut, new, kodiaq_ids = set_new_ids(maindb, kodiaq_meta)
-    nnew = np.sum(new)
-    # Survey flag
-    flag_s = defs.survey_flag(sname)
-    kodiaq_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    midx = np.array(maindb['IGM_ID'][kodiaq_ids[~new]])
-    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
-    # Append
-    assert chk_maindb_join(maindb, kodiaq_cut)
-    maindb = vstack([maindb,kodiaq_cut], join_type='exact')
-    # Update hf5 file
-    if not test:
-        kodiaq.hdf5_adddata(hdf, kodiaq_ids, sname)
-
-    ''' HD-LLS '''
-    sname = 'HD-LLS_DR1'
-    print('===============\n Doing {:s} \n==============\n'.format(sname))
-    # Read
-    hdlls_meta = hdlls.meta_for_build()
-    # IDs
-    hdlls_cut, new, hdlls_ids = set_new_ids(maindb, hdlls_meta)
-    nnew = np.sum(new)
-    # Survey flag
-    flag_s = defs.survey_flag(sname)
-    hdlls_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    midx = np.array(maindb['IGM_ID'][hdlls_ids[~new]])
-    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
-    # Append
-    assert chk_maindb_join(maindb, hdlls_cut)
-    maindb = vstack([maindb,hdlls_cut], join_type='exact')
-    # Update hf5 file
-    if (not test) or mk_test_file:
-        hdlls.hdf5_adddata(hdf, hdlls_ids, sname, mk_test_file=mk_test_file)
-
-    ''' GGG '''
-    sname = 'GGG'
-    print('===============\n Doing {:s} \n==============\n'.format(sname))
-    ggg_meta = ggg.meta_for_build()
-    # IDs
-    ggg_cut, new, ggg_ids = set_new_ids(maindb, ggg_meta)
-    nnew = np.sum(new)
-    # Survey flag
-    flag_s = defs.survey_flag(sname)
-    ggg_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    midx = np.array(maindb['IGM_ID'][ggg_ids[~new]])
-    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
-    # Append
-    assert chk_maindb_join(maindb, ggg_cut)
-    maindb = vstack([maindb,ggg_cut], join_type='exact')
-    # Update hf5 file
-    if not mk_test_file:
-        ggg.hdf5_adddata(hdf, ggg_ids, sname)
-
-    # Check for duplicates
-    if not chk_for_duplicates(maindb):
-        raise ValueError("Failed duplicates")
-
-    # Check for junk
 
     # Finish
     hdf['catalog'] = maindb
@@ -188,7 +137,6 @@ def ver01(test=False, mk_test_file=False):
     #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
-
 
 def ver02(test=False, mk_test_file=False, skip_copy=False):
     """ Build version 2.X
