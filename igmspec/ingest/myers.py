@@ -11,13 +11,13 @@ from astropy.io import fits
 
 
 def add_to_hdf(hdf):
-    """ Add Meyers catalog to hdf file
+    """ Add Myers catalog to hdf file
 
     Parameters
     ----------
     hdf : HDF5 file
     """
-    print("Adding Meyers catalog")
+    print("Adding Myers catalog")
     # Load
     ADM_qso, date = load()
     # Add
