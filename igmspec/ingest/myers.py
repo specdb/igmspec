@@ -91,15 +91,20 @@ def zbest_myers(ADM_qso):
                       2**12, 2**13, 2**14, 2**16, 2**17, 2**18]
     myers_source = ['SDSS-HW', 'BOSS', '2QZ', '2SLAQ', 'AUS', 'AGES', 'COSMOS', 'FAN', 'MMT', 'PAPOVICH',
                       'GLIKMAN', 'MADDOX', 'LAMOST', 'MCGREER', 'VCV', 'ALLBOSS']
+    myers_source = [str(msrc) for msrc in myers_source]  # For hdf5
     #; Above gives top priority to HW, and second priority to BOSS
 
     #; Assign the best redshift to Myers targets
     zem = []
     zem_source = []
     for row in ADM_qso:
-         indx = min(np.where(row['SOURCEBIT'] & myers_binary)[0])
-         zem.append(row['ZBEST'][indx])
-         zem_source.append(myers_source[indx])
+        try:
+            indx = min(np.where(row['SOURCEBIT'] & myers_binary)[0])
+        except ValueError:
+            indx = 0
+        # Fill
+        zem.append(row['ZBEST'][indx])
+        zem_source.append(myers_source[indx])
     # Add to Table
     ADM_qso['ZEM'] = zem
     ADM_qso['ZEM_SOURCE'] = zem_source
