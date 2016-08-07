@@ -181,18 +181,9 @@ def ver01(test=False, mk_test_file=False):
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     hdf = h5py.File(outfil,'w')
 
-    # Defs
-    zpri = defs.z_priority()
-    lenz = [len(zpi) for zpi in zpri]
-    dummyf = str('#')*np.max(np.array(lenz))  # For the Table
-    stypes = defs.list_of_stypes()
-    lens = [len(stype) for stype in stypes]
-    dummys = str('#')*np.max(np.array(lens))  # For the Table
-    #cdict = defs.get_cat_dict()
 
     # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
-    idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
-                 flag_zem=dummyf, flag_survey=0, STYPE=dummys)
+    idict = defs.get_db_table_format()
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]
     maindb = Table(lst, names=tkeys)

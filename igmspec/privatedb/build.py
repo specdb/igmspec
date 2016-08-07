@@ -10,7 +10,10 @@ import pdb
 from igmspec import defs
 
 from astropy.table import Table, vstack, Column
+from astropy.coordinates import SkyCoord
 #from astropy import units as u
+
+from linetools import utils as ltu
 
 
 def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
@@ -51,19 +54,75 @@ def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
     # Return
     return pfiles
 
-def mk_meta(files):
+
+def mk_meta(files, fname=False, stype='QSO'):
     """ Generate a meta Table from an input list of files
 
     Parameters
     ----------
     files : list
       List of FITS files
+    fname : bool, optional
+      Attempt to parse RA/DEC from the file name
+      Format must be
+      SDSSJ######(.##)+/-######(.#)[x]
+        where x cannot be a #. or +/-
 
     Returns
     -------
     meta : Table
       Meta table
     """
+    from igmspec.igmspec import IgmSpec
+    igmsp = IgmSpec(skip_test=True)
+    #
+    coordlist = []
+    for ifile in files:
+        if fname:
+            # Starting index
+            if 'SDSSJ' in ifile:
+                i0 = ifile.find('SDSSJ')+4
+            else:
+                i0 = ifile.rfind('J')+1
+            # Find end (ugly)
+            for ii in range(i0+1,99999):
+                if ifile[ii] in ('0','1','2','3','4','5','6','7','8','9',
+                                 '.','+','-'):
+                    continue
+                else:
+                    i1 = ii
+                    break
+        # Get coord
+        coord = ltu.radec_to_coord(ifile[i0:i1])
+        coordlist.append(coord)
+    coords = SkyCoord(ra=[coord.ra.degree for coord in coordlist], dec=[coord.dec.degree for coord in coordlist], unit='deg')
+
+    # Generate Meta Table
+    idict = defs.get_db_table_format()
+    idict['PRIV_ID'] = 0
+    tkeys = idict.keys()
+    lst = [[idict[tkey]] for tkey in tkeys]
+    maindb = Table(lst, names=tkeys)
+
+    # Fill
+    meta = Table()
+    meta['RA'] = coords.ra.deg
+    meta['DEC'] = coords.dec.deg
+    meta['STYPE'] = [stype]*len(coords)
+
+    # Redshift
+    pdb.set_trace()
+
+
+    # Test
+    maindb = vstack([maindb,meta], join_type='exact')
+    maindb = maindb[1:]
+
+    # Add other meta (as desired)
+    return maindb
+
+
+
 
 def ver01(test=False, mk_test_file=False):
     """ Build version 1.0
