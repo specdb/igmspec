@@ -40,7 +40,7 @@ def add_to_flag(cur_flag, add_flag):
 
 
 def chk_maindb_join(maindb, newdb):
-    """ Check that new data is consistent with existing table
+    """Check that new data is consistent with existing table
 
     Parameters
     ----------
