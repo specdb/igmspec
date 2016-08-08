@@ -86,7 +86,7 @@ def zbest_myers(ADM_qso):
     #zstr = replicate(create_struct('ZEM', 0.0, 'ZEM_SOURCE', ''), nmyers)
     #myers = struct_addtags(a, zstr)
     #; Bits for Myers survey SOURCEBIT in order of redshift precedenece
-    #;                 HW  , BOSS , all the rest
+    #;      HW  , BOSS , all the rest
     myers_binary = [2**0, 2**7, 2**1, 2**2, 2**3, 2**4, 2**5, 2**6, 2**8, 2**11,
                       2**12, 2**13, 2**14, 2**16, 2**17, 2**18]
     myers_source = ['SDSS-HW', 'BOSS', '2QZ', '2SLAQ', 'AUS', 'AGES', 'COSMOS', 'FAN', 'MMT', 'PAPOVICH',
@@ -94,7 +94,7 @@ def zbest_myers(ADM_qso):
     myers_source = [str(msrc) for msrc in myers_source]  # For hdf5
     #; Above gives top priority to HW, and second priority to BOSS
 
-    #; Assign the best redshift to Myers targets
+    # Assign the best redshift to Myers targets
     zem = []
     zem_source = []
     for row in ADM_qso:
