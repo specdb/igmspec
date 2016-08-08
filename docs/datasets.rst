@@ -11,10 +11,12 @@ List of Surveys
 
 Below is the list of surveys included in igmspec v1.0
 
-* :doc:`boss`
-* :doc:`hdlls`
-* :doc:`kodiaq`
-* :doc:`sdss`
+* :doc:`boss`  [BOSS_DR12]
+* :doc:`hdlls` [HD-LLS_DR1]
+* :doc:`kodiaq` [KODIAQ_DR1]
+* :doc:`sdss`   [SDSS_DR7]
+* :doc:`ggg`   [GGG]
+* :doc:`hst_z2`   [HST_z2]
 
 Overview
 ========
@@ -39,7 +41,7 @@ zem         float    Emission redshift of background source
 RA          float    Right Ascension (deg)
 DEC         float    Declination (deg)
 EPOCH       float    Coordinate epoch (only 2000 in igmspec v1.0)
-DATE-OBS    str      Date observed (see individual survey notes)
+DATE-OBS    str      Date observed (YYYY-MM-DD)
 R           float    Instrument resolution, :math:`\lambda/\Delta\lambda` (FWHM)
 WV_MIN      float    Minimum wavelength of the spectrum
 WV_MAX      float    Maximum wavelength of the spectrum

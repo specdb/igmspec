@@ -1,103 +1,82 @@
-""" Module to ingest SDSS III (aka BOSS) data products
+""" Module to ingest HD-LLS Survey data
+
+Prochaska et al. 2015
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 
 import numpy as np
-import os, json
 import pdb
+import warnings
+import os, json, glob, imp
 import datetime
 
-from astropy.table import Table, Column, vstack
-from astropy.time import Time
+from astropy.table import Table, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 from astropy import units as u
+from astropy.io import fits
 
-from linetools import utils as ltu
 from linetools.spectra import io as lsio
+from linetools import utils as ltu
 
 from igmspec.ingest import utils as iiu
 
+#igms_path = imp.find_module('igmspec')[1]
+
+
 def grab_meta():
-    """ Grab BOSS meta Table
+    """ Grab KODIAQ meta Table
     Returns
     -------
 
     """
-    #http://www.sdss.org/dr12/algorithms/boss-dr12-quasar-catalog/
-    boss_dr12 = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q.fits.gz')
-    boss_dr12['CAT'] = ['DR12Q']*len(boss_dr12)
-    #
-    boss_sup = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q_sup.fits.gz')
-    boss_sup['CAT'] = ['SUPGD']*len(boss_sup)
-    boss_supbad = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q_supbad.fits.gz')
-    boss_supbad['CAT'] = ['SUPBD']*len(boss_supbad)
-    # Collate
-    boss_meta = vstack([boss_dr12, boss_sup, boss_supbad], join_type='outer')
-    #
-    nboss = len(boss_meta)
-    # DATE-OBS
-    t = Time(list(boss_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
-    boss_meta.add_column(Column(t.iso, name='DATE-OBS'))
-    # Add columns
-    boss_meta.add_column(Column(['BOSS']*nboss, name='INSTR'))
-    boss_meta.add_column(Column(['BOTH']*nboss, name='GRATING'))
-    #http://www.sdss.org/instruments/boss_spectrograph/
-    boss_meta.add_column(Column([2100.]*nboss, name='R'))  # RESOLUTION
-    boss_meta.add_column(Column(['SDSS 2.5-M']*nboss, name='TELESCOPE'))
-    # Redshift logic
-    boss_meta['zem'] = boss_meta['Z_PCA']
-    boss_meta['sig_zem'] = boss_meta['ERR_ZPCA']
-    boss_meta['flag_zem'] = [str('BOSS_PCA ')]*nboss
-    # Fix bad redshifts
-    bad_pca = boss_meta['Z_PCA'] < 0.
-    boss_meta['zem'][bad_pca] = boss_meta['Z_PIPE'][bad_pca]
-    boss_meta['sig_zem'][bad_pca] = boss_meta['ERR_ZPIPE'][bad_pca]
-    boss_meta['flag_zem'][bad_pca] = str('BOSS_PIPE')
-    #
-    return boss_meta
+    hstz2_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HST_z2/hst_z2.ascii', format='ascii')
+    # RA/DEC, DATE
+    ra = []
+    dec = []
+    for row in hstz2_meta:
+        # Fix DEC
+        # Get RA/DEC
+        coord = ltu.radec_to_coord((row['ra'],row['dec']))
+        ra.append(coord.ra.value)
+        dec.append(coord.dec.value)
+    hstz2_meta.add_column(Column(ra, name='RA'))
+    hstz2_meta.add_column(Column(dec, name='DEC'))
+    # RENAME
+    hstz2_meta.rename_column('obsdate','DATE-OBS')
+    hstz2_meta.rename_column('tel','TELESCOPE')
+    hstz2_meta.rename_column('inst','INSTR')
+    hstz2_meta.rename_column('grating','GRATING')
+    hstz2_meta.rename_column('resolution','R')
+    return hstz2_meta
 
 def meta_for_build():
-    """ Load the meta info
-    DR12 quasars : https://data.sdss.org/datamodel/files/BOSS_QSO/DR12Q/DR12Q.html
-
+    """ Generates the meta data needed for the IGMSpec build
     Returns
     -------
-
+    meta : Table
     """
-    boss_meta = grab_meta()
+    # Cut down to unique QSOs
+    hstz2_meta = grab_meta()
+    names = np.array([name[0:26] for name in hstz2_meta['qso']])
+    uni, uni_idx = np.unique(names, return_index=True)
+    hstz2_meta = hstz2_meta[uni_idx]
+    nqso = len(hstz2_meta)
     #
     meta = Table()
-    for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
-        meta[key] = boss_meta[key]
-    meta['STYPE'] = [str('QSO')]*len(meta)
+    meta['RA'] = hstz2_meta['RA']
+    meta['DEC'] = hstz2_meta['DEC']
+    meta['zem'] = hstz2_meta['zem']
+    meta['sig_zem'] = [0.]*nqso
+    meta['flag_zem'] = [str('SDSS_PIPE')]*nqso
+    meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
 
 
-def get_specfil(row):
-    """Grab the BOSS file name + path
-    """
-    # Generate file name (DR4 is different)
-    pnm = '{0:04d}'.format(row['PLATE'])
-    fnm = '{0:04d}'.format(row['FIBERID'])
-    mjd = str(row['MJD'])
-    path = os.getenv('RAW_IGMSPEC')+'/BOSS/'
-    #
-    if row['CAT'] == 'SUPGD':
-        path += 'Sup12/'
-        specfil = path+'spec-{:04d}-{:d}-{:04d}.fits.gz'.format(row['PLATE'], row['MJD'], row['FIBERID'])
-    elif row['CAT'] == 'SUPBD':
-        path += 'SupBad/'
-        specfil = path+'spec-{:04d}-{:d}-{:04d}.fits.gz'.format(row['PLATE'], row['MJD'], row['FIBERID'])
-    else:
-        specfil = 'None'
-    # Finish
-    return specfil
-
-
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
-    """ Add BOSS data to the DB
+def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
+                 mk_test_file=False):
+    """ Append HST_z2 data to the h5 file
 
     Parameters
     ----------
@@ -108,6 +87,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
       Survey name
     chk_meta_only : bool, optional
       Only check meta file;  will not write
+    mk_test_file : bool, optional
+      Generate the debug test file for Travis??
 
     Returns
     -------
@@ -115,12 +96,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     """
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
-    boss_grp = hdf.create_group(sname)
+    hstz2_grp = hdf.create_group(sname)
     # Load up
     meta = grab_meta()
     bmeta = meta_for_build()
     # Checks
-    if sname != 'BOSS_DR12':
+    if sname != 'HST_z2':
         raise IOError("Not expecting this survey..")
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")
@@ -133,42 +114,51 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
     # Find new sources
     idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 1.2*u.arcsec):  # There is one system offset by 1.1"
-        raise ValueError("Bad matches in BOSS")
+    if np.sum(d2d > 0.1*u.arcsec):
+        raise ValueError("Bad matches in HST_z2")
     meta_IDs = IDs[idx]
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
-    # Add zem
+    # Loop me to bid the full survey catalog
+    meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 4650  # Just needs to be large enough
+    max_npix = 300  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
                               (str('sig'),  'float32', (max_npix)),
                               #(str('co'),   'float32', (max_npix)),
-                              ])
+                             ])
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
+    Rlist = []
     wvminlist = []
     wvmaxlist = []
-    speclist = []
+    gratinglist = []
     npixlist = []
+    speclist = []
     # Loop
+    #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
+    path = os.getenv('RAW_IGMSPEC')+'/HST_z2/'
     maxpix = 0
     for jj,row in enumerate(meta):
-        full_file = get_specfil(row)
-        if full_file == 'None':
-            continue
+        # Generate full file
+        if row['INSTR'] == 'ACS':
+            full_file = path+row['qso']+'.fits.gz'
+        elif row['INSTR'] == 'WFC3':
+            coord = ltu.radec_to_coord((row['RA'],row['DEC']))
+            full_file = path+'/J{:s}{:s}_wfc3.fits.gz'.format(coord.ra.to_string(unit=u.hour,sep='',precision=2,pad=True),
+                                               coord.dec.to_string(sep='',pad=True,alwayssign=True,precision=1))
         # Extract
-        print("BOSS: Reading {:s}".format(full_file))
+        print("HST_z2: Reading {:s}".format(full_file))
+        hduf = fits.open(full_file)
+        head = hduf[0].header
+        spec = lsio.readspec(full_file)
         # Parse name
         fname = full_file.split('/')[-1]
-        # Generate full file
-        spec = lsio.readspec(full_file)
         # npix
         npix = spec.npix
         if npix > max_npix:
@@ -186,14 +176,15 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
-        # Only way to set the dataset correctly
         if chk_meta_only:
             continue
+        # Only way to set the dataset correctly
         spec_set[jj] = data
 
     #
     print("Max pix = {:d}".format(maxpix))
     # Add columns
+    meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     meta.add_column(Column(speclist, name='SPEC_FILE'))
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
@@ -208,11 +199,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     else:
         raise ValueError("meta file failed")
     # References
-    refs = [dict(url='http://adsabs.harvard.edu/abs/2015ApJS..219...12A',
-                 bib='boss_qso_dr12'),
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2011ApJS..195...16O',
+                 bib='omeara11')
             ]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
-    pdb.set_trace()
     #
     return
+
