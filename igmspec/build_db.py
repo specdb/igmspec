@@ -183,7 +183,7 @@ def ver01(test=False, mk_test_file=False):
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     hdf = h5py.File(outfil,'w')
 
-    # Myers QSOs
+    ''' Myers QSOs '''
     myers.add_to_hdf(hdf)
 
     # Defs
