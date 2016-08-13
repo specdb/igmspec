@@ -294,6 +294,7 @@ def ver01(test=False, mk_test_file=False):
         raise ValueError("Failed duplicates")
 
     # Check for junk
+    zpri = defs.z_priority()
 
     # Finish
     hdf['catalog'] = maindb

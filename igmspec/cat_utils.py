@@ -3,9 +3,32 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import h5py
+
 from astropy.table import Table
+from astropy.coordinates import SkyCoord
 
 from igmspec import defs as idefs
+
+def z_for_radec(ra, dec, hdf):
+    """ Parse quasar catalog (Myers) for zem
+
+    Parameters
+    ----------
+    ra : list or array
+      RA in deg
+    dec : list or array
+      DEC in deg
+    hdf : pointer to HDF file
+      Must contain quasar catalog in ['quasars']
+
+    Returns
+    -------
+
+    """
+    # Generate coordinates
+    icoord = SkyCoord(ra=ra, dec=dec, unit='deg')
+    # Match to quasar catalog
+    qcoord = SkyCoord(ra=ra, dec=dec, unit='deg')
 
 
 def flag_to_surveys(flag):
