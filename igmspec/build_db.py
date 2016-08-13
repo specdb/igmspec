@@ -18,6 +18,7 @@ from astropy import units as u
 
 def add_to_flag(cur_flag, add_flag):
     """ Add a bitwise flag to an existing flat
+    
     Parameters
     ----------
     cur_flag : int or ndarray
