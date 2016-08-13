@@ -115,6 +115,10 @@ def mk_meta(files, fname=False, stype='QSO'):
 
     # Redshift from Myers
     zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], igmsp.idb.hdf)
+    badz = zem <= 0.
+    if np.sum(badz) > 0:
+        pdb.set_trace()
+    meta['ZEM'] = zem
     pdb.set_trace()
 
     # Stack

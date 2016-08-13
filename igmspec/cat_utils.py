@@ -4,6 +4,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import h5py
+import pdb
 
 from astropy import units as u
 from astropy.table import Table
@@ -41,9 +42,10 @@ def zem_from_radec(ra, dec, hdf, qtoler=2*u.arcsec):
     good = d2d < qtoler
     # Finish
     zem = np.zeros_like(ra)
-    zem[good] = qsos['ZEM'][good]
+    zem[good] = qsos['ZEM'][idx[good]]
     zsource = np.array(['NONENONE']*len(ra))
-    zsource[good] = qsos['ZEM_SOURCE'][good]
+    zsource[good] = qsos['ZEM_SOURCE'][idx[good]]
+    pdb.set_trace()
 
     # Return
     return zem, zsource
