@@ -22,6 +22,12 @@ def add_to_hdf(hdf):
     ADM_qso, date = load()
     # Redshifts
     zbest_myers(ADM_qso)
+    # Cut down
+    ztrim = (ADM_qso['ZEM'] >= 0.1) & (ADM_qso['ZEM'] <= 7.0)
+    coordtrim = (ADM_qso['RA'] >= 0.0) & (ADM_qso['RA'] <= 360.0) & (np.abs(
+            ADM_qso['DEC']) <= 90.0)
+    keep = ztrim & coordtrim
+    ADM_qso = ADM_qso[keep]
     # Add
     hdf['quasars'] = ADM_qso
     hdf['quasars'].attrs['DATE'] = date
@@ -87,8 +93,10 @@ def zbest_myers(ADM_qso):
     #myers = struct_addtags(a, zstr)
     #; Bits for Myers survey SOURCEBIT in order of redshift precedenece
     #;      HW  , BOSS , all the rest
-    myers_binary = [2**0, 2**7, 2**1, 2**2, 2**3, 2**4, 2**5, 2**6, 2**8, 2**11,
-                      2**12, 2**13, 2**14, 2**16, 2**17, 2**18]
+    myers_pref = [0, 7, 1, 2, 3, 4, 5, 6, 8, 11, 12, 13, 14, 16, 17, 18]
+    myers_binary = [2**ipref for ipref in myers_pref]
+    #myers_binary = [2**0, 2**7, 2**1, 2**2, 2**3, 2**4, 2**5, 2**6, 2**8, 2**11,
+    #                  2**12, 2**13, 2**14, 2**16, 2**17, 2**18]
     myers_source = ['SDSS-HW', 'BOSS', '2QZ', '2SLAQ', 'AUS', 'AGES', 'COSMOS', 'FAN', 'MMT', 'PAPOVICH',
                       'GLIKMAN', 'MADDOX', 'LAMOST', 'MCGREER', 'VCV', 'ALLBOSS']
     myers_source = [str(msrc) for msrc in myers_source]  # For hdf5
@@ -103,7 +111,7 @@ def zbest_myers(ADM_qso):
         except ValueError:
             indx = 0
         # Fill
-        zem.append(row['ZBEST'][indx])
+        zem.append(row['ZBEST'][myers_pref[indx]])
         zem_source.append(myers_source[indx])
     # Add to Table
     ADM_qso['ZEM'] = zem
