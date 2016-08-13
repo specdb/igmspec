@@ -2,14 +2,17 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+import numpy as np
 import h5py
 
+from astropy import units as u
 from astropy.table import Table
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, match_coordinates_sky
 
 from igmspec import defs as idefs
 
-def z_for_radec(ra, dec, hdf):
+
+def zem_from_radec(ra, dec, hdf, qtoler=2*u.arcsec):
     """ Parse quasar catalog (Myers) for zem
 
     Parameters
@@ -23,12 +26,27 @@ def z_for_radec(ra, dec, hdf):
 
     Returns
     -------
-
+    zem : array
+      Redshifts
+    zsource : array
+      str array of sources
     """
     # Generate coordinates
     icoord = SkyCoord(ra=ra, dec=dec, unit='deg')
-    # Match to quasar catalog
-    qcoord = SkyCoord(ra=ra, dec=dec, unit='deg')
+    # Quasar catalog
+    qsos = hdf['quasars'].value
+    qcoord = SkyCoord(ra=qsos['RA'], dec=qsos['DEC'], unit='deg')
+    # Match
+    idx, d2d, d3d = match_coordinates_sky(icoord, qcoord, nthneighbor=1)
+    good = d2d < qtoler
+    # Finish
+    zem = np.zeros_like(ra)
+    zem[good] = qsos['ZEM'][good]
+    zsource = np.array(['NONENONE']*len(ra))
+    zsource[good] = qsos['ZEM_SOURCE'][good]
+
+    # Return
+    return zem, zsource
 
 
 def flag_to_surveys(flag):

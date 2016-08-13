@@ -15,6 +15,8 @@ from astropy.coordinates import SkyCoord
 
 from linetools import utils as ltu
 
+from igmspec.cat_utils import zem_from_radec
+
 
 def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
     """ Generate a list of FITS files within the file tree
@@ -112,6 +114,7 @@ def mk_meta(files, fname=False, stype='QSO'):
     meta['PRIV_ID'] = np.arange(len(meta)).astype(int)
 
     # Redshift from Myers
+    zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], igmsp.idb.hdf)
     pdb.set_trace()
 
     # Stack
