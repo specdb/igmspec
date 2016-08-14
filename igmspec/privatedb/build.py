@@ -4,17 +4,21 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import os, glob
+import json
 import h5py
+import datetime
 import warnings
 import pdb
 
+
 from igmspec import defs
+from igmspec.ingest import utils as iiu
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord
-#from astropy import units as u
 
 from linetools import utils as ltu
+from linetools.spectra import io as lsio
 
 from igmspec.cat_utils import zem_from_radec
 
@@ -134,13 +138,120 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False):
     # Cut
     meta = meta[~badz]
 
-    # Stack (primarly as a test)
+    # Stack (primarily as a test)
     maindb = vstack([maindb,meta], join_type='exact')
     maindb = maindb[1:]
 
-    # Add other meta (as desired)
+    # Add other meta info (as desired)
+    maindb['SPEC_FILE'] = np.array(files)[~badz]
+    # Return
     return maindb
 
+
+def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False):
+    """ Ingest the spectra
+    Parameters
+    ----------
+    hdf : hdf5 pointer
+    sname : str
+      Name of dataset
+    meta : Table
+    max_npix : int, optional
+      Maximum length of the spectra
+    chk_meta_only : bool, optional
+      Only check meta file;  will not write
+
+    Returns
+    -------
+
+    """
+    # Add Survey
+    print("Adding {:s} survey to DB".format(sname))
+    kodiaq_grp = hdf.create_group(sname)
+    # Spectra
+    nspec = len(meta)
+    data = np.ma.empty((1,),
+                       dtype=[(str('wave'), 'float64', (max_npix)),
+                              (str('flux'), 'float32', (max_npix)),
+                              (str('sig'),  'float32', (max_npix)),
+                              #(str('co'),   'float32', (max_npix)),
+                             ])
+    # Init
+    #full_idx = np.zeros(len(hdlls_full), dtype=int)
+    spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
+                                         maxshape=(None,), compression='gzip')
+    spec_set.resize((nspec,))
+    Rlist = []
+    wvminlist = []
+    wvmaxlist = []
+    dateobslist = []
+    npixlist = []
+    instrlist = []
+    gratinglist = []
+    telelist = []
+    # Loop
+    for jj,member in enumerate(meta['SPEC_FILE']):
+        # Extract
+        f = member
+        spec = lsio.readspec(f)
+        # Parse name
+        fname = f.split('/')[-1]
+        # npix
+        head = spec.header
+        npix = spec.npix
+        if npix > max_npix:
+            raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
+        # Some fiddling about
+        for key in ['wave','flux','sig']:
+            data[key] = 0.  # Important to init (for compression too)
+        data['flux'][0][:npix] = spec.flux.value
+        data['sig'][0][:npix] = spec.sig.value
+        data['wave'][0][:npix] = spec.wavelength.value
+        # Meta
+        wvminlist.append(np.min(data['wave'][0][:npix]))
+        wvmaxlist.append(np.max(data['wave'][0][:npix]))
+        npixlist.append(npix)
+        # Dummy
+        instrlist.append('HIRES')
+        telelist.append('Keck-I')
+        gratinglist.append('BOTH')
+        #Rlist.append(iiu.set_resolution(head))
+        Rlist.append(2000.)
+        tval = datetime.datetime.strptime(head['DATE-OBS'], '%Y-%m-%d')
+        dateobslist.append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
+        #if chk_meta_only:
+        #    continue
+        # Set
+        spec_set[jj] = data
+
+    # Add columns
+    nmeta = len(meta)
+    meta.add_column(Column([2000.]*nmeta, name='EPOCH'))
+    meta.add_column(Column(npixlist, name='NPIX'))
+    meta.add_column(Column([str(date) for date in dateobslist], name='DATE-OBS'))
+    meta.add_column(Column(wvminlist, name='WV_MIN'))
+    meta.add_column(Column(wvmaxlist, name='WV_MAX'))
+    meta.add_column(Column(Rlist, name='R'))
+    meta.add_column(Column(np.arange(nmeta,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(gratinglist, name='GRATING'))
+    meta.add_column(Column(instrlist, name='INSTR'))
+    meta.add_column(Column(telelist, name='TELESCOPE'))
+
+    # Add HDLLS meta to hdf5
+    if iiu.chk_meta(meta, skip_igmid=True):
+        if chk_meta_only:
+            pdb.set_trace()
+        hdf[sname]['meta'] = meta
+    else:
+        raise ValueError("meta file failed")
+    # References
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2015ApJS..221....2P',
+                 bib='prochaska+15'),
+            ]
+    jrefs = ltu.jsonify(refs)
+    hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
+    #
+    return
 
 
 def ver01(test=False, mk_test_file=False):
