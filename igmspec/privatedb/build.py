@@ -40,7 +40,7 @@ def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
 
     """
     walk = os.walk(tree_root)
-    folders = ['.']
+    folders = ['/.']
     pfiles = []
     while len(folders) > 0:
         # Search for fits files
@@ -148,7 +148,8 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False):
     return maindb
 
 
-def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False):
+def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
+                   refs=None):
     """ Ingest the spectra
     Parameters
     ----------
@@ -160,6 +161,8 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False):
       Maximum length of the spectra
     chk_meta_only : bool, optional
       Only check meta file;  will not write
+    refs : list, optional
+      list of dicts with reference info
 
     Returns
     -------
@@ -245,11 +248,9 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False):
     else:
         raise ValueError("meta file failed")
     # References
-    refs = [dict(url='http://adsabs.harvard.edu/abs/2015ApJS..221....2P',
-                 bib='prochaska+15'),
-            ]
-    jrefs = ltu.jsonify(refs)
-    hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
+    if refs is not None:
+        jrefs = ltu.jsonify(refs)
+        hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return
 
