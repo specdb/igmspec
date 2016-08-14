@@ -45,7 +45,6 @@ def zem_from_radec(ra, dec, hdf, qtoler=2*u.arcsec):
     zem[good] = qsos['ZEM'][idx[good]]
     zsource = np.array(['NONENONE']*len(ra))
     zsource[good] = qsos['ZEM_SOURCE'][idx[good]]
-    pdb.set_trace()
 
     # Return
     return zem, zsource

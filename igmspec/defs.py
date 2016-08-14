@@ -56,6 +56,8 @@ def list_of_stypes():
 
 def z_priority():
     """ List of redshift priorities for setting the DB redshift
+    See also myers.zbest_myers
+
     Returns
     -------
     zpri : list
@@ -63,9 +65,23 @@ def z_priority():
     """
     zpri = [
         str('GGG'),        # GGG redshifts
+        str('SDSS-HW'),    # SDSS redshifts with Hewitt&Wild
         str('BOSS_PCA'),   # PCA analysis by Paris et al. 2015 on BOSS spectra
         str('BOSS_PIPE'),  # BOSS Pipeline redshifts
-        str('SDSS_PIPE'),  # BOSS Pipeline redshifts
+        str('2QZ'),        #
+        str('2SLAQ'),      #
+        str('AUS'),
+        str('AGES'),
+        str('COSMOS'),
+        str('FAN'),
+        str('MMT'),
+        str('PAPOVICH'),
+        str('GLIKMAN'),
+        str('MADDOX'),
+        str('LAMOST'),
+        str('MCGREER'),
+        str('VCV'),
+        str('ALLBOSS'),
         str('UNKN'),       # Unknown
     ]
     return zpri

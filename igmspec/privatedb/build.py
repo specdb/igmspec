@@ -5,6 +5,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import os, glob
 import h5py
+import warnings
 import pdb
 
 from igmspec import defs
@@ -57,7 +58,7 @@ def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
     return pfiles
 
 
-def mk_meta(files, fname=False, stype='QSO'):
+def mk_meta(files, fname=False, stype='QSO', skip_badz=False):
     """ Generate a meta Table from an input list of files
 
     Parameters
@@ -69,6 +70,8 @@ def mk_meta(files, fname=False, stype='QSO'):
       Format must be
       SDSSJ######(.##)+/-######(.#)[x]
         where x cannot be a #. or +/-
+    skip_badz : bool, optional
+      Skip spectra without a parseable redshift (using the Myers catalog)
 
     Returns
     -------
@@ -102,6 +105,7 @@ def mk_meta(files, fname=False, stype='QSO'):
     # Generate Meta Table
     idict = defs.get_db_table_format()
     idict['PRIV_ID'] = 0
+    idict.pop('IGM_ID')
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]
     maindb = Table(lst, names=tkeys)
@@ -110,24 +114,32 @@ def mk_meta(files, fname=False, stype='QSO'):
     meta = Table()
     meta['RA'] = coords.ra.deg
     meta['DEC'] = coords.dec.deg
-    meta['STYPE'] = [stype]*len(coords)
+    meta['STYPE'] = [stype]*len(meta)
     meta['PRIV_ID'] = np.arange(len(meta)).astype(int)
+    meta['flag_survey'] = [1]*len(meta)
 
     # Redshift from Myers
     zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], igmsp.idb.hdf)
     badz = zem <= 0.
     if np.sum(badz) > 0:
-        pdb.set_trace()
-    meta['ZEM'] = zem
-    pdb.set_trace()
+        if skip_badz:
+            warnings.warn("Skipping {:d} entries without a parseable redshift".format(
+                np.sum(badz)))
+        else:
+            raise ValueError("{:d} entries without a parseable redshift".format(
+                np.sum(badz)))
+    meta['zem'] = zem
+    meta['sig_zem'] = 0.  # Need to add
+    meta['flag_zem'] = zsource
+    # Cut
+    meta = meta[~badz]
 
-    # Stack
+    # Stack (primarly as a test)
     maindb = vstack([maindb,meta], join_type='exact')
     maindb = maindb[1:]
 
     # Add other meta (as desired)
     return maindb
-
 
 
 
