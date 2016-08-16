@@ -11,7 +11,7 @@ import numbers
 import pdb
 
 from igmspec import defs
-from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers
+from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, xq100, myers
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -42,7 +42,7 @@ def add_to_flag(cur_flag, add_flag):
 
 
 def chk_maindb_join(maindb, newdb):
-    """ Check that new data is consistent with existing table
+    """Check that new data is consistent with existing table
 
     Parameters
     ----------
@@ -343,7 +343,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
     v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     print("Loading v01")
     v01hdf = h5py.File(v01file,'r')
-    maindb = v01hdf['catalog'].value
+    maindb = Table(v01hdf['catalog'].value)
 
     # Start new file
     version = 'v02'
@@ -383,6 +383,26 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Finish
         test = True
         maindb = dmaindb
+
+    ''' XQ-100 '''
+    if not mk_test_file:
+        sname = 'XQ-100'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        xq100_meta = xq100.meta_for_build()
+        # IDs
+        xq100_cut, new, xq100_ids = set_new_ids(maindb, xq100_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        xq100_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][xq100_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, xq100_cut)
+        maindb = vstack([maindb, xq100_cut], join_type='exact')
+        # Update hf5 file
+        xq100.hdf5_adddata(hdf, xq100_ids, sname)#, mk_test_file=mk_test_file)
 
     ''' HST_z2 '''
     if not mk_test_file:

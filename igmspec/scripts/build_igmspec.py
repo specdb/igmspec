@@ -46,7 +46,7 @@ def main(args=None):
     # Run
     if pargs.version is None:
         print("Building v01 of the igmspec DB")
-        build_db.ver01(test=pargs.test, mk_test_file=pargs.mk_test_file)
+        build_db.ver02(test=pargs.test, mk_test_file=pargs.mk_test_file)
     elif pargs.version == 'v01':
         print("Building v01 of the igmspec DB")
         build_db.ver01(test=pargs.test, mk_test_file=pargs.mk_test_file)
