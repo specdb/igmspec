@@ -65,6 +65,7 @@ def grab_meta():
 
 def meta_for_build():
     """ Load the meta info
+    
     JXP made DR7 -- Should add some aspect of the official list..
       Am worried about the coordinates some..
 
