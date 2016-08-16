@@ -32,24 +32,43 @@ def grab_meta():
     -------
 
     """
-    # This table has units in it!
-    xq100_table = Table.read(os.getenv('RAW_IGMSPEC')+'/XQ-100/XQ100_v1_2.fits')
+    #
+    xq100_table = Table.read(os.getenv('RAW_IGMSPEC')+'/XQ-100/XQ100_v1_2.fits.gz')
     nqso = len(xq100_table)
+    # ESO meta
+    eso_tbl = Table.read(os.getenv('RAW_IGMSPEC')+'/XQ-100/metadata_eso_XQ100.csv', format='ascii.csv')
+    ar_files = eso_tbl['ARCFILE'].data
     # Spectral files
     spec_files = glob.glob(os.getenv('RAW_IGMSPEC')+'/XQ-100/ADP.*')
     # Dummy column
     xq100_coords = SkyCoord(ra=xq100_table['RA'], dec=xq100_table['DEC'], unit='deg')
     matches = []
     sv_spec_files = []
+    sv_orig_files = []
+    sv_rescale_files = []
     for spec_file in spec_files:
         if 'ADP.2016-07-15T08:22:40.682.fits' in spec_file:
             print("XQ-100: Skipping summary file")
+            continue
+        # ESO file
+        ssfile = spec_file[spec_file.rfind('/')+1:-5]
+        eso_mt = np.where(ar_files == ssfile)[0]
+        try:
+            ofile = eso_tbl['ORIGFILE'][eso_mt][0]
+        except IndexError:
+            print("XQ-100: File {:s} not really in XQ100!".format(spec_file))
+            continue
+        if ('_1' in ofile) or ('_2' in ofile) or ('_3' in ofile) or ('_4' in ofile):
+            print("XQ-100: Skipping additional file: {:s}".format(ofile))
             continue
         # Match
         hdu = fits.open(spec_file)
         head0 = hdu[0].header
         if head0['DISPELEM'] == 'UVB,VIS,NIR':
             print("XQ-100: Skipping merged spectrum file")
+            if 'rescale' not in ofile:
+                print('no rescale')
+                pdb.set_trace()
             continue
         try:
             coord = SkyCoord(ra=head0['RA'], dec=head0['DEC'], unit='deg')
@@ -63,11 +82,13 @@ def grab_meta():
         # Save
         matches.append(imt)
         sv_spec_files.append(spec_file)
-    #
+        sv_orig_files.append(ofile)
+    # Finish up
     xq100_meta = xq100_table[np.array(matches)]
     nspec = len(xq100_meta)
     # Add spec_files
     xq100_meta['SPEC_FILE'] = sv_spec_files
+    xq100_meta['ORIG_FILE'] = sv_orig_files
     # Add zem
     xq100_meta['zem'] = xq100_meta['Z_QSO']
     xq100_meta['sig_zem'] = xq100_meta['ERR_ZQSO']
@@ -131,6 +152,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     # Load up
     meta = grab_meta()
     bmeta = meta_for_build(xq100_meta=meta)
+    eso_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/XQ-100/metadata_eso_XQ100.csv', format='ascii.csv')
+    if len(meta) != 300:
+        pdb.set_trace()
     # Checks
     if sname != 'XQ-100':
         raise IOError("Expecting XQ-100!!")
@@ -157,7 +181,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
                               (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
+                              (str('co'),   'float32', (max_npix)),
                              ])
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
@@ -185,12 +209,14 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
         else:
             maxpix = max(npix,maxpix)
+        # Continuum
         # Some fiddling about
         for key in ['wave','flux','sig']:
             data[key] = 0.  # Important to init (for compression too)
         data['flux'][0][:npix] = spec.flux.value
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.to('AA').value
+        data['co'][0][:npix] = spec.co.value
         # Meta
         head = spec.header
         speclist.append(str(fname))
