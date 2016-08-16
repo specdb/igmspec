@@ -12,7 +12,7 @@ Sources
 The XQ-100 survey is a Large Programme and public spectral data release of
 100 quasars observed with the X-SHOOTER spectrometer on the VLT telescope.
 The full Data Release became available in 2016, as described in
-`Lopez et al. (2016)`.
+`Lopez et al. (2016) <http://adsabs.harvard.edu/abs/2016arXiv160708776L>`.
 
 
 Meta Data
@@ -26,6 +26,7 @@ full details.
 Spectra
 =======
 
-In igmspec v2.0 are all of the spectra released in
+In igmspec v2.0 are all of the combined spectra released in
 XQ-100 except the 3-arm stitched products.  That is, each
 spectrum is from an individual camera of X-SHOOTER.
+This includes the continuum that was ingested in the ESO archive.

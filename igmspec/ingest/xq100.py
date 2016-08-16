@@ -261,7 +261,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         raise ValueError("meta file failed")
 
     # References
-    refs = [dict(url='',
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2016arXiv160708776L',
                  bib='lopez+16')]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
