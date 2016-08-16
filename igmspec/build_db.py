@@ -4,12 +4,14 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import igmspec
+import os
+
 import h5py
 import numbers
 import pdb
 
 from igmspec import defs
-from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, xq100
+from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, xq100, myers
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -180,6 +182,9 @@ def ver01(test=False, mk_test_file=False):
     else:
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     hdf = h5py.File(outfil,'w')
+
+    # Myers QSOs
+    myers.add_to_hdf(hdf)
 
     # Defs
     zpri = defs.z_priority()
