@@ -19,6 +19,7 @@ from linetools.spectra import io as lsio
 
 from igmspec.ingest import utils as iiu
 
+
 def grab_meta():
     """ Grab BOSS meta Table
     Returns
@@ -57,6 +58,7 @@ def grab_meta():
     boss_meta['flag_zem'][bad_pca] = str('BOSS_PIPE')
     #
     return boss_meta
+
 
 def meta_for_build():
     """ Load the meta info
@@ -199,14 +201,16 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             hduKG = fits.open(KG_file)
             KGtbl = hduKG[1].data
             wvKG = 10.**KGtbl['LOGLAM']
-            pdb.set_trace()
             try:
                 assert (wvKG[0]-spec.wavelength[0].value) < 1e-5
             except:
                 pdb.set_trace()
             gdpix = np.where(wvKG < (1+row['zem'])*1200.)[0]
             co[gdpix] = KGtbl['CONT'][gdpix]
-        data['wave'][0][:npix] = co
+            #from xastropy.xutils import xdebug as xdb
+            #xdb.set_trace()
+            #xdb.xplot(data['wave'][0][0:npix], data['flux'][0][0:npix], co)
+        data['co'][0][:npix] = co
         # Meta
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
@@ -216,7 +220,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         if chk_meta_only:
             continue
         spec_set[jj] = data
-        pdb.set_trace()
 
     #
     print("Max pix = {:d}".format(maxpix))
