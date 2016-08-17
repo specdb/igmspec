@@ -158,6 +158,23 @@ def set_new_ids(maindb, newdb, chk=True):
     #
     return cut_db, new, ids
 
+def start_maindb():
+    """ Start the main DB catalog
+
+    Returns
+    -------
+    maindb : Table
+    tkeys : list
+      List of columns in the table
+
+    """
+    idict = defs.get_db_table_format()
+    tkeys = idict.keys()
+    lst = [[idict[tkey]] for tkey in tkeys]
+    maindb = Table(lst, names=tkeys)
+    # Return
+    return maindb, tkeys
+
 
 def ver01(test=False, mk_test_file=False):
     """ Build version 1.0
@@ -187,11 +204,8 @@ def ver01(test=False, mk_test_file=False):
     # Myers QSOs
     myers.add_to_hdf(hdf)
 
-    # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
-    idict = defs.get_db_table_format()
-    tkeys = idict.keys()
-    lst = [[idict[tkey]] for tkey in tkeys]
-    maindb = Table(lst, names=tkeys)
+    # Main DB Table
+    maindb, tkeys = start_maindb()
 
     ''' BOSS_DR12 '''
     # Read

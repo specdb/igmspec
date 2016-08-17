@@ -21,6 +21,7 @@ from linetools import utils as ltu
 from linetools.spectra import io as lsio
 
 from igmspec.cat_utils import zem_from_radec
+from igmspec import build_db as ibdb
 
 
 def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
@@ -62,7 +63,7 @@ def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
     return pfiles
 
 
-def mk_meta(files, fname=False, stype='QSO', skip_badz=False):
+def mk_meta(files, fname=False, stype='QSO', skip_badz=False, **kwargs):
     """ Generate a meta Table from an input list of files
 
     Parameters
@@ -255,74 +256,52 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
     return
 
 
-def ver01(test=False, mk_test_file=False):
-    """ Build version 1.0
+def mk_db(trees, names, outfil, **kwargs):
+    """ Generate the DB
 
     Parameters
     ----------
-    test : bool, optional
-      Run test only
-    mk_test_file : bool, optional
-      Generate the test file for Travis tests?
-      Writes catalog and HD-LLS dataset only
+    trees : list
+      List of top level paths for the FITS files
+    names : list
+      List of names for the various datasets
+    outfil : str
+      Output file name for the hdf5 file
 
     Returns
     -------
 
     """
-    version = 'v01'
     # HDF5 file
-    if mk_test_file:
-        outfil = igmspec.__path__[0]+'/tests/files/IGMspec_DB_{:s}_debug.hdf5'.format(version)
-        print("Building debug file: {:s}".format(outfil))
-        test = True
-    else:
-        outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     hdf = h5py.File(outfil,'w')
 
     # Defs
     zpri = defs.z_priority()
-    lenz = [len(zpi) for zpi in zpri]
-    dummyf = str('#')*np.max(np.array(lenz))  # For the Table
-    stypes = defs.list_of_stypes()
-    lens = [len(stype) for stype in stypes]
-    dummys = str('#')*np.max(np.array(lens))  # For the Table
-    #cdict = defs.get_cat_dict()
 
-    # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
-    idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
-                 flag_zem=dummyf, flag_survey=0, STYPE=dummys)
-    tkeys = idict.keys()
-    lst = [[idict[tkey]] for tkey in tkeys]
-    maindb = Table(lst, names=tkeys)
+    # Main DB Table
+    maindb, tkeys = ibdb.start_maindb()
 
-    ''' BOSS_DR12 '''
-    # Read
-    boss_meta = boss.meta_for_build()
-    nboss = len(boss_meta)
-    # IDs
-    boss_ids = np.arange(nboss,dtype=int)
-    boss_meta.add_column(Column(boss_ids, name='IGM_ID'))
-    # Survey flag
-    flag_s = defs.survey_flag('BOSS_DR12')
-    boss_meta.add_column(Column([flag_s]*nboss, name='flag_survey'))
-    # Check
-    assert chk_maindb_join(maindb, boss_meta)
-    # Append
-    maindb = vstack([maindb,boss_meta], join_type='exact')
-    if mk_test_file:
-        maindb = maindb[1:100]  # Eliminate dummy line
-    else:
-        maindb = maindb[1:]  # Eliminate dummy line
-    #if not test:
-    #    boss.hdf5_adddata(hdf, sdss_ids, sname)
-
+    # MAIN LOOP
+    for ss,tree in enumerate(trees):
+        # Files
+        fits_files = grab_files(tree)
+        # Meta
+        full_meta = mk_meta(fits_files, **kwargs)
+        # Catalog
+        cat_meta = full_meta[tkeys]
+        assert ibdb.chk_maindb_join(maindb, cat_meta)
+        # Append
+        maindb = vstack([maindb,cat_meta], join_type='exact')
+        if ss == 0:
+            maindb = maindb[1:]  # Eliminate dummy line
+        # Ingest
+        ingest_spectra(hdf, names[ss], full_meta)
 
     # Finish
     hdf['catalog'] = maindb
     hdf['catalog'].attrs['EPOCH'] = 2000.
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
-    hdf['catalog'].attrs['VERSION'] = version
+    #hdf['catalog'].attrs['VERSION'] = version
     #hdf['catalog'].attrs['CAT_DICT'] = cdict
     #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
     hdf.close()
