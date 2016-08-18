@@ -1,48 +1,54 @@
-""" Module to ingest GGG Survey data
+""" Module to ingest HD-LLS Survey data
 
-Worseck et al. 2014
+Prochaska et al. 2015
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 
 import numpy as np
 import pdb
-import os
-import imp
-import json
+import warnings
+import os, json, glob, imp
+import datetime
 
-from astropy.table import Table, Column, vstack
-from astropy.time import Time
+from astropy.table import Table, Column
+from astropy.coordinates import SkyCoord, match_coordinates_sky
+from astropy import units as u
+from astropy.io import fits
 
 from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
 from igmspec.ingest import utils as iiu
 
-igms_path = imp.find_module('igmspec')[1]
+#igms_path = imp.find_module('igmspec')[1]
 
 
 def grab_meta():
-    """ Grab GGG meta Table
+    """ Grab KODIAQ meta Table
     Returns
     -------
 
     """
-    # This table has units in it!
-    ggg_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/GGG/GGG_catalog.fits.gz')
-    nqso = len(ggg_meta)
-    # Turn off RA/DEC units
-    for key in ['RA', 'DEC']:
-        ggg_meta[key].unit = None
-    #
-    # Add zem
-    ggg_meta['zem'] = ggg_meta['z_gmos']
-    ggg_meta['sig_zem'] = ggg_meta['zerror_gmos']
-    ggg_meta['flag_zem'] = [str('GGG')]*nqso
-    ggg_meta.add_column(Column([2000.]*nqso, name='EPOCH'))
-    #
-    return ggg_meta
-
+    hstz2_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HST_z2/hst_z2.ascii', format='ascii')
+    # RA/DEC, DATE
+    ra = []
+    dec = []
+    for row in hstz2_meta:
+        # Fix DEC
+        # Get RA/DEC
+        coord = ltu.radec_to_coord((row['ra'],row['dec']))
+        ra.append(coord.ra.value)
+        dec.append(coord.dec.value)
+    hstz2_meta.add_column(Column(ra, name='RA'))
+    hstz2_meta.add_column(Column(dec, name='DEC'))
+    # RENAME
+    hstz2_meta.rename_column('obsdate','DATE-OBS')
+    hstz2_meta.rename_column('tel','TELESCOPE')
+    hstz2_meta.rename_column('inst','INSTR')
+    hstz2_meta.rename_column('grating','GRATING')
+    hstz2_meta.rename_column('resolution','R')
+    return hstz2_meta
 
 def meta_for_build():
     """ Generates the meta data needed for the IGMSpec build
@@ -50,23 +56,27 @@ def meta_for_build():
     -------
     meta : Table
     """
-    ggg_meta = grab_meta()
     # Cut down to unique QSOs
-    names = np.array([name[0:26] for name in ggg_meta['SDSSJ']])
+    hstz2_meta = grab_meta()
+    names = np.array([name[0:26] for name in hstz2_meta['qso']])
     uni, uni_idx = np.unique(names, return_index=True)
-    ggg_meta = ggg_meta[uni_idx]
-    nqso = len(ggg_meta)
+    hstz2_meta = hstz2_meta[uni_idx]
+    nqso = len(hstz2_meta)
     #
     meta = Table()
-    for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
-        meta[key] = ggg_meta[key]
+    meta['RA'] = hstz2_meta['RA']
+    meta['DEC'] = hstz2_meta['DEC']
+    meta['zem'] = hstz2_meta['zem']
+    meta['sig_zem'] = [0.]*nqso
+    meta['flag_zem'] = [str('SDSS_PIPE')]*nqso
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
-    """ Append GGG data to the h5 file
+def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
+                 mk_test_file=False):
+    """ Append HST_z2 data to the h5 file
 
     Parameters
     ----------
@@ -77,6 +87,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
       Survey name
     chk_meta_only : bool, optional
       Only check meta file;  will not write
+    mk_test_file : bool, optional
+      Generate the debug test file for Travis??
 
     Returns
     -------
@@ -84,12 +96,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     """
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
-    ggg_grp = hdf.create_group(sname)
+    hstz2_grp = hdf.create_group(sname)
     # Load up
     meta = grab_meta()
     bmeta = meta_for_build()
     # Checks
-    if sname != 'GGG':
+    if sname != 'HST_z2':
         raise IOError("Not expecting this survey..")
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")
@@ -98,16 +110,20 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         raise ValueError("Wrong sized table..")
 
     # Generate ID array from RA/DEC
-    meta_IDs = IDs
+    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
+    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
+    # Find new sources
+    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
+    if np.sum(d2d > 0.1*u.arcsec):
+        raise ValueError("Bad matches in HST_z2")
+    meta_IDs = IDs[idx]
+
+    # Loop me to bid the full survey catalog
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
-
-
-    # Double up for the two gratings
-    meta = vstack([meta,meta])
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 1600  # Just needs to be large enough
+    max_npix = 300  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -121,25 +137,25 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     Rlist = []
     wvminlist = []
     wvmaxlist = []
+    gratinglist = []
     npixlist = []
     speclist = []
-    gratinglist = []
-    telelist = []
-    dateobslist = []
-    instrlist = []
     # Loop
-    path = os.getenv('RAW_IGMSPEC')+'/GGG/'
+    #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
+    path = os.getenv('RAW_IGMSPEC')+'/HST_z2/'
     maxpix = 0
     for jj,row in enumerate(meta):
         # Generate full file
-        if jj >= nspec//2:
-            full_file = path+row['name']+'_R400.fits.gz'
-            gratinglist.append('R400')
-        else:
-            full_file = path+row['name']+'_B600.fits.gz'
-            gratinglist.append('B400')
+        if row['INSTR'] == 'ACS':
+            full_file = path+row['qso']+'.fits.gz'
+        elif row['INSTR'] == 'WFC3':
+            coord = ltu.radec_to_coord((row['RA'],row['DEC']))
+            full_file = path+'/J{:s}{:s}_wfc3.fits.gz'.format(coord.ra.to_string(unit=u.hour,sep='',precision=2,pad=True),
+                                               coord.dec.to_string(sep='',pad=True,alwayssign=True,precision=1))
         # Extract
-        print("GGG: Reading {:s}".format(full_file))
+        print("HST_z2: Reading {:s}".format(full_file))
+        hduf = fits.open(full_file)
+        head = hduf[0].header
         spec = lsio.readspec(full_file)
         # Parse name
         fname = full_file.split('/')[-1]
@@ -156,36 +172,23 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
         # Meta
-        head = spec.header
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
-        telelist.append(head['OBSERVAT'])
-        instrlist.append(head['INSTRUME'])
-        tval = Time(head['DATE'], format='isot', out_subfmt='date')
-        dateobslist.append(tval.iso)
         npixlist.append(npix)
-        if 'R400' in fname:
-            Rlist.append(833.)
-        else:
-            Rlist.append(940.)
-        # Only way to set the dataset correctly
         if chk_meta_only:
             continue
+        # Only way to set the dataset correctly
         spec_set[jj] = data
 
     #
     print("Max pix = {:d}".format(maxpix))
     # Add columns
+    meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     meta.add_column(Column(speclist, name='SPEC_FILE'))
-    meta.add_column(Column(gratinglist, name='GRATING'))
-    meta.add_column(Column(telelist, name='TELESCOPE'))
-    meta.add_column(Column(instrlist, name='INSTR'))
-    meta.add_column(Column(dateobslist, name='DATE-OBS'))
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    meta.add_column(Column(Rlist, name='R'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
@@ -195,13 +198,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         hdf[sname]['meta'] = meta
     else:
         raise ValueError("meta file failed")
-
     # References
-    refs = [dict(url='http://adsabs.harvard.edu/abs/2014MNRAS.445.1745W',
-                 bib='worseck+14')]
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2011ApJS..195...16O',
+                 bib='omeara11')
+            ]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return
-
 

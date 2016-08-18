@@ -9,12 +9,12 @@ def parser(options=None):
 
     import argparse
 
-    parser = argparse.ArgumentParser(description='plot_igmspec script v0.1')
+    parser = argparse.ArgumentParser(description='plot_igmspec script v0.2')
     parser.add_argument("coord", type=str, help="Coordinates, e.g. J081240+320808")
     parser.add_argument("--tol", default=5., type=float, help="Maximum offset in arcsec [default=5.]")
     parser.add_argument("--meta", default=True, help="Show meta data? [default: True]", action="store_true")
-    parser.add_argument("--survey", help="Name of Survey to use")
-    parser.add_argument("--select", default=0, type=int, help="Name of Survey to use [default: 0]")
+    parser.add_argument("-s", "--survey", help="Name of Survey to use")
+    parser.add_argument("--select", default=0, type=int, help="Index of spectrum to plot (when multiple exist)")
     parser.add_argument("--mplot", default=False, help="Use simple matplotlib plot [default: False]")
 
     if options is None:
@@ -24,7 +24,7 @@ def parser(options=None):
     return args
 
 
-def main(args, unit_test=False):
+def main(args, unit_test=False, **kwargs):
     """ Run
     """
 
@@ -33,10 +33,10 @@ def main(args, unit_test=False):
     from igmspec import cat_utils as icu
 
     # init
-    igsmp = IgmSpec()
+    igmsp = IgmSpec(**kwargs)
 
     # Grab
-    all_spec, all_meta = igsmp.spec_from_coord(args.coord, tol=args.tol*u.arcsec, isurvey=args.survey)
+    all_spec, all_meta = igmsp.spec_from_coord(args.coord, tol=args.tol*u.arcsec, isurvey=args.survey)
 
     # Outcome
     if len(all_meta) == 0:
@@ -56,10 +56,12 @@ def main(args, unit_test=False):
         #print("Choose another survey from this list (as you wish): {}".format(surveys))
 
     if args.meta:
-        igsmp.idb.show_meta()
+        igmsp.idb.show_meta()
 
     # Load spectra
     spec.select = args.select
+    if unit_test:
+        return
     # Show  [may transition to xspec]
     if args.mplot:
         spec.plot()

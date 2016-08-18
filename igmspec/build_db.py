@@ -4,15 +4,18 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import igmspec
+import os
+
 import h5py
 import numbers
 import pdb
 
 from igmspec import defs
-from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss
+from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
+from astropy import units as u
 
 
 def add_to_flag(cur_flag, add_flag):
@@ -61,8 +64,32 @@ def chk_maindb_join(maindb, newdb):
     return True
 
 
+def chk_for_duplicates(maindb):
+    """ Generate new IGM_IDs for an input DB
+
+    Parameters
+    ----------
+    maindb : Table
+
+    Return
+    ------
+    result : bool
+      * True = pass
+      * False = fail
+    """
+    c_main = SkyCoord(ra=maindb['RA'], dec=maindb['DEC'], unit='deg')
+    # Find candidate dups
+    idx, d2d, d3d = match_coordinates_sky(c_main, c_main, nthneighbor=2)
+    cand_dups = d2d < 2*u.arcsec
+    # Finish
+    if np.sum(cand_dups) > 0:
+        return False
+    else:
+        return True
+
 def get_new_ids(maindb, newdb, chk=True):
     """ Generate new IGM_IDs for an input DB
+
     Parameters
     ----------
     maindb : Table
@@ -85,9 +112,8 @@ def get_new_ids(maindb, newdb, chk=True):
     # Find new sources
     idx, d2d, d3d = match_coordinates_sky(c_new, c_main, nthneighbor=1)
     new = d2d > cdict['match_toler']
-    #
     # Old IDs
-    IDs[~new] = -1 * maindb[idx[~new]]['IGM_ID']
+    IDs[~new] = -1 * maindb['IGM_ID'][idx[~new]]
     nnew = np.sum(new)
     # New IDs
     if nnew > 0:
@@ -132,26 +158,46 @@ def set_new_ids(maindb, newdb, chk=True):
     return cut_db, new, ids
 
 
-def ver01(test=False):
-    """ Build version 0.1
+def ver01(test=False, mk_test_file=False):
+    """ Build version 1.0
+
+    Parameters
+    ----------
+    test : bool, optional
+      Run test only
+    mk_test_file : bool, optional
+      Generate the test file for Travis tests?
+      Writes catalog and HD-LLS dataset only
+
     Returns
     -------
 
     """
-    version = 'ver01'
+    version = 'v01'
     # HDF5 file
-    outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    if mk_test_file:
+        outfil = igmspec.__path__[0]+'/tests/files/IGMspec_DB_{:s}_debug.hdf5'.format(version)
+        print("Building debug file: {:s}".format(outfil))
+        test = True
+    else:
+        outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     hdf = h5py.File(outfil,'w')
+
+    # Myers QSOs
+    myers.add_to_hdf(hdf)
 
     # Defs
     zpri = defs.z_priority()
     lenz = [len(zpi) for zpi in zpri]
     dummyf = str('#')*np.max(np.array(lenz))  # For the Table
+    stypes = defs.list_of_stypes()
+    lens = [len(stype) for stype in stypes]
+    dummys = str('#')*np.max(np.array(lens))  # For the Table
     #cdict = defs.get_cat_dict()
 
     # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
     idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
-                 flag_zem=dummyf, flag_survey=0)
+                 flag_zem=dummyf, flag_survey=0, STYPE=dummys)
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]
     maindb = Table(lst, names=tkeys)
@@ -170,7 +216,10 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, boss_meta)
     # Append
     maindb = vstack([maindb,boss_meta], join_type='exact')
-    maindb = maindb[1:]  # Eliminate dummy line
+    if mk_test_file:
+        maindb = maindb[1:100]  # Eliminate dummy line
+    else:
+        maindb = maindb[1:]  # Eliminate dummy line
     #if not test:
     #    boss.hdf5_adddata(hdf, sdss_ids, sname)
 
@@ -188,6 +237,8 @@ def ver01(test=False):
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
     # Append
     assert chk_maindb_join(maindb, sdss_cut)
+    if mk_test_file:
+        sdss_cut = sdss_cut[0:100]
     maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
     if not test:
@@ -229,7 +280,8 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, hdlls_cut)
     maindb = vstack([maindb,hdlls_cut], join_type='exact')
     # Update hf5 file
-    hdlls.hdf5_adddata(hdf, hdlls_ids, sname)
+    if (not test) or mk_test_file:
+        hdlls.hdf5_adddata(hdf, hdlls_ids, sname, mk_test_file=mk_test_file)
 
     ''' GGG '''
     sname = 'GGG'
@@ -247,11 +299,113 @@ def ver01(test=False):
     assert chk_maindb_join(maindb, ggg_cut)
     maindb = vstack([maindb,ggg_cut], join_type='exact')
     # Update hf5 file
-    ggg.hdf5_adddata(hdf, ggg_ids, sname)
+    if not mk_test_file:
+        ggg.hdf5_adddata(hdf, ggg_ids, sname)
+
+    # Check for duplicates
+    if not chk_for_duplicates(maindb):
+        raise ValueError("Failed duplicates")
+
+    # Check for junk
 
     # Finish
     hdf['catalog'] = maindb
     hdf['catalog'].attrs['EPOCH'] = 2000.
+    hdf['catalog'].attrs['Z_PRIORITY'] = zpri
+    hdf['catalog'].attrs['VERSION'] = version
+    #hdf['catalog'].attrs['CAT_DICT'] = cdict
+    #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
+    hdf.close()
+    print("Wrote {:s} DB file".format(outfil))
+
+
+def ver02(test=False, mk_test_file=False, skip_copy=False):
+    """ Build version 2.X
+
+    Reads previous datasets from v1.X
+
+    Parameters
+    ----------
+    test : bool, optional
+      Run test only
+    mk_test_file : bool, optional
+      Generate the test file for Travis tests?
+      Writes catalog and HD-LLS dataset only
+    skip_copy : bool, optional
+      Skip copying the data from v01
+
+    Returns
+    -------
+    """
+    # Read v1.X
+    v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'
+    v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
+    print("Loading v01")
+    v01hdf = h5py.File(v01file,'r')
+    maindb = v01hdf['catalog'].value
+
+    # Start new file
+    version = 'v02'
+    if mk_test_file:
+        outfil = igmspec.__path__[0]+'/tests/files/IGMspec_DB_{:s}_debug.hdf5'.format(version)
+        print("Building debug file: {:s}".format(outfil))
+        test = True
+    else:
+        outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    hdf = h5py.File(outfil,'w')
+
+    # Copy over the old stuff
+    if (not test) and (not skip_copy):
+        for key in v01hdf.keys():
+            if key == 'catalog':
+                continue
+            else:
+                v01hdf.copy(key, hdf)
+    if mk_test_file:
+        v01hdf_debug = h5py.File(v01file_debug,'r')
+        # Copy orginal
+        for key in v01hdf_debug.keys():
+            if key == 'catalog':
+                dmaindb = v01hdf_debug[key].value
+            else:
+                v01hdf_debug.copy(key, hdf)
+        # Add some SDSS for script test
+        bsdssi = np.where(maindb['flag_survey'] == 3)[0][0:10]
+        sdss_meta = v01hdf['SDSS_DR7']['meta']
+        sdssi = np.in1d(maindb['IGM_ID'][bsdssi], sdss_meta['IGM_ID'])
+        hdf.create_group('SDSS_DR7')
+        ibool = np.array([False]*len(sdss_meta))
+        ibool[sdssi] = True
+        # Generate
+        hdf['SDSS_DR7']['meta'] = sdss_meta[ibool]
+        hdf['SDSS_DR7']['spec'] = v01hdf['SDSS_DR7']['spec'][ibool]
+        # Finish
+        test = True
+        maindb = dmaindb
+
+    ''' HST_z2 '''
+    if not mk_test_file:
+        sname = 'HST_z2'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        hstz2_meta = hst_z2.meta_for_build()
+        # IDs
+        hstz2_cut, new, hstz2_ids = set_new_ids(maindb, hstz2_meta)
+        nnew = np.sum(new)
+        if nnew > 0:
+            raise ValueError("All of these should be in SDSS")
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        midx = np.array(maindb['IGM_ID'][hstz2_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Update hf5 file
+        if (not test):# or mk_test_file:
+            hst_z2.hdf5_adddata(hdf, hstz2_ids, sname, mk_test_file=mk_test_file)
+
+    # Finish
+    hdf['catalog'] = maindb
+    hdf['catalog'].attrs['EPOCH'] = 2000.
+    zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
     hdf['catalog'].attrs['VERSION'] = version
     #hdf['catalog'].attrs['CAT_DICT'] = cdict

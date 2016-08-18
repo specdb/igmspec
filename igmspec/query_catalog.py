@@ -17,6 +17,12 @@ from igmspec import db_utils as idbu
 
 from linetools import utils as ltu
 
+try:
+    basestring
+except NameError:  # For Python 3
+    basestring = str
+
+
 class QueryCatalog(object):
     """ A Class for querying the IGMspec catalog
 

@@ -1,5 +1,5 @@
 
-Simple Scripts with IGMspec (v1.1)
+Simple Scripts with IGMspec (v1.2)
 ==================================
 
 :download:`Download <examples/Simple_Scripts.ipynb>` this notebook.
@@ -28,12 +28,12 @@ version of the DB with the *get\_igmspec* script.
 Examples
 ~~~~~~~~
 
-ver01
-^^^^^
+v01
+^^^
 
 ::
 
-    get_igmspec -v ver01
+    get_igmspec -v v01
 
 --------------
 

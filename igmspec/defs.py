@@ -33,8 +33,24 @@ def instruments():
         # Gemini GMOS spectrometer
         'GMOS-S': dict(gratings=['R400', 'B600']),
         'GMOS-N': dict(gratings=['R400', 'B600']),
+        # HST
+        'ACS': dict(gratings=['PR200L']),
+        'WFC3': dict(gratings=['G280']),
     }
     return inst_dict
+
+def list_of_stypes():
+    """ List of source types
+    Returns
+    -------
+    stypes : list
+
+    """
+    stypes = [
+        str('QSO'),        # Quasars
+        str('GRB'),        # Gamma ray burst
+    ]
+    return stypes
 
 def z_priority():
     """ List of redshift priorities for setting the DB redshift
@@ -47,6 +63,7 @@ def z_priority():
         str('GGG'),        # GGG redshifts
         str('BOSS_PCA'),   # PCA analysis by Paris et al. 2015 on BOSS spectra
         str('BOSS_PIPE'),  # BOSS Pipeline redshifts
+        str('SDSS_PIPE'),  # BOSS Pipeline redshifts
         str('UNKN'),       # Unknown
     ]
     return zpri
@@ -73,6 +90,7 @@ def get_survey_dict():
     survey_dict['KODIAQ_DR1'] = 4   # O'Meara et al. 2016
     survey_dict['HD-LLS_DR1'] = 8   # Prochaska et al. 2015
     survey_dict['GGG'] = 16         # Worseck et al. 201X
+    survey_dict['HST_z2'] = 32      # O'Meara et al. 2011
     #
     return survey_dict
 

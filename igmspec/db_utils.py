@@ -17,6 +17,6 @@ def grab_dbfile():
         raise IOError("You need to set the environmental variable IGMSPEC_DB")
     fils = glob.glob(os.getenv('IGMSPEC_DB')+'/IGMspec_DB_*hdf5')
     fils.sort()
-    db_file = fils[-1] # Should grab the lateset
+    db_file = fils[-1]  # Should grab the latest
     # Return
     return db_file

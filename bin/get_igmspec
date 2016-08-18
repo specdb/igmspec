@@ -6,7 +6,7 @@
 
 
 """
-This script runs PYPIT
+This script grabs the igmspec database file from the great Internet
 """
 
 import igmspec.scripts.get_igmspec as get_igmspec
