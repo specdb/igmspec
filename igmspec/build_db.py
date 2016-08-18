@@ -158,7 +158,8 @@ def set_new_ids(maindb, newdb, chk=True):
     #
     return cut_db, new, ids
 
-def start_maindb():
+
+def start_maindb(private=False):
     """ Start the main DB catalog
 
     Returns
@@ -166,9 +167,14 @@ def start_maindb():
     maindb : Table
     tkeys : list
       List of columns in the table
+    private : bool, optional
+      Private DB?
 
     """
     idict = defs.get_db_table_format()
+    if private:
+        idict['PRIV_ID'] = 0
+        idict.pop('IGM_ID')
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]
     maindb = Table(lst, names=tkeys)

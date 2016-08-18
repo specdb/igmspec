@@ -103,17 +103,23 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False, **kwargs):
                     i1 = ii
                     break
         # Get coord
-        coord = ltu.radec_to_coord(ifile[i0:i1])
+        try:
+            coord = ltu.radec_to_coord(ifile[i0:i1])
+        except UnboundLocalError:
+            pdb.set_trace()
         coordlist.append(coord)
     coords = SkyCoord(ra=[coord.ra.degree for coord in coordlist], dec=[coord.dec.degree for coord in coordlist], unit='deg')
 
     # Generate Meta Table
+    maindb, tkeys = ibdb.start_maindb(private=True)
+    '''
     idict = defs.get_db_table_format()
     idict['PRIV_ID'] = 0
     idict.pop('IGM_ID')
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]
     maindb = Table(lst, names=tkeys)
+    '''
 
     # Fill
     meta = Table()
@@ -279,7 +285,7 @@ def mk_db(trees, names, outfil, **kwargs):
     zpri = defs.z_priority()
 
     # Main DB Table
-    maindb, tkeys = ibdb.start_maindb()
+    maindb, tkeys = ibdb.start_maindb(private=True)
 
     # MAIN LOOP
     for ss,tree in enumerate(trees):
