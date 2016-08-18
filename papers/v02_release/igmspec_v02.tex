@@ -139,8 +139,8 @@
 \def\mglls {\gamma_{\rm LLS}}
 \def\mavgt {<\mtll>}
 
-\title{igmspec ver02 
-[v1.0]}
+\title{igmspec
+[v1.1]}
 
 \author{
 J. Xavier Prochaska\altaffilmark{1}, 
@@ -165,30 +165,32 @@ igmspec
 \label{sec:intro}
 
 Shortly after the discovery of quasars by \cite{schmidt6X},
-astronomers idenfitied absorption-line features in the quasar
+astronomers identified absorption-line features in the quasar
 spectra suggesting the presence of intergalactic gas
-\citep{burbidge,bahcall}.  [Gunn Peterson?]
+\citep{burbidge,bahcall}.  
 The community quickly recognized both the value of these
 data to cosmology and galaxy formation \cite{bahcall,spitzer}.
-In decades that followed, the observationalists gathered
+In the decades that followed, observationalists gathered
 spectra of increasingly higher quality of several tens of
 high-$z$ sources to analyze the IGM 
 \citep{sargent,young,tytler,wolfe,lanzetta,bergeron}.
 These were obtained primarily with private observatories and
 the actual spectra were rarely made available
 \citep[see][for a few exceptions]{dodorico_hdf}.
-The obvious exception was the data archive of the
+An obvious exception was the data archive of the
 {\it IUE} and {\it HST} but even these were difficult to 
 collate and combine \citep{jannuzi,bechtold}.
-[VLT public too]
+One also recognizes the policy of ESO to archive and
+make public their Very Large Telescope (VLT) datasets.
 
-The past $\approx 10$\,years, however, have witnessed the
+The past $\approx 10$\,years has witnessed the
 rise of large, public spectral datasets \citep{york,2dF}.
 This includes the spectra of several hundred thousand quasars
 probing the IGM \citep{sdss_dr7Q,boss_dr12Q}.
 These surveys have, in part, stimulated the public release
 of smaller spectroscopic surveys with higher quality
-(S/N, resolution) and/or complimentary sources.
+(S/N, resolution) and/or complimentary sources
+\citep[e.g.][]{pro07,hdlls}.
 Accessing both the large survey datasets (SDSS, BOSS)
 and these modest datasets of IGM spectroscopy
 has remained a challenge, in part due to the lack of a
@@ -196,51 +198,54 @@ uniform standard in data distribution within the astronomical
 community\footnote{This speaks to a general failure of the
 Virtual Observatory.}
 This holds despite the fact that the reduced and calibrated
-spectra probing the IGM comprise less than 10\,Gb of disk space.
+spectra probing the IGM comprise less than a few
+tens Gb of disk space.
 
 Therefore, as a service to the IGM researchers, ourselves, and the
 broader community, we have initiated an effort to collate 
 all of the published surveys of IGM spectroscopy and distribute
-them along with a simple set of software for accessing and
-[managing] the data.  Termed {\it igmspec}, this database
+them together with a simple software package
+for accessing and manipulating the data.  
+Termed {\it igmspec}, this database
 is intended to grow with future surveys (e.g. DESI)
-and to ingest other historical datasets that come to light in
+and to continue to ingest other historical 
+datasets that come to light in
 the public domain.  In addition, we provide 
-software to generate completely private databases in tandem
+software to generate private databases in tandem
 with {\it igmspec}.  This may be of interest for surveys 
-under construction and prior to publication.
+under construction, i.e.\ prior to publication.
 
-[outilne]
-
+This paper describes version v02 of the {\it igmspec}
+database.  The manuscript is organized as follows:
 
 
 
 \section{{\it igmspec} Catalog}
 \label{sec:catalog}
 
-At the heart of {\it igmspec} is a catalog of all the sources
-included, each of which uniquely probes the IGM.
-Each source is assigned a unique {\it igmspec}~ID to be
-preserved in all future versions of the database.
+At the heart of {\it igmspec} is a catalog of all the sources,
+, each of which uniquely probes the IGM.
+Each source is assigned a unique identifier IGM\_ID to be
+preserved in all future versions of the database.\footnote{If a source
+happens to be erroneous, we will simply remove it without modifying
+any other IGM\_ID values.}
 
 To construct the catalog, we followed these steps:
 
 \begin{enumerate}
 \item Ingest all quasars from the BOSS DR12 survey.
-\item Add all quasars from the SDSS DR7 survey not observed by BOSS defined
-as any source with $\theta > 2''$ angular separation.
+\item Add all quasars from the SDSS DR7 survey not observed by BOSS.
+These were defined as sources with $\theta > 2''$ angular separation.
 \item Add any additional, unique sources from the {\it igmspec} datasets
-\item Examine each pair of sources within $\theta \le 10''$ to establish
-if these are truly unique
 \end{enumerate}
+We then examined each pair of sources with $\theta \le 10''$ to establish
+if these are truly unique
 
 The {\it igmspec} catalog includes a bare minimum of meta data
 to limit its size and maximize search speed.
-These ``keys'' are listed in Table~\ref{tab:cat_keys}.
+The ``keys'' are described in Table~\ref{tab:cat_keys}.
 
  
- 
-\clearpage
 \begin{deluxetable}{lcl}
 %\rotate
 \tablewidth{0pc}
@@ -262,6 +267,12 @@ flag\_survey & int     & Bitwise flag indicating the surveys covering the source
 %\tablecomments{All column densities are log$_{10}$. When the reported $\sigma=+9.99$, }
 \end{deluxetable}
 
+In addition to the {\it igmspec} catalog, we include the quasar
+catalog compiled, maintained, and kindly shared by A. Myers.
+See the documentation for a description of the priority given to 
+redshift measurements collated in that catalog.
+
+
 \section{{\it igmspec} Datasets}
 \label{sec:datasets}
 
@@ -276,8 +287,8 @@ Table~\ref{tab:datasets} lists the surveys included in
 {\it igmspec\_v02} and briefly summarizes key aspects
 of each survey.  The {\it igmspec} documentation and 
 the original references provide greater detail on the meta data
-and spectra included with each survey but the following
-sub-sections also provide a brief description.
+and spectra included within each survey but the following
+sub-sections also provide a brief description of each.
 
 \subsection{BOSS DR12}
 
@@ -320,20 +331,19 @@ sample against the \cite{meyers1X} quasar catalog.
 \label{sec:arch}
 
 The {\it igmspec} database is provided as a single HDF5 file
-containing both its catalog and all of the survey 
-data.  Each survey comprises an HDF5 Group
+containing both the catalogs and the survey spectral data.  
+Each survey comprises an HDF5 Group
 with a {\it meta} Dataset and a {\it spec} Dataset.
-The former is a {\tt numpy.ndarray} **Table** with
-one entry per spectrum in the survey.
-The latter is a masked {\tt numpy.ndarray} 
-with **column** names `wave', `flux', and `sig'
-and an optional column `co' for an estimate of the source
+The former is an {\tt astropy} Table, with one row per
+spectrum, converted into an HDF5 object by {\tt h5p}.
+The latter is an {\tt numpy.ndarray} 
+with dtype names `wave', `flux', and `sig' for the
+wavelength, flux, and $1\sigma$ error arrays.
+One may also include `co' for an estimate of the source
 continuum.  
 
 The HDF5 format enables rapid access to the data without
-reading the entire database into memory.  Regarding
-performance, ...
-
+reading the entire database into memory.  
 Figure~\ref{fig:arch} illustrates the 
 architecture of the {\it igmspec} database.
 
@@ -346,15 +356,16 @@ with the {\it igmspec} database.  This includes a simple
 script {\tt get\_igmspec} to download the latest
 (or any previous) version of the database.
 Additional software enables the user to plot an
-input source or ...
+input source, examine meta data, and do simple queries.
 
 The IgmSpec class provides a lightweight object for
 interfacing with the catalog and spectroscopic datasets
 from within Python.  See the iPython Notebook
-http:// for simple usage cases.
+https://github.com/pyigm/igmspec/blob/master/docs/examples/Simple\_Usage.ipynb
+for simple usage cases.
 
 All of the software is provided in a git repository
-(http://)
+(https://github.com/pyigm/igmspec)
 and is being actively developed by the community.
 
 \section{Concluding Remarks}
@@ -364,7 +375,7 @@ With {\it igmspec}, it is our goal to provide (nearly)
 all of the published spectral datasets that effectively
 probe the IGM.  Hopefully, this effort will
 enable new, unforeseen research on the IGM as well
-as the greater diffusion of difficult to access spectral
+as the greater diffusion of otherwise difficult-to-access spectral
 datasets.  
 
 For {\it igmspec\_v03}, we plan to include at least the following:
@@ -394,24 +405,18 @@ We thank JMO, GW, JR, NM
 %by NSF grant AST-0908910.
 
 
-\bibliographystyle{/u/xavier/paper/Bibli/apj}
-\bibliography{/u/xavier/paper/Bibli/allrefs}
+%\bibliographystyle{/u/xavier/paper/Bibli/apj}
+%\bibliography{/u/xavier/paper/Bibli/allrefs}
 
 %\input{Tables/tab_HIRES.tex}
 %\input{Tables/tab_MIKE.tex}
 
 
-
 \begin{figure}
-%\includegraphics[width=6in]{Figures/fig_HI_SLLS.pdf}
-\caption{\ion{H}{1} \lya\ (top row) and \lyb\ (bottom row)
-  profiles for three LLS with $\mnhi
-  \ge 10^{19} \cm{-2}$.  The damping wings of \lya\ are well-resolved
-  in these SLLS and the blue curves indicate for the best-estimats and
-  uncertainty of the \nhi\ values.  
-  These are well constrained, even in poor S/N data.
+\includegraphics[width=6in]{architecture_v02.pdf}
+\caption{igmspec architecture
 }
-\label{fig:HI_SLLS}
+\label{fig:arch}
 \end{figure}
 
 
