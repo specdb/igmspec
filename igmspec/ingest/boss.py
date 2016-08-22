@@ -194,10 +194,14 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         data['flux'][0][:npix] = spec.flux.value
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
-        # Continuum
-        co = spec.co.value
+        # GZ Continuum
+        try:
+            co = spec.co.value
+        except AttributeError:
+            co = np.ones_like(spec.flux.value)
+        # KG Continuum
         KG_file = get_specfil(row, KG=True)
-        if os.path.isfile(KG_file):
+        if os.path.isfile(KG_file) and (npix>1):  # Latter is for junk in GZ file.  Needs fixing
             hduKG = fits.open(KG_file)
             KGtbl = hduKG[1].data
             wvKG = 10.**KGtbl['LOGLAM']
@@ -229,6 +233,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
+    meta.add_column([2000.]*len(meta), name='EPOCH')
 
     # Add HDLLS meta to hdf5
     if iiu.chk_meta(meta):
@@ -236,6 +241,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             pdb.set_trace()
         hdf[sname]['meta'] = meta
     else:
+        pdb.set_trace()
         raise ValueError("meta file failed")
     # References
     refs = [dict(url='http://adsabs.harvard.edu/abs/2015ApJS..219...12A',
