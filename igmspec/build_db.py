@@ -20,6 +20,7 @@ from astropy import units as u
 
 def add_to_flag(cur_flag, add_flag):
     """ Add a bitwise flag to an existing flat
+
     Parameters
     ----------
     cur_flag : int or ndarray
@@ -158,6 +159,29 @@ def set_new_ids(maindb, newdb, chk=True):
     return cut_db, new, ids
 
 
+def start_maindb(private=False):
+    """ Start the main DB catalog
+
+    Returns
+    -------
+    maindb : Table
+    tkeys : list
+      List of columns in the table
+    private : bool, optional
+      Private DB?
+
+    """
+    idict = defs.get_db_table_format()
+    if private:
+        idict['PRIV_ID'] = 0
+        idict.pop('IGM_ID')
+    tkeys = idict.keys()
+    lst = [[idict[tkey]] for tkey in tkeys]
+    maindb = Table(lst, names=tkeys)
+    # Return
+    return maindb, tkeys
+
+
 def ver01(test=False, mk_test_file=False):
     """ Build version 1.0
 
@@ -186,21 +210,8 @@ def ver01(test=False, mk_test_file=False):
     # Myers QSOs
     myers.add_to_hdf(hdf)
 
-    # Defs
-    zpri = defs.z_priority()
-    lenz = [len(zpi) for zpi in zpri]
-    dummyf = str('#')*np.max(np.array(lenz))  # For the Table
-    stypes = defs.list_of_stypes()
-    lens = [len(stype) for stype in stypes]
-    dummys = str('#')*np.max(np.array(lens))  # For the Table
-    #cdict = defs.get_cat_dict()
-
-    # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
-    idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
-                 flag_zem=dummyf, flag_survey=0, STYPE=dummys)
-    tkeys = idict.keys()
-    lst = [[idict[tkey]] for tkey in tkeys]
-    maindb = Table(lst, names=tkeys)
+    # Main DB Table
+    maindb, tkeys = start_maindb()
 
     ''' BOSS_DR12 '''
     # Read
@@ -307,6 +318,7 @@ def ver01(test=False, mk_test_file=False):
         raise ValueError("Failed duplicates")
 
     # Check for junk
+    zpri = defs.z_priority()
 
     # Finish
     hdf['catalog'] = maindb

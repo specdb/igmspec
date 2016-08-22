@@ -6,12 +6,15 @@ import numpy as np
 import warnings
 import pdb
 
-def chk_meta(meta):
+def chk_meta(meta, skip_igmid=False):
     """ Vettes a meta Table prior to its being ingested into the hdf
 
     Parameters
     ----------
     meta
+    skip_igmid : bool, optional
+      Skips IGM_ID as required
+      Used for personal DB
 
     Returns
     -------
@@ -26,9 +29,11 @@ def chk_meta(meta):
 
     chk = True
     # Required columns
-    req_clms = ['IGM_ID', 'RA', 'DEC', 'EPOCH', 'zem', 'R', 'WV_MIN',
+    req_clms = ['RA', 'DEC', 'EPOCH', 'zem', 'R', 'WV_MIN',
                 'WV_MAX', 'DATE-OBS', 'SURVEY_ID', 'NPIX', 'SPEC_FILE',
                 'INSTR', 'GRATING', 'TELESCOPE']
+    if not skip_igmid:
+        req_clms += ['IGM_ID']
     meta_keys = meta.keys()
     for clm in req_clms:
         if clm not in meta_keys:
