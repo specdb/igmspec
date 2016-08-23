@@ -21,6 +21,7 @@ def get_specfil(row):
     """Parse the SDSS spectrum file
     Requires a link to the database Class
     """
+    catfil = os.getenv('RAW_IGMSPEC')+'/2dF/2df/cat/2QZ_6QZ_pubcat.txt'
     path = os.getenv('SDSSPATH')+'/DR7_QSO/spectro/1d_26/'
     # Generate file name (DR4 is different)
     pnm = '{0:04d}'.format(row['PLATE'])
