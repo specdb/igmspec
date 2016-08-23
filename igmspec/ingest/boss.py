@@ -233,7 +233,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
-    meta.add_column([2000.]*len(meta), name='EPOCH')
+    meta.add_column(Column([2000.]*len(meta), name='EPOCH'))
 
     # Add HDLLS meta to hdf5
     if iiu.chk_meta(meta):
