@@ -249,6 +249,5 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             ]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
-    pdb.set_trace()
     #
     return
