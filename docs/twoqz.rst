@@ -6,6 +6,14 @@
 
 This document describes the 2QZ dataset.
 
+Notebooks
+=========
+
+.. toctree::
+    :maxdepth: 1
+
+        2QZ <2QZ>
+
 Sources
 =======
 

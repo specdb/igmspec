@@ -77,3 +77,33 @@ J001115.23+144601.8
 
     plot_igmspec J001115.23+144601.8
 
+--------------
+
+SDSS/BOSS Database
+------------------
+
+::
+
+    profx.ucolick.org> sdss_igmspec -h
+    usage: sdss_igmspec [-h] [-s SURVEY] [--select SELECT] [-p] plate fiberid
+
+    sdss_igmspec script v0.1
+
+    positional arguments:
+      plate                 Plate
+      fiberid               FiberID
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -s SURVEY, --survey SURVEY
+                            Name of Survey to use (BOSS_DR12 or SDSS_DR7)
+      --select SELECT       Index of spectrum to plot (when multiple exist)
+      -p, --plot            Plot with lt_xspec
+
+Example
+~~~~~~~
+
+::
+
+    UNIX> sdss_igmspec 434 555 -p
+
