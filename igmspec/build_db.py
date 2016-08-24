@@ -158,7 +158,7 @@ def set_new_ids(maindb, newdb, chk=True):
     return cut_db, new, ids
 
 
-def ver01(test=False, mk_test_file=False):
+def ver01(test=False, mk_test_file=False, **kwargs):
     """ Build version 1.0
 
     Parameters
@@ -222,7 +222,7 @@ def ver01(test=False, mk_test_file=False):
     else:
         maindb = maindb[1:]  # Eliminate dummy line
     if not test:
-        boss.hdf5_adddata(hdf, boss_ids, sname)
+        boss.hdf5_adddata(hdf, boss_ids, sname, **kwargs)
 
     ''' SDSS DR7'''
     sname = 'SDSS_DR7'
@@ -243,7 +243,7 @@ def ver01(test=False, mk_test_file=False):
     maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
     if not test:
-        sdss.hdf5_adddata(hdf, sdss_ids, sname)
+        sdss.hdf5_adddata(hdf, sdss_ids, sname, **kwargs)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
@@ -305,7 +305,8 @@ def ver01(test=False, mk_test_file=False):
 
     # Check for duplicates
     if not chk_for_duplicates(maindb):
-        raise ValueError("Failed duplicates")
+        pdb.set_trace()
+        #raise ValueError("Failed duplicates")
 
     # Check for junk
 

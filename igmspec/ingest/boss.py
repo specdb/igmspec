@@ -109,7 +109,7 @@ def get_specfil(row, KG=False):
     return specfil
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
+def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=None, **kwargs):
     """ Add BOSS data to the DB
 
     Parameters
@@ -121,6 +121,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
       Survey name
     chk_meta_only : bool, optional
       Only check meta file;  will not write
+    boss_hdf : str, optional
+
 
     Returns
     -------
@@ -128,6 +130,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     """
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
+    if boss_hdf is not None:
+        print("Using previously generated {:s} dataset...".format(sname))
+        boss_hdf.copy(sname, hdf)
+        return
     boss_grp = hdf.create_group(sname)
     # Load up
     meta = grab_meta()
