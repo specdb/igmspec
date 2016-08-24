@@ -26,6 +26,7 @@ def grab_meta():
     -------
 
     """
+
     #http://www.sdss.org/dr12/algorithms/boss-dr12-quasar-catalog/
     boss_dr12 = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q.fits.gz')
     boss_dr12['CAT'] = ['DR12Q']*len(boss_dr12)
@@ -68,7 +69,20 @@ def meta_for_build():
     -------
 
     """
+    from igmspec.build_db import chk_for_duplicates
     boss_meta = grab_meta()
+    # Cut down to unique
+    c_main = SkyCoord(ra=boss_meta['RA'], dec=boss_meta['DEC'], unit='deg')
+    idx, d2d, d3d = match_coordinates_sky(c_main, c_main, nthneighbor=2)
+    dups = np.where(d2d < 2*u.arcsec)[0]
+    flgs = np.array([True]*len(boss_meta))
+    #
+    for ii in dups:
+        if boss_meta[ii]['CAT'] == 'SUPBD':
+            flgs[ii] = False
+    boss_meta = boss_meta[flgs]
+    if not chk_for_duplicates(boss_meta):
+        raise ValueError("DUPLICATES IN BOSS")
     #
     meta = Table()
     for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:

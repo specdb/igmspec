@@ -87,6 +87,7 @@ def chk_for_duplicates(maindb):
     else:
         return True
 
+
 def get_new_ids(maindb, newdb, chk=True):
     """ Generate new IGM_IDs for an input DB
 
@@ -221,6 +222,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
         maindb = maindb[1:100]  # Eliminate dummy line
     else:
         maindb = maindb[1:]  # Eliminate dummy line
+    tmp=chk_for_duplicates(maindb)
     if not test:
         boss.hdf5_adddata(hdf, boss_ids, sname, **kwargs)
 
