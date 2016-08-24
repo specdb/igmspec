@@ -76,6 +76,7 @@ class InterfaceDB(object):
         #
         surveys = list(self.hdf.keys())
         surveys.pop(surveys.index('catalog'))
+        surveys.pop(surveys.index('quasars'))
         self.surveys = surveys
         if self.verbose:
             print("Available surveys: {}".format(self.surveys))
