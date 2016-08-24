@@ -11,7 +11,7 @@ import numbers
 import pdb
 
 from igmspec import defs
-from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers
+from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -394,6 +394,25 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Finish
         test = True
         maindb = dmaindb
+
+    ''' 2QZ '''
+    if not mk_test_file:
+        sname = '2QZ'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        tdf_meta = twodf.meta_for_build()
+        # IDs
+        tdf_cut, new, tdf_ids = set_new_ids(maindb, tdf_meta)
+        nnew = np.sum(new)
+        if nnew > 0:
+            raise ValueError("All of these should be in SDSS")
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        midx = np.array(maindb['IGM_ID'][tdf_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Update hf5 file
+        if (not test):# or mk_test_file:
+            twodf.hdf5_adddata(hdf, tdf_ids, sname, mk_test_file=mk_test_file)
 
     ''' HST_z2 '''
     if not mk_test_file:

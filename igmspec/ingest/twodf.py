@@ -21,7 +21,6 @@ def get_specfil(row):
     """Parse the SDSS spectrum file
     Requires a link to the database Class
     """
-    catfil = os.getenv('RAW_IGMSPEC')+'/2dF/2df/cat/2QZ_6QZ_pubcat.txt'
     path = os.getenv('SDSSPATH')+'/DR7_QSO/spectro/1d_26/'
     # Generate file name (DR4 is different)
     pnm = '{0:04d}'.format(row['PLATE'])
@@ -41,26 +40,66 @@ def grab_meta():
     -------
     meta
     """
-    sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/SDSS_DR7_qso.fits.gz')
-    nspec = len(sdss_meta)
+    catfil = os.getenv('RAW_IGMSPEC')+'/2dF/2QZ393524355693.out'
+    tdf_meta = Table.read(catfil, format='ascii')
+    # Rename columns
+    clms = ['Name', 'RAh00', 'RAm00', 'RAs00', 'DECd00', 'DECm00', 'DECs00',
+       'ID','cat_name', 'Sector', 'RAh50', 'RAm50', 'RAs50', 'DECd50', 'DECm50', 'DECs50',
+       'UKST', 'XAPM','YAPM','RA50','DEC50','bj','u-b','b-r','Nobs',
+       'z1','q1','ID1','date1','fld1','fiber1','SN1',
+       'z2','q2','ID2','date2','fld2','fiber2','SN2',
+        'zprev','rflux','Xray','EBV','comm1','comm2']
+    for ii in range(1,46):
+        tdf_meta.rename_column('col{:d}'.format(ii), clms[ii-1])
+    # Cut down to QSOs and take only 1 spectrum
+    ispec = []
+    zspec = []
+    datespec = []
+    for row in tdf_meta:
+        if 'QSO' in row['ID1']:
+            ispec.append(1)
+            zspec.append(row['z1'])
+            sdate = str(row['date1'])
+            datespec.append('{:s}-{:s}-{:s}'.format(sdate[0:4],sdate[4:6], sdate[6:8]))
+        elif 'QSO' in row['ID2']:
+            ispec.append(2)
+            zspec.append(row['z2'])
+            sdate = str(row['date2'])
+            datespec.append('{:s}-{:s}-{:s}'.format(sdate[0:4],sdate[4:6], sdate[6:8]))
+        else:
+            ispec.append(0)
+            zspec.append(-1.)
+            datespec.append('')
+    tdf_meta['ispec'] = ispec
+    tdf_meta['zem'] = zspec
+    tdf_meta['DATE'] = datespec
+    cut = tdf_meta['ispec'] > 0
+    tdf_meta = tdf_meta[cut]
+    nspec = len(tdf_meta)
     # DATE
-    t = Time(list(sdss_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
-    sdss_meta.add_column(Column(t.iso, name='DATE-OBS'))
+    t = Time(list(tdf_meta['DATE'].data), format='iso', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    tdf_meta.add_column(Column(t.iso, name='DATE-OBS'))
     # Add a few columns
-    sdss_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
-    sdss_meta.add_column(Column([2000.]*nspec, name='R'))
-    sdss_meta.add_column(Column(['SDSS']*nspec, name='INSTR'))
-    sdss_meta.add_column(Column(['BOTH']*nspec, name='GRATING'))
-    sdss_meta.add_column(Column(['SDSS 2.5-M']*nspec, name='TELESCOPE'))
+    tdf_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
+    # Resolution
+    #  2df 8.6A FWHM
+    #  R=580 at 5000A
+    #  6df??
+    tdf_meta.add_column(Column([580.]*nspec, name='R'))
+    #
+    tdf_meta.add_column(Column(['2dF']*nspec, name='INSTR'))
+    tdf_meta.add_column(Column(['300B']*nspec, name='GRATING'))
+    tdf_meta.add_column(Column(['UKST']*nspec, name='TELESCOPE'))
     # Rename
-    sdss_meta.rename_column('RAOBJ', 'RA')
-    sdss_meta.rename_column('DECOBJ', 'DEC')
-    sdss_meta.rename_column('Z', 'zem')          # Some of these were corrected by QPQ
-    sdss_meta.rename_column('Z_ERR', 'sig_zem')
+    rad = (tdf_meta['RAh00']*3600 + tdf_meta['RAm00']*60 + tdf_meta['RAs00'])*360./86400.
+    decd = tdf_meta['DECd00'] + tdf_meta['DECm00']/60 + tdf_meta['DECs00']/3600.
+    tdf_meta['RA'] = rad
+    tdf_meta['DEC'] = decd
+    tdf_meta['sig_zem'] = [0.]*nspec
     # Sort
-    sdss_meta.sort('RA')
+    tdf_meta.sort('RA')
     # Return
-    return sdss_meta
+    return tdf_meta
 
 
 def meta_for_build():
@@ -72,14 +111,14 @@ def meta_for_build():
     -------
 
     """
-    sdss_meta = grab_meta()
-    nqso = len(sdss_meta)
+    tdf_meta = grab_meta()
+    nqso = len(tdf_meta)
     #
     #
     meta = Table()
     for key in ['RA', 'DEC', 'zem', 'sig_zem']:
-        meta[key] = sdss_meta[key]
-    meta['flag_zem'] = [str('SDSS')]*nqso  # QPQ too
+        meta[key] = tdf_meta[key]
+    meta['flag_zem'] = [str('2QZ')]*nqso  # QPQ too
     # Return
     return meta
 
