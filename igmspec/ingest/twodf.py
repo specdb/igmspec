@@ -14,21 +14,27 @@ from astropy.io import fits
 from astropy.time import Time
 
 from linetools.spectra import io as lsio
+from linetools.spectra.xspectrum1d import XSpectrum1D
 
 from igmspec.ingest import utils as iiu
 
 def get_specfil(row):
-    """Parse the SDSS spectrum file
+    """Parse the 2QZ spectrum file
     Requires a link to the database Class
     """
-    path = os.getenv('SDSSPATH')+'/DR7_QSO/spectro/1d_26/'
-    # Generate file name (DR4 is different)
-    pnm = '{0:04d}'.format(row['PLATE'])
-    fnm = '{0:03d}'.format(row['FIBERID'])
-    mjd = str(row['MJD'])
-    sfil = path+pnm+'/1d/'+'spSpec-'
+    path = os.getenv('RAW_IGMSPEC')+'/2dF/2df/fits/'
+    # RA/DEC folder
+    path += 'ra{:02d}_{:02d}/'.format(row['RAh00'], row['RAh00']+1)
+    # File name
+    sfil = path+row['Name']
+    if row['ispec'] == 1:
+        sfil += 'a'
+    elif row['ispec'] == 2:
+        sfil += 'b'
+    else:
+        raise ValueError("Bad ispec value")
     # Finish
-    specfil = sfil+mjd+'-'+pnm+'-'+fnm+'.fit.gz'  # Is usually gzipped
+    specfil = sfil+'.fits.gz'
     return specfil
 
 
@@ -119,12 +125,13 @@ def meta_for_build():
     for key in ['RA', 'DEC', 'zem', 'sig_zem']:
         meta[key] = tdf_meta[key]
     meta['flag_zem'] = [str('2QZ')]*nqso  # QPQ too
+    meta['STYPE'] = [str('QSO')]*nqso  # QPQ too
     # Return
     return meta
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
-    """ Add SDSS data to the DB
+    """ Add 2QZ data to the DB
 
     Parameters
     ----------
@@ -140,14 +147,14 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     -------
 
     """
-       # Add Survey
+    # Add Survey
     print("Adding {:s} survey to DB".format(sname))
-    sdss_grp = hdf.create_group(sname)
+    tqz_grp = hdf.create_group(sname)
     # Load up
     meta = grab_meta()
     bmeta = meta_for_build()
     # Checks
-    if sname != 'SDSS_DR7':
+    if sname != '2QZ':
         raise IOError("Not expecting this survey..")
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")
@@ -183,22 +190,31 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     for jj,row in enumerate(meta):
         full_file = get_specfil(row)
         # Extract
-        print("SDSS: Reading {:s}".format(full_file))
+        print("2QZ: Reading {:s}".format(full_file))
         # Parse name
         fname = full_file.split('/')[-1]
         if debug:
             if jj > 500:
                 speclist.append(str(fname))
                 if not os.path.isfile(full_file):
-                    raise IOError("SDSS file {:s} does not exist".format(full_file))
+                    raise IOError("2QZ file {:s} does not exist".format(full_file))
                 wvminlist.append(np.min(data['wave'][0][:npix]))
                 wvmaxlist.append(np.max(data['wave'][0][:npix]))
                 npixlist.append(npix)
                 continue
-        # Generate full file
-        spec = lsio.readspec(full_file)
+        # Read
+        hdu = fits.open(full_file)
+        head0 = hdu[0].header
+        wave = lsio.setwave(head0)
+        flux = hdu[0].data
+        var = hdu[2].data
+        sig = np.zeros_like(flux)
+        gd = var > 0.
+        sig[gd] = np.sqrt(var)
         # npix
+        spec = XSpectrum1D.from_tuple((wave,flux,sig))
         npix = spec.npix
+        spec.header = head0
         if npix > max_npix:
             raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
         else:

@@ -35,6 +35,8 @@ def instruments():
         # Gemini GMOS spectrometer
         'GMOS-S': dict(gratings=['R400', 'B600']),
         'GMOS-N': dict(gratings=['R400', 'B600']),
+        # UKST
+        '2dF': dict(gratings=['300B']),
         # HST
         'ACS': dict(gratings=['PR200L']),
         'WFC3': dict(gratings=['G280']),
@@ -131,6 +133,7 @@ def get_survey_dict():
     survey_dict['HD-LLS_DR1'] = 8   # Prochaska et al. 2015
     survey_dict['GGG'] = 16         # Worseck et al. 201X
     survey_dict['HST_z2'] = 32      # O'Meara et al. 2011
+    survey_dict['2QZ'] = 64         # Croom et al.
     #
     return survey_dict
 

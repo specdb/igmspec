@@ -354,7 +354,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
     v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     print("Loading v01")
     v01hdf = h5py.File(v01file,'r')
-    maindb = v01hdf['catalog'].value
+    maindb = Table(v01hdf['catalog'].value)
 
     # Start new file
     version = 'v02'
@@ -404,12 +404,14 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # IDs
         tdf_cut, new, tdf_ids = set_new_ids(maindb, tdf_meta)
         nnew = np.sum(new)
-        if nnew > 0:
-            raise ValueError("All of these should be in SDSS")
         # Survey flag
         flag_s = defs.survey_flag(sname)
+        tdf_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
         midx = np.array(maindb['IGM_ID'][tdf_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, tdf_cut)
+        maindb = vstack([maindb,tdf_cut], join_type='exact')
         # Update hf5 file
         if (not test):# or mk_test_file:
             twodf.hdf5_adddata(hdf, tdf_ids, sname, mk_test_file=mk_test_file)
