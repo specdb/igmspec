@@ -22,7 +22,7 @@ def get_specfil(row):
     """Parse the 2QZ spectrum file
     Requires a link to the database Class
     """
-    path = os.getenv('RAW_IGMSPEC')+'/2dF/2df/fits/'
+    path = os.getenv('RAW_IGMSPEC')+'/2QZ/2df/fits/'
     # RA/DEC folder
     path += 'ra{:02d}_{:02d}/'.format(row['RAh00'], row['RAh00']+1)
     # File name
@@ -46,7 +46,7 @@ def grab_meta():
     -------
     meta
     """
-    catfil = os.getenv('RAW_IGMSPEC')+'/2dF/2QZ393524355693.out'
+    catfil = os.getenv('RAW_IGMSPEC')+'/2QZ/2QZ393524355693.out'
     tdf_meta = Table.read(catfil, format='ascii')
     # Rename columns
     clms = ['Name', 'RAh00', 'RAm00', 'RAs00', 'DECd00', 'DECm00', 'DECs00',
