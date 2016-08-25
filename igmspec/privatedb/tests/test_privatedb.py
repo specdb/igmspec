@@ -30,6 +30,7 @@ def test_ingest():
     ffiles = pbuild.grab_files(data_dir)
     meta = pbuild.mk_meta(ffiles, fname=True, skip_badz=True)
     hdf = h5py.File('tmp.hdf5','w')
+    pytest.set_trace()
     pbuild.ingest_spectra(hdf, 'test', meta)
     hdf.close()
     # Read
