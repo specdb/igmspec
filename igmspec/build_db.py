@@ -375,12 +375,18 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
                 v01hdf.copy(key, hdf)
     if mk_test_file:
         v01hdf_debug = h5py.File(v01file_debug,'r')
-        # Copy orginal
+        # Copy original
         for key in v01hdf_debug.keys():
             if key == 'catalog':
                 dmaindb = v01hdf_debug[key].value
             else:
                 v01hdf_debug.copy(key, hdf)
+        # Add subset of quasars
+        idx = np.array([False]*v01hdf['quasars'].size)
+        idx[0:100] = True
+        idx[161121] = True
+        idx[161130] = True
+        hdf['quasars'] = v01hdf['quasars'].value[idx]
         # Add some SDSS for script test
         bsdssi = np.where(maindb['flag_survey'] == 3)[0][0:10]
         sdss_meta = v01hdf['SDSS_DR7']['meta']
