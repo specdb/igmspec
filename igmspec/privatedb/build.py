@@ -222,7 +222,7 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
         # Dummy
-        instrlist.append('HIRESb')
+        instrlist.append('HIRES')
         telelist.append('Keck-I')
         gratinglist.append('BOTH')
         #Rlist.append(iiu.set_resolution(head))
