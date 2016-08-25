@@ -1,6 +1,6 @@
 
-Simple Examples for Using IGMspec (v1.1)
-========================================
+Simple Examples for Using IGMspec (v1.1.1)
+==========================================
 
 :download:`Download <examples/Simple_Usage.ipynb>` this notebook.
 
@@ -11,6 +11,8 @@ Simple Examples for Using IGMspec (v1.1)
 .. code:: python
 
     # import
+    from astropy import units as u
+    
     from igmspec import query_catalog as iqcat
     from igmspec import interface_db as igidb
     from igmspec import db_utils as idbu
@@ -28,8 +30,8 @@ Setup Class
 
 .. parsed-literal::
 
-    Using /u/xavier/local/Python/igmspec/DB/IGMspec_DB_ver01.hdf5 for the catalog file
-    Using /u/xavier/local/Python/igmspec/DB/IGMspec_DB_ver01.hdf5 for the DB file
+    Using /raid/IGMSPEC_DB/IGMspec_DB_v01.hdf5 for the catalog file
+    Using /raid/IGMSPEC_DB/IGMspec_DB_v01.hdf5 for the DB file
     Available surveys: [u'GGG', u'HD-LLS_DR1', u'KODIAQ_DR1', u'SDSS_DR7']
 
 
@@ -42,7 +44,7 @@ Setup Class
 
 .. parsed-literal::
 
-    <QueryCatalog:  DB_file=/u/xavier/local/Python/igmspec/DB/IGMspec_DB_ver01.hdf5 with 377018 sources
+    <QueryCatalog:  DB_file=/raid/IGMSPEC_DB/IGMspec_DB_v01.hdf5 with 377018 sources
        Loaded surveys are [u'BOSS_DR12', u'GGG', u'HD-LLS_DR1', u'KODIAQ_DR1', u'SDSS_DR7'] 
     >
 
@@ -57,7 +59,7 @@ Setup Class
 
 .. parsed-literal::
 
-    <InterfaceDB:  DB_file=/u/xavier/local/Python/igmspec/DB/IGMspec_DB_ver01.hdf5 
+    <InterfaceDB:  DB_file=/raid/IGMSPEC_DB/IGMspec_DB_v01.hdf5 
        Loaded surveys are [u'GGG', u'HD-LLS_DR1', u'KODIAQ_DR1', u'SDSS_DR7'] 
     >
 
@@ -105,10 +107,10 @@ Search around FJ0812+32
 .. raw:: html
 
     &lt;Table length=1&gt;
-    <table id="table4616683664">
+    <table id="table4581353360">
     <thead><tr><th>zem</th><th>sig_zem</th><th>Z_CONF</th><th>Z_WARN</th><th>PLATE</th><th>MJD</th><th>FIBERID</th><th>FLG_TARG</th><th>RA</th><th>DEC</th><th>PSF_U</th><th>PSF_G</th><th>PSF_R</th><th>PSF_I</th><th>PSF_Z</th><th>PSF_SU</th><th>PSF_SG</th><th>PSF_SR</th><th>PSF_SI</th><th>PSF_SZ</th><th>DATE-OBS</th><th>EPOCH</th><th>R</th><th>IGM_ID</th><th>SPEC_FILE</th><th>NPIX</th><th>WV_MIN</th><th>WV_MAX</th><th>SURVEY_ID</th><th>INSTR</th><th>GRATING</th><th>TELESCOPE</th></tr></thead>
     <thead><tr><th>float32</th><th>float32</th><th>float32</th><th>int16</th><th>int32</th><th>int32</th><th>int32</th><th>int16</th><th>float64</th><th>float64</th><th>float32</th><th>float32</th><th>float32</th><th>float32</th><th>float32</th><th>float32</th><th>float32</th><th>float32</th><th>float32</th><th>float32</th><th>str10</th><th>float64</th><th>float64</th><th>int64</th><th>str28</th><th>int64</th><th>float64</th><th>float64</th><th>int64</th><th>str4</th><th>str4</th><th>str10</th></tr></thead>
-    <tr><td>2.704</td><td>0.0015619</td><td>0.0</td><td>0</td><td>861</td><td>52318</td><td>333</td><td>0</td><td>123.170</td><td>32.136</td><td>19.6334</td><td>17.8486</td><td>17.4545</td><td>17.2825</td><td>17.139</td><td>0.02811</td><td>0.017889</td><td>0.021285</td><td>0.018897</td><td>0.028298</td><td>2002-02-13</td><td>2000.0</td><td>2000.0</td><td>50734</td><td>spSpec-52318-0861-333.fit.gz</td><td>3852</td><td>3799.3</td><td>9221.5</td><td>9317</td><td>SDSS</td><td>BOTH</td><td>SDSS 2.5-M</td></tr>
+    <tr><td>2.704</td><td>0.0015619</td><td>0.0</td><td>0</td><td>861</td><td>52318</td><td>333</td><td>0</td><td>123.170</td><td>32.136</td><td>19.6334</td><td>17.8486</td><td>17.4545</td><td>17.2825</td><td>17.139</td><td>0.02811</td><td>0.017889</td><td>0.021285</td><td>0.018897</td><td>0.028298</td><td>2002-02-13</td><td>2000.0</td><td>2000.0</td><td>50734</td><td>spSpec-52318-0861-333.fit.gz</td><td>3821</td><td>3823.8</td><td>9215.1</td><td>9317</td><td>SDSS</td><td>BOTH</td><td>SDSS 2.5-M</td></tr>
     </table>
 
 
@@ -123,6 +125,12 @@ Search around FJ0812+32
 
     Staged 1 spectra totalling 0.0032 Gb
     Loaded spectra
+
+
+.. parsed-literal::
+
+    /Users/xavier/local/Python/linetools/linetools/spectra/xspectrum1d.py:291: UserWarning: Assuming wavelength unit is Angstroms
+      warnings.warn("Assuming wavelength unit is Angstroms")
 
 
 .. code:: python
@@ -173,12 +181,12 @@ Search around J233446.40-090812.3
 .. raw:: html
 
     &lt;Table length=3&gt;
-    <table id="table4697565904">
+    <table id="table4583427920">
     <thead><tr><th>Name</th><th>QSO</th><th>RA</th><th>DEC</th><th>zem</th><th>Z_LLS</th><th>logNHI</th><th>sig(logNHI) [2]</th><th>SPEC_FILE</th><th>IGM_ID</th><th>EPOCH</th><th>NPIX</th><th>DATE-OBS</th><th>WV_MIN</th><th>WV_MAX</th><th>R</th><th>SURVEY_ID</th><th>GRATING</th><th>INSTR</th><th>TELESCOPE</th></tr></thead>
     <thead><tr><th>str33</th><th>str19</th><th>float64</th><th>float64</th><th>float64</th><th>float64</th><th>float64</th><th>float64</th><th>str37</th><th>int64</th><th>float64</th><th>int64</th><th>str10</th><th>float64</th><th>float64</th><th>float64</th><th>int64</th><th>str4</th><th>str5</th><th>str13</th></tr></thead>
-    <tr><td>HD-LLS_J233446.40-090812.3_z3.226</td><td>SDSSJ2334-0908</td><td>353.693</td><td>-9.137</td><td>3.317</td><td>3.226</td><td>17.7</td><td>0.1 .. 0.3</td><td>HD-LLS_J233446.40-090812.3_ESI.fits</td><td>376530</td><td>2000.0</td><td>33000</td><td>2002-12-02</td><td>3899.8</td><td>11714.9</td><td>6000.0</td><td>140</td><td>ECH</td><td>ESI</td><td>Keck-II</td></tr>
-    <tr><td>HD-LLS_J233446.40-090812.3_z3.226</td><td>SDSSJ2334-0908</td><td>353.693</td><td>-9.137</td><td>3.317</td><td>3.226</td><td>17.7</td><td>0.1 .. 0.3</td><td>HD-LLS_J233446.40-090812.3_HIRES.fits</td><td>376530</td><td>2000.0</td><td>129277</td><td>2007-09-18</td><td>4064.6</td><td>7120.0</td><td>48000.0</td><td>141</td><td>BOTH</td><td>HIRES</td><td>Keck-I</td></tr>
-    <tr><td>HD-LLS_J233446.40-090812.3_z3.226</td><td>SDSSJ2334-0908</td><td>353.693</td><td>-9.137</td><td>3.317</td><td>3.226</td><td>17.7</td><td>0.1 .. 0.3</td><td>HD-LLS_J233446.40-090812.3_MAGE.fits</td><td>376530</td><td>2000.0</td><td>16580</td><td>2010-08-13</td><td>3042.1</td><td>10269.6</td><td>5857.14285714</td><td>142</td><td>N/A</td><td>MagE</td><td>Magellan/Clay</td></tr>
+    <tr><td>HD-LLS_J233446.40-090812.3_z3.226</td><td>SDSSJ2334-0908</td><td>353.693</td><td>-9.137</td><td>3.317</td><td>3.226</td><td>17.7</td><td>0.1 .. 0.3</td><td>HD-LLS_J233446.40-090812.3_ESI.fits</td><td>376530</td><td>2000.0</td><td>33000</td><td>2002-12-02</td><td>3899.8</td><td>11714.9</td><td>6000.0</td><td>139</td><td>ECH</td><td>ESI</td><td>Keck-II</td></tr>
+    <tr><td>HD-LLS_J233446.40-090812.3_z3.226</td><td>SDSSJ2334-0908</td><td>353.693</td><td>-9.137</td><td>3.317</td><td>3.226</td><td>17.7</td><td>0.1 .. 0.3</td><td>HD-LLS_J233446.40-090812.3_HIRES.fits</td><td>376530</td><td>2000.0</td><td>129277</td><td>2007-09-18</td><td>4064.6</td><td>7120.0</td><td>48000.0</td><td>140</td><td>BOTH</td><td>HIRES</td><td>Keck-I</td></tr>
+    <tr><td>HD-LLS_J233446.40-090812.3_z3.226</td><td>SDSSJ2334-0908</td><td>353.693</td><td>-9.137</td><td>3.317</td><td>3.226</td><td>17.7</td><td>0.1 .. 0.3</td><td>HD-LLS_J233446.40-090812.3_MAGE.fits</td><td>376530</td><td>2000.0</td><td>16580</td><td>2010-08-13</td><td>3042.1</td><td>10269.6</td><td>5857.14285714</td><td>141</td><td>N/A</td><td>MagE</td><td>Magellan/Clay</td></tr>
     </table>
 
 
@@ -524,4 +532,5 @@ Check for high dispersion spectrum in b/g QSOs
         HD-LLS_DR1: 8
         KODIAQ_DR1: 4
         SDSS_DR7: 2
+
 

@@ -130,7 +130,7 @@ def meta_for_build(xq100_meta=None):
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
-    """ Append GGG data to the h5 file
+    """ Append XQ-100 data to the h5 file
 
     Parameters
     ----------

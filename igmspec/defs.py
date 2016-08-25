@@ -2,6 +2,8 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+import numpy as np
+
 from collections import OrderedDict
 from astropy import units as u
 
@@ -33,6 +35,8 @@ def instruments():
         # Gemini GMOS spectrometer
         'GMOS-S': dict(gratings=['R400', 'B600']),
         'GMOS-N': dict(gratings=['R400', 'B600']),
+        # UKST
+        '2dF': dict(gratings=['300B']),
         # HST
         'ACS': dict(gratings=['PR200L']),
         'WFC3': dict(gratings=['G280']),
@@ -56,6 +60,8 @@ def list_of_stypes():
 
 def z_priority():
     """ List of redshift priorities for setting the DB redshift
+    See also myers.zbest_myers
+
     Returns
     -------
     zpri : list
@@ -63,10 +69,24 @@ def z_priority():
     """
     zpri = [
         str('GGG'),        # GGG redshifts
+        str('SDSS-HW'),    # SDSS redshifts with Hewitt&Wild
         str('BOSS_PCA'),   # PCA analysis by Paris et al. 2015 on BOSS spectra
         str('XQ-100'),     # XQ-100 redshifts
         str('BOSS_PIPE'),  # BOSS Pipeline redshifts
-        str('SDSS_PIPE'),  # BOSS Pipeline redshifts
+        str('2QZ'),        #
+        str('2SLAQ'),      #
+        str('AUS'),
+        str('AGES'),
+        str('COSMOS'),
+        str('FAN'),
+        str('MMT'),
+        str('PAPOVICH'),
+        str('GLIKMAN'),
+        str('MADDOX'),
+        str('LAMOST'),
+        str('MCGREER'),
+        str('VCV'),
+        str('ALLBOSS'),
         str('UNKN'),       # Unknown
     ]
     return zpri
@@ -80,6 +100,28 @@ def get_cat_dict():
     cdict = dict(match_toler=2*u.arcsec)
     return cdict
 
+
+def get_db_table_format():
+    """ Returns DB Table format
+
+    Returns
+    -------
+    idict : dict
+      Describes the table columns
+    """
+        # Defs
+    zpri = z_priority()
+    lenz = [len(zpi) for zpi in zpri]
+    dummyf = str('#')*np.max(np.array(lenz))  # For the Table
+    stypes = list_of_stypes()
+    lens = [len(stype) for stype in stypes]
+    dummys = str('#')*np.max(np.array(lens))  # For the Table
+
+    # Dict for Table
+    idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
+                 flag_zem=dummyf, flag_survey=0, STYPE=dummys)
+    # Return
+    return idict
 
 def get_survey_dict():
     """ Return the survey dict
@@ -95,6 +137,7 @@ def get_survey_dict():
     survey_dict['GGG'] = 16         # Worseck et al. 201X
     survey_dict['HST_z2'] = 2**5    # O'Meara et al. 2011
     survey_dict['XQ-100'] = 2**6    # Lopez et al. 2016
+    survey_dict['2QZ'] = 2**7         # Croom et al.
     #
     return survey_dict
 
