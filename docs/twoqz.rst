@@ -4,7 +4,9 @@
 2QZ Dataset
 ***********
 
-This document describes the 2QZ dataset.
+This document describes the 2QZ dataset as
+published by
+`Croom et al. (2004) <http://adsabs.harvard.edu/abs/2004MNRAS.349.1397C>`_.
 
 Notebooks
 =========
