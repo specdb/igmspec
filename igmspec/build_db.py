@@ -43,7 +43,7 @@ def add_to_flag(cur_flag, add_flag):
 
 
 def chk_maindb_join(maindb, newdb):
-    """ Check that new data is consistent with existing table
+    """Check that new data is consistent with existing table
 
     Parameters
     ----------
@@ -87,6 +87,7 @@ def chk_for_duplicates(maindb):
         return False
     else:
         return True
+
 
 def get_new_ids(maindb, newdb, chk=True):
     """ Generate new IGM_IDs for an input DB
@@ -182,7 +183,7 @@ def start_maindb(private=False):
     return maindb, tkeys
 
 
-def ver01(test=False, mk_test_file=False):
+def ver01(test=False, mk_test_file=False, **kwargs):
     """ Build version 1.0
 
     Parameters
@@ -207,7 +208,7 @@ def ver01(test=False, mk_test_file=False):
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     hdf = h5py.File(outfil,'w')
 
-    # Myers QSOs
+    ''' Myers QSOs '''
     myers.add_to_hdf(hdf)
 
     # Main DB Table
@@ -215,6 +216,7 @@ def ver01(test=False, mk_test_file=False):
 
     ''' BOSS_DR12 '''
     # Read
+    sname = 'BOSS_DR12'
     boss_meta = boss.meta_for_build()
     nboss = len(boss_meta)
     # IDs
@@ -231,8 +233,9 @@ def ver01(test=False, mk_test_file=False):
         maindb = maindb[1:100]  # Eliminate dummy line
     else:
         maindb = maindb[1:]  # Eliminate dummy line
-    #if not test:
-    #    boss.hdf5_adddata(hdf, sdss_ids, sname)
+    tmp=chk_for_duplicates(maindb)
+    if not test:
+        boss.hdf5_adddata(hdf, boss_ids, sname, **kwargs)
 
     ''' SDSS DR7'''
     sname = 'SDSS_DR7'
@@ -253,7 +256,7 @@ def ver01(test=False, mk_test_file=False):
     maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
     if not test:
-        sdss.hdf5_adddata(hdf, sdss_ids, sname)
+        sdss.hdf5_adddata(hdf, sdss_ids, sname, **kwargs)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
