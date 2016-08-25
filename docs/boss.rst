@@ -6,6 +6,14 @@ BOSS Dataset
 
 This document describes the BOSS dataset.
 
+Notebooks
+=========
+
+.. toctree::
+    :maxdepth: 1
+
+            BOSS_DR12 <BOSS_DR12>
+
 Sources
 =======
 
