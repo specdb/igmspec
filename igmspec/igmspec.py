@@ -74,10 +74,6 @@ class IgmSpec(object):
         else:
             surveys = self.qcat.in_surveys(isurvey)
 
-        # Pop BOSS_DR12 for now
-        if 'BOSS_DR12' in surveys:
-            surveys.pop(surveys.index('BOSS_DR12'))
-
         # Load spectra
         spec, meta = self.idb.grab_spec(surveys, ids, **kwargs)
         return spec, meta
