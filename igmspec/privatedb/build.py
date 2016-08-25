@@ -177,7 +177,7 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
     """
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
-    kodiaq_grp = hdf.create_group(sname)
+    grp = hdf.create_group(sname)
     # Spectra
     nspec = len(meta)
     data = np.ma.empty((1,),

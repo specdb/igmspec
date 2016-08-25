@@ -45,12 +45,6 @@ def chk_meta(meta, skip_igmid=False):
     except:
         print("Bad DATE-OBS formatting")
         chk = False
-    # Check instrument
-    meta_instr = meta['INSTR'].data
-    db_instr = np.array(inst_dict.keys())
-    if not np.all(np.in1d(meta_instr, db_instr)):
-        print("Bad instrument in meta data")
-        chk = False
     # Check for unicode
     for key in meta_keys:
         if 'unicode' in meta[key].dtype.name:
@@ -58,6 +52,12 @@ def chk_meta(meta, skip_igmid=False):
             tmp = Column(meta[key].data.astype(str), name=key)
             meta.remove_column(key)
             meta[key] = tmp
+    # Check instrument
+    meta_instr = meta['INSTR'].data
+    db_instr = np.array(inst_dict.keys()).astype(str)
+    if not np.all(np.in1d(meta_instr, db_instr)):
+        print("Bad instrument in meta data")
+        chk = False
     # Return
     return chk
 

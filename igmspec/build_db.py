@@ -11,7 +11,7 @@ import numbers
 import pdb
 
 from igmspec import defs
-from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf
+from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf, xq100
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -375,12 +375,18 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
                 v01hdf.copy(key, hdf)
     if mk_test_file:
         v01hdf_debug = h5py.File(v01file_debug,'r')
-        # Copy orginal
+        # Copy original
         for key in v01hdf_debug.keys():
             if key == 'catalog':
                 dmaindb = v01hdf_debug[key].value
             else:
                 v01hdf_debug.copy(key, hdf)
+        # Add subset of quasars
+        idx = np.array([False]*v01hdf['quasars'].size)
+        idx[0:100] = True
+        idx[161121] = True
+        idx[161130] = True
+        hdf['quasars'] = v01hdf['quasars'].value[idx]
         # Add some SDSS for script test
         bsdssi = np.where(maindb['flag_survey'] == 3)[0][0:10]
         sdss_meta = v01hdf['SDSS_DR7']['meta']
@@ -394,6 +400,26 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Finish
         test = True
         maindb = dmaindb
+
+    ''' XQ-100 '''
+    if not mk_test_file:
+        sname = 'XQ-100'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        xq100_meta = xq100.meta_for_build()
+        # IDs
+        xq100_cut, new, xq100_ids = set_new_ids(maindb, xq100_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        xq100_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][xq100_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, xq100_cut)
+        maindb = vstack([maindb, xq100_cut], join_type='exact')
+        # Update hf5 file
+        xq100.hdf5_adddata(hdf, xq100_ids, sname)#, mk_test_file=mk_test_file)
 
     ''' 2QZ '''
     if not mk_test_file:

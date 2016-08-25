@@ -7,6 +7,9 @@ import h5py
 
 from igmspec.privatedb import build as pbuild
 
+def data_path(filename):
+    data_dir = os.path.join(os.path.dirname(__file__), 'files')
+    return os.path.join(data_dir, filename)
 
 def test_grab_files():
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -21,7 +24,6 @@ def test_meta():
     meta = pbuild.mk_meta(ffiles, fname=True, skip_badz=True)
     #
     np.testing.assert_allclose(meta['zem'].data, (2.39499998093, 2.59719920158))
-
 
 def test_ingest():
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
