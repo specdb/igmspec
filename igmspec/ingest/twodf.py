@@ -19,7 +19,7 @@ from linetools import utils as ltu
 
 from igmspec.ingest import utils as iiu
 
-def get_specfil(row):
+def get_specfil(row, next=False):
     """Parse the 2QZ spectrum file
     Requires a link to the database Class
     """
@@ -192,30 +192,34 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         full_file = get_specfil(row)
         # Extract
         print("2QZ: Reading {:s}".format(full_file))
+        # Read -- A few sources have differing files..
+        try:
+            hdu = fits.open(full_file)
+        except IOError:
+            if 'a.fits' in full_file:
+                full_file = full_file.replace('a.fits','b.fits')
+                try:
+                    hdu = fits.open(full_file)
+                except:
+                    pdb.set_trace()
+                else:
+                    row['ispec'] = 2
+            else:
+                pdb.set_trace()
         # Parse name
         fname = full_file.split('/')[-1]
-        if debug:
-            if jj > 500:
-                speclist.append(str(fname))
-                if not os.path.isfile(full_file):
-                    raise IOError("2QZ file {:s} does not exist".format(full_file))
-                wvminlist.append(np.min(data['wave'][0][:npix]))
-                wvmaxlist.append(np.max(data['wave'][0][:npix]))
-                npixlist.append(npix)
-                continue
-        # Read
-        hdu = fits.open(full_file)
+        # Data
         head0 = hdu[0].header
         wave = lsio.setwave(head0)
         flux = hdu[0].data
         var = hdu[2].data
         sig = np.zeros_like(flux)
         gd = var > 0.
-        sig[gd] = np.sqrt(var)
+        sig[gd] = np.sqrt(var[gd])
         # npix
         spec = XSpectrum1D.from_tuple((wave,flux,sig))
         npix = spec.npix
-        spec.header = head0
+        #spec.header = head0
         if npix > max_npix:
             raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
         else:
