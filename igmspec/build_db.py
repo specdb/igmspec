@@ -11,7 +11,7 @@ import numbers
 import pdb
 
 from igmspec import defs
-from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers
+from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf, xq100
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -20,6 +20,7 @@ from astropy import units as u
 
 def add_to_flag(cur_flag, add_flag):
     """ Add a bitwise flag to an existing flat
+
     Parameters
     ----------
     cur_flag : int or ndarray
@@ -42,7 +43,7 @@ def add_to_flag(cur_flag, add_flag):
 
 
 def chk_maindb_join(maindb, newdb):
-    """ Check that new data is consistent with existing table
+    """Check that new data is consistent with existing table
 
     Parameters
     ----------
@@ -86,6 +87,7 @@ def chk_for_duplicates(maindb):
         return False
     else:
         return True
+
 
 def get_new_ids(maindb, newdb, chk=True):
     """ Generate new IGM_IDs for an input DB
@@ -158,7 +160,30 @@ def set_new_ids(maindb, newdb, chk=True):
     return cut_db, new, ids
 
 
-def ver01(test=False, mk_test_file=False):
+def start_maindb(private=False):
+    """ Start the main DB catalog
+
+    Returns
+    -------
+    maindb : Table
+    tkeys : list
+      List of columns in the table
+    private : bool, optional
+      Private DB?
+
+    """
+    idict = defs.get_db_table_format()
+    if private:
+        idict['PRIV_ID'] = 0
+        idict.pop('IGM_ID')
+    tkeys = idict.keys()
+    lst = [[idict[tkey]] for tkey in tkeys]
+    maindb = Table(lst, names=tkeys)
+    # Return
+    return maindb, tkeys
+
+
+def ver01(test=False, mk_test_file=False, **kwargs):
     """ Build version 1.0
 
     Parameters
@@ -183,27 +208,15 @@ def ver01(test=False, mk_test_file=False):
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     hdf = h5py.File(outfil,'w')
 
-    # Myers QSOs
+    ''' Myers QSOs '''
     myers.add_to_hdf(hdf)
 
-    # Defs
-    zpri = defs.z_priority()
-    lenz = [len(zpi) for zpi in zpri]
-    dummyf = str('#')*np.max(np.array(lenz))  # For the Table
-    stypes = defs.list_of_stypes()
-    lens = [len(stype) for stype in stypes]
-    dummys = str('#')*np.max(np.array(lens))  # For the Table
-    #cdict = defs.get_cat_dict()
-
-    # Main DB Table  (WARNING: THIS MAY TURN INTO SQL)
-    idict = dict(RA=0., DEC=0., IGM_ID=0, zem=0., sig_zem=0.,
-                 flag_zem=dummyf, flag_survey=0, STYPE=dummys)
-    tkeys = idict.keys()
-    lst = [[idict[tkey]] for tkey in tkeys]
-    maindb = Table(lst, names=tkeys)
+    # Main DB Table
+    maindb, tkeys = start_maindb()
 
     ''' BOSS_DR12 '''
     # Read
+    sname = 'BOSS_DR12'
     boss_meta = boss.meta_for_build()
     nboss = len(boss_meta)
     # IDs
@@ -220,8 +233,9 @@ def ver01(test=False, mk_test_file=False):
         maindb = maindb[1:100]  # Eliminate dummy line
     else:
         maindb = maindb[1:]  # Eliminate dummy line
-    #if not test:
-    #    boss.hdf5_adddata(hdf, sdss_ids, sname)
+    tmp=chk_for_duplicates(maindb)
+    if not test:
+        boss.hdf5_adddata(hdf, boss_ids, sname, **kwargs)
 
     ''' SDSS DR7'''
     sname = 'SDSS_DR7'
@@ -242,7 +256,7 @@ def ver01(test=False, mk_test_file=False):
     maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
     if not test:
-        sdss.hdf5_adddata(hdf, sdss_ids, sname)
+        sdss.hdf5_adddata(hdf, sdss_ids, sname, **kwargs)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
@@ -307,6 +321,7 @@ def ver01(test=False, mk_test_file=False):
         raise ValueError("Failed duplicates")
 
     # Check for junk
+    zpri = defs.z_priority()
 
     # Finish
     hdf['catalog'] = maindb
@@ -342,7 +357,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
     v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     print("Loading v01")
     v01hdf = h5py.File(v01file,'r')
-    maindb = v01hdf['catalog'].value
+    maindb = Table(v01hdf['catalog'].value)
 
     # Start new file
     version = 'v02'
@@ -363,12 +378,18 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
                 v01hdf.copy(key, hdf)
     if mk_test_file:
         v01hdf_debug = h5py.File(v01file_debug,'r')
-        # Copy orginal
+        # Copy original
         for key in v01hdf_debug.keys():
             if key == 'catalog':
                 dmaindb = v01hdf_debug[key].value
             else:
                 v01hdf_debug.copy(key, hdf)
+        # Add subset of quasars
+        idx = np.array([False]*v01hdf['quasars'].size)
+        idx[0:100] = True
+        idx[161121] = True
+        idx[161130] = True
+        hdf['quasars'] = v01hdf['quasars'].value[idx]
         # Add some SDSS for script test
         bsdssi = np.where(maindb['flag_survey'] == 3)[0][0:10]
         sdss_meta = v01hdf['SDSS_DR7']['meta']
@@ -382,6 +403,47 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Finish
         test = True
         maindb = dmaindb
+
+    ''' XQ-100 '''
+    if not mk_test_file:
+        sname = 'XQ-100'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        xq100_meta = xq100.meta_for_build()
+        # IDs
+        xq100_cut, new, xq100_ids = set_new_ids(maindb, xq100_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        xq100_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][xq100_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, xq100_cut)
+        maindb = vstack([maindb, xq100_cut], join_type='exact')
+        # Update hf5 file
+        xq100.hdf5_adddata(hdf, xq100_ids, sname)#, mk_test_file=mk_test_file)
+
+    ''' 2QZ '''
+    if not mk_test_file:
+        sname = '2QZ'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        tdf_meta = twodf.meta_for_build()
+        # IDs
+        tdf_cut, new, tdf_ids = set_new_ids(maindb, tdf_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        tdf_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][tdf_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, tdf_cut)
+        maindb = vstack([maindb,tdf_cut], join_type='exact')
+        # Update hf5 file
+        if (not test):# or mk_test_file:
+            twodf.hdf5_adddata(hdf, tdf_ids, sname, mk_test_file=mk_test_file)
 
     ''' HST_z2 '''
     if not mk_test_file:
