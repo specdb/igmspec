@@ -23,7 +23,7 @@ def get_specfil(row):
     """Parse the SDSS spectrum file
     Requires a link to the database Class
     """
-    path = os.getenv('SDSSPATH')+'/DR7_QSO/spectro/1d_26/'
+    path = os.getenv('RAW_IGMSPEC')+'/SDSS/spectro_DR7/1d_26/'
     # Generate file name (DR4 is different)
     pnm = '{0:04d}'.format(row['PLATE'])
     fnm = '{0:03d}'.format(row['FIBERID'])
