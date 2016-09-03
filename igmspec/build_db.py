@@ -446,6 +446,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Update hf5 file
         xq100.hdf5_adddata(hdf, xq100_ids, sname)#, mk_test_file=mk_test_file)
 
+    """
     ''' 2QZ '''
     if not mk_test_file:
         sname = '2QZ'
@@ -466,6 +467,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Update hf5 file
         if (not test):# or mk_test_file:
             twodf.hdf5_adddata(hdf, tdf_ids, sname, mk_test_file=mk_test_file)
+    """
 
     ''' HST_z2 '''
     if not mk_test_file:
