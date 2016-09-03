@@ -32,6 +32,8 @@ def instruments():
         'MIKEr': dict(gratings=['RED']),
         # Magellan MagE spectrometer
         'MagE': dict(gratings=['N/A']),
+        # MMT BCS
+        'MMT': dict(gratings=['??']),
         # Gemini GMOS spectrometer
         'GMOS-S': dict(gratings=['R400', 'B600']),
         'GMOS-N': dict(gratings=['R400', 'B600']),
@@ -180,3 +182,16 @@ def get_res_dicts():
     Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict, MagE=MagE_Rdict)
     #
     return Rdicts
+
+
+def get_req_clms():
+    """
+    Returns
+    -------
+    req_clms : list
+      List of required columns for meta data
+    """
+    req_clms = ['RA', 'DEC', 'EPOCH', 'zem', 'R', 'WV_MIN',
+            'WV_MAX', 'DATE-OBS', 'SURVEY_ID', 'NPIX', 'SPEC_FILE',
+            'INSTR', 'GRATING', 'TELESCOPE', 'IGM_ID']
+    return req_clms

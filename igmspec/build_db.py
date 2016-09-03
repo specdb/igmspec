@@ -175,7 +175,7 @@ def start_maindb(private=False):
     idict = defs.get_db_table_format()
     if private:
         idict['PRIV_ID'] = 0
-        idict.pop('IGM_ID')
+        #idict.pop('IGM_ID')
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]
     maindb = Table(lst, names=tkeys)
