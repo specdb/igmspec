@@ -58,7 +58,6 @@ def grab_meta():
     boss_meta['sig_zem'][bad_pca] = boss_meta['ERR_ZPIPE'][bad_pca]
     boss_meta['flag_zem'][bad_pca] = str('BOSS_PIPE')
     #
-    pdb.set_trace()
     return boss_meta
 
 
@@ -205,11 +204,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
         spec = lsio.readspec(full_file)
         # npix
         npix = spec.npix
-        if row['zem'] > 4.8:
-            pdb.set_trace()
-        if npix == 0:
+        #if row['zem'] > 4.8:
+        #    pdb.set_trace()
+        if npix < 10:
             full_file = get_specfil(row, hiz=True)
-            pdb.set_trace()
             spec = lsio.readspec(full_file)
         elif npix > max_npix:
             raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
