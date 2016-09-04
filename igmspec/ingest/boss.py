@@ -209,6 +209,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
         if npix < 10:
             full_file = get_specfil(row, hiz=True)
             spec = lsio.readspec(full_file)
+            npix = spec.npix
         elif npix > max_npix:
             raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
         else:
