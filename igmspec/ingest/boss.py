@@ -24,6 +24,7 @@ def grab_meta():
     """ Grab BOSS meta Table
     Returns
     -------
+    boss_meta : Table
 
     """
 
