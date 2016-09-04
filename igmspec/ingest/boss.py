@@ -30,6 +30,9 @@ def grab_meta():
     #http://www.sdss.org/dr12/algorithms/boss-dr12-quasar-catalog/
     boss_dr12 = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q.fits.gz')
     boss_dr12['CAT'] = ['DR12Q']*len(boss_dr12)
+    gd = np.any([boss_dr12['Z_PIPE'] > 0., boss_dr12['Z_PCA'] > 0.],axis=0) # CUTS Z_VI
+    pdb.set_trace()
+    boss_dr12 = boss_dr12[gd]
     #
     boss_sup = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS/DR12Q_sup.fits.gz')
     boss_sup['CAT'] = ['SUPGD']*len(boss_sup)

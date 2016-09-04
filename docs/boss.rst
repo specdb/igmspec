@@ -21,12 +21,18 @@ The igmspec database is intended to include all of the
 quasar spectra in the BOSS DR12 data release.  The current
 version includes the following catalogs:
 
-==========  =============================================== ===========
-Catalog     Description                                     Link
-==========  =============================================== ===========
-DR12Q       Official DR12 quasar release of the             `DR12Q <http://data.sdss3.org/datamodel/files/BOSS_QSO/DR12Q/DR12Q.html>`_
-            BOSS survey.  This is 297,301 quasars
-==========  =============================================== ===========
+============  =============================================== ===========
+Catalog       Description                                     Link
+============  =============================================== ===========
+DR12Q         Official DR12 quasar release of the             `DR12Q <http://data.sdss3.org/datamodel/files/BOSS_QSO/DR12Q/DR12Q.html>`_
+              BOSS survey.  This is 297,301 quasars
+DR12Q_sup     Supplemental quasars                            `DR12Q_sup <https://data.sdss.org/datamodel/files/BOSS_QSO/DR12Q/DR12Q_sup.html>`_
+DR12Q_supbad  Bad spectra identified as quasars               No unique link
+============  =============================================== ===========
+
+For DR12Q, I have ignored the ~50 sources with Z_VI>0 but
+Z_PCA and Z_PIPE junk.  I noted that at least one of these
+doesn't have a proper spectrum.
 
 Meta Data
 =========
