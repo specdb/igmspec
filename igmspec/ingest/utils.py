@@ -83,6 +83,7 @@ def set_resolution(head, instr=None):
         else:
             pass
         if instr is None:
+            pdb.set_trace()
             raise ValueError("NEED MORE INFO FOR INSTR")
 
     # Grab resolution

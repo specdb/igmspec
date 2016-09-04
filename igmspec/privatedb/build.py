@@ -10,9 +10,8 @@ import datetime
 import warnings
 import pdb
 
-
-
 from astropy.table import Table, vstack, Column
+from astropy.io import fits
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 
 from linetools import utils as ltu
@@ -64,7 +63,8 @@ def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
 
 
 def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
-            mdict=None, debug=False, **kwargs):
+            mdict=None, parse_head=None, debug=False,
+            private_z=None, **kwargs):
     """ Generate a meta Table from an input list of files
 
     Parameters
@@ -80,8 +80,12 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
         where x cannot be a #. or +/-
     skip_badz : bool, optional
       Skip spectra without a parseable redshift (using the Myers catalog)
+    parse_head : dict, optional
+      Parse header for meta info with this dict
     mdict : dict, optional
       Input meta data in dict form e.g.  mdict=dict(INSTR='ESI')
+    private_z : Table, optional
+      Table of private redshifts.  Must include RA, DEC, ZEM, ZEM_SOURCE
 
     Returns
     -------
@@ -89,7 +93,6 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
       Meta table
     """
     from igmspec.igmspec import IgmSpec
-    from igmspec import defs as igmsp_defs
     igmsp = IgmSpec(skip_test=True)
     #
     coordlist = []
@@ -135,8 +138,13 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
     meta['PRIV_ID'] = np.arange(len(meta)).astype(int) + (max_pid+1)
     meta['flag_survey'] = [1]*len(meta)
 
-    # Redshift from Myers
-    zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], igmsp.idb.hdf)
+    # Redshift from Myers (and more)
+    myers = Table(igmsp.idb.hdf['quasars'].value)
+    if private_z is not None:
+        zqsos = vstack([myers, private_z])
+    else:
+        zqsos = myers
+    zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], zqsos)
     badz = zem <= 0.
     if np.sum(badz) > 0:
         if skip_badz:
@@ -168,7 +176,7 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
         pdb.set_trace()
     maindb = maindb[1:]
 
-    # Add other meta info (as desired)
+    # SPEC_FILE
     maindb['SPEC_FILE'] = np.array(files)[~badz]
 
     # mdict
@@ -180,6 +188,31 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
     if 'EPOCH' not in maindb.keys():
         warnings.warn("EPOCH not defined.  Filling with 2000.")
         maindb['EPOCH'] = 2000.
+
+    # Header?
+    if parse_head is not None:
+        # Setup to store
+        plist = {}
+        for key in parse_head.keys():
+            plist[key] = []
+        # Loop on files
+        for sfile in maindb['SPEC_FILE']:
+            head = fits.open(sfile)[0].header
+            for key,item in parse_head.items():
+                # R
+                if key == 'R':
+                    if parse_head[key] == True:
+                        plist[key].append(iiu.set_resolution(head))
+                    else:
+                        raise ValueError("Set something else for R")
+                elif key == 'DATE-OBS':
+                    tval = datetime.datetime.strptime(head[item], '%Y-%m-%d')
+                    plist[key].append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
+                else:
+                    plist[key].append(head[item])
+        # Finish
+        for key in parse_head.keys():
+            maindb[key] = plist[key]
 
     # Fill in empty columns with warning
     mkeys = maindb.keys()
