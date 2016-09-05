@@ -90,7 +90,7 @@ def chk_for_duplicates(maindb):
         return True
 
 
-def get_new_ids(maindb, newdb, chk=True):
+def get_new_ids(maindb, newdb, chk=True, idkey='IGM_ID'):
     """ Generate new IGM_IDs for an input DB
 
     Parameters
@@ -99,6 +99,8 @@ def get_new_ids(maindb, newdb, chk=True):
     newdb : Table
     chk : bool, optional
       Perform some checks
+    idkey : str, optional
+      Key for ID
 
     Returns
     -------
@@ -116,12 +118,12 @@ def get_new_ids(maindb, newdb, chk=True):
     idx, d2d, d3d = match_coordinates_sky(c_new, c_main, nthneighbor=1)
     new = d2d > cdict['match_toler']
     # Old IDs
-    IDs[~new] = -1 * maindb['IGM_ID'][idx[~new]]
+    IDs[~new] = -1 * maindb[idkey][idx[~new]]
     nnew = np.sum(new)
     # New IDs
     if nnew > 0:
         # Generate
-        newID = np.max(maindb['IGM_ID']) + 1
+        newID = np.max(maindb[idkey]) + 1
         newIDs = newID + np.arange(nnew, dtype=int)
         # Insert
         IDs[new] = newIDs
@@ -132,7 +134,7 @@ def get_new_ids(maindb, newdb, chk=True):
     return IDs
 
 
-def set_new_ids(maindb, newdb, chk=True):
+def set_new_ids(maindb, newdb, chk=True, idkey='IGM_ID'):
     """ Set the new IDs
     Parameters
     ----------
@@ -150,11 +152,11 @@ def set_new_ids(maindb, newdb, chk=True):
 
     """
     # IDs
-    ids = get_new_ids(maindb, newdb)  # Includes new and old
+    ids = get_new_ids(maindb, newdb, idkey=idkey)  # Includes new and old
     # Truncate
     new = ids > 0
     cut_db = newdb[new]
-    cut_db.add_column(Column(ids[new], name='IGM_ID'))
+    cut_db.add_column(Column(ids[new], name=idkey))
     # Reset IDs to all positive
     ids = np.abs(ids)
     #
@@ -174,8 +176,8 @@ def start_maindb(private=False):
 
     """
     idict = defs.get_db_table_format()
-    if private:
-        idict['PRIV_ID'] = 0
+    #if private:
+    #    idict['PRIV_ID'] = 0
         #idict.pop('IGM_ID')
     tkeys = idict.keys()
     lst = [[idict[tkey]] for tkey in tkeys]

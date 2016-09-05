@@ -62,7 +62,7 @@ def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
     return pfiles
 
 
-def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
+def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
             mdict=None, parse_head=None, debug=False,
             private_z=None, verbose=False, **kwargs):
     """ Generate a meta Table from an input list of files
@@ -71,8 +71,6 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
     ----------
     files : list
       List of FITS files
-    max_pid : int
-      Maximum private ID used thus far
     fname : bool, optional
       Attempt to parse RA/DEC from the file name
       Format must be
@@ -111,10 +109,13 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
                 else:
                     i1 = ii
                     break
+            # Deal with .fits
+            if ifile[i1-1] == '.':
+                i1 -= 1
         # Get coord
         try:
             coord = ltu.radec_to_coord(ifile[i0:i1])
-        except UnboundLocalError:
+        except (UnboundLocalError, ValueError):
             pdb.set_trace()
         coordlist.append(coord)
     coords = SkyCoord(ra=[coord.ra.degree for coord in coordlist], dec=[coord.dec.degree for coord in coordlist], unit='deg')
@@ -135,7 +136,7 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
     meta['RA'] = coords.ra.deg
     meta['DEC'] = coords.dec.deg
     meta['STYPE'] = [stype]*len(meta)
-    meta['PRIV_ID'] = np.arange(len(meta)).astype(int) + (max_pid+1)
+    #meta['PRIV_ID'] = np.arange(len(meta)).astype(int) + (max_pid+1)
     meta['flag_survey'] = [1]*len(meta)
 
     # Redshift from Myers (and more)
@@ -232,7 +233,7 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
 
     # Return
     if debug:
-        maindb[['IGM_ID', 'PRIV_ID', 'RA', 'SPEC_FILE']].pprint(max_width=120)
+        maindb[['IGM_ID', 'RA', 'DEC', 'SPEC_FILE']].pprint(max_width=120)
         pdb.set_trace()
     return maindb
 

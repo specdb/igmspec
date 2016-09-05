@@ -37,6 +37,7 @@ def instruments():
         # Gemini GMOS spectrometer
         'GMOS-S': dict(gratings=['R400', 'B600']),
         'GMOS-N': dict(gratings=['R400', 'B600']),
+        'GNIRS': dict(gratings=['ECH']),
         # UKST
         '2dF': dict(gratings=['300B']),
         # HST
@@ -184,9 +185,11 @@ def get_res_dicts():
                   'B600+_G5323': 844.,
                   'B1200+_G5301': 1872.,
                   }
+    GNIRS_Rdict = {'32/mm_G5506': 1700.,    # Assumes 0.3" slit
+                  }
     #
     Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict, MagE=MagE_Rdict,
-                  GMOS=GMOS_Rdict)
+                  GMOS=GMOS_Rdict, GNIRS=GNIRS_Rdict)
     #
     return Rdicts
 
