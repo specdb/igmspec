@@ -6,20 +6,20 @@ import numpy as np
 import os, glob
 import json
 import h5py
-import datetime
 import warnings
 import pdb
 
 from astropy.table import Table, vstack, Column
 from astropy.io import fits
 from astropy.coordinates import SkyCoord, match_coordinates_sky
+from astropy.time import Time
 
 from linetools import utils as ltu
 from linetools.spectra import io as lsio
 
 from igmspec.cat_utils import zem_from_radec
 from igmspec import build_db as ibdb
-from igmspec import defs
+from igmspec import defs as igmsp_defs
 from igmspec.ingest import utils as iiu
 
 
@@ -64,7 +64,7 @@ def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
 
 def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
             mdict=None, parse_head=None, debug=False,
-            private_z=None, **kwargs):
+            private_z=None, verbose=False, **kwargs):
     """ Generate a meta Table from an input list of files
 
     Parameters
@@ -165,7 +165,7 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
     c_new = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
     # Find new sources
     idx, d2d, d3d = match_coordinates_sky(c_new, c_igmsp, nthneighbor=1)
-    cdict = defs.get_cat_dict()
+    cdict = igmsp_defs.get_cat_dict()
     mtch = d2d < cdict['match_toler']
     meta['IGM_ID'][mtch] = igmsp.qcat.cat['IGM_ID'][idx[mtch]]
 
@@ -179,6 +179,38 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
     # SPEC_FILE
     maindb['SPEC_FILE'] = np.array(files)[~badz]
 
+    # Try Header?
+    if parse_head is not None:
+        # Setup to store
+        plist = {}
+        for key in parse_head.keys():
+            plist[key] = []
+        # Loop on files
+        for sfile in maindb['SPEC_FILE']:
+            if verbose:
+                print('Parsing {:s}'.format(sfile))
+            head = fits.open(sfile)[0].header
+            for key,item in parse_head.items():
+                # R
+                if key == 'R':
+                    if parse_head[key] == True:
+                        try:
+                            plist[key].append(iiu.set_resolution(head))
+                        except ValueError:
+                            if mdict is not None:
+                                plist[key].append(mdict['R'])
+                            else:
+                                plist[key].append(0.)
+                    else:
+                        raise ValueError("Set something else for R")
+                elif key == 'DATE-OBS':
+                    tval = Time(head[item], format='isot', out_subfmt='date')
+                    plist[key].append(tval.iso)
+                else:
+                    plist[key].append(head[item])
+        # Finish
+        for key in parse_head.keys():
+            maindb[key] = plist[key]
     # mdict
     if mdict is not None:
         for key,item in mdict.items():
@@ -188,31 +220,6 @@ def mk_meta(files, max_pid, fname=False, stype='QSO', skip_badz=False,
     if 'EPOCH' not in maindb.keys():
         warnings.warn("EPOCH not defined.  Filling with 2000.")
         maindb['EPOCH'] = 2000.
-
-    # Header?
-    if parse_head is not None:
-        # Setup to store
-        plist = {}
-        for key in parse_head.keys():
-            plist[key] = []
-        # Loop on files
-        for sfile in maindb['SPEC_FILE']:
-            head = fits.open(sfile)[0].header
-            for key,item in parse_head.items():
-                # R
-                if key == 'R':
-                    if parse_head[key] == True:
-                        plist[key].append(iiu.set_resolution(head))
-                    else:
-                        raise ValueError("Set something else for R")
-                elif key == 'DATE-OBS':
-                    tval = datetime.datetime.strptime(head[item], '%Y-%m-%d')
-                    plist[key].append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
-                else:
-                    plist[key].append(head[item])
-        # Finish
-        for key in parse_head.keys():
-            maindb[key] = plist[key]
 
     # Fill in empty columns with warning
     mkeys = maindb.keys()
@@ -266,13 +273,9 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
-    Rlist = []
     wvminlist = []
     wvmaxlist = []
-    dateobslist = []
     npixlist = []
-    gratinglist = []
-    telelist = []
     # Loop
     for jj,member in enumerate(meta['SPEC_FILE']):
         # Extract
@@ -295,25 +298,11 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
-        # Dummy
-        telelist.append('Keck-I')
-        gratinglist.append('BOTH')
-        #Rlist.append(iiu.set_resolution(head))
-        Rlist.append(2000.)
-        try:
-            tval = datetime.datetime.strptime(head['DATE-OBS'], '%Y-%m-%d')
-        except KeyError:
-            pdb.set_trace()
-        dateobslist.append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
-        #if chk_meta_only:
-        #    continue
         # Set
         spec_set[jj] = data
 
     # Add columns
-    nmeta = len(meta)
     meta.add_column(Column(npixlist, name='NPIX'))
-    meta.add_column(Column([str(date) for date in dateobslist], name='DATE-OBS'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
 
@@ -352,7 +341,7 @@ def mk_db(trees, names, outfil, **kwargs):
     hdf = h5py.File(outfil,'w')
 
     # Defs
-    zpri = defs.z_priority()
+    zpri = igmsp_defs.z_priority()
 
     # Main DB Table
     maindb, tkeys = ibdb.start_maindb(private=True)

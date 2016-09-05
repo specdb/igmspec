@@ -80,10 +80,11 @@ def set_resolution(head, instr=None):
                 instr = 'HIRES'
             elif 'MagE' in head['INSTRUME']:
                 instr = 'MagE'
+            elif 'GMOS' in head['INSTRUME']:
+                instr = 'GMOS'
         else:
             pass
         if instr is None:
-            pdb.set_trace()
             raise ValueError("NEED MORE INFO FOR INSTR")
 
     # Grab resolution
@@ -97,6 +98,12 @@ def set_resolution(head, instr=None):
             return Rdicts[instr][head['DECKNAME'].strip()]
         except KeyError:
             print("Need to add {:s}".format(head['DECKNAME']))
+            pdb.set_trace()
+    elif instr == 'GMOS':
+        try:
+            return Rdicts[instr][head['GRATING']]
+        except KeyError:
+            print("Need to add {:s}".format(head['GRATING']))
             pdb.set_trace()
     elif instr == 'MagE':
         try:

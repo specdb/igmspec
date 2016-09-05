@@ -180,8 +180,13 @@ def get_res_dicts():
                    'E3': HIRES1/0.4,
                    }
     MagE_Rdict = {'0.70': 4100./0.7}
+    GMOS_Rdict = {'B600+_G5307': 844.,    # Assumes 1" slit
+                  'B600+_G5323': 844.,
+                  'B1200+_G5301': 1872.,
+                  }
     #
-    Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict, MagE=MagE_Rdict)
+    Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict, MagE=MagE_Rdict,
+                  GMOS=GMOS_Rdict)
     #
     return Rdicts
 
