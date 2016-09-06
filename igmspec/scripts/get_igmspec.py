@@ -39,13 +39,13 @@ def main(pargs):
     import subprocess
 
     # Version
-    if pargs.version not in ['v01']:
+    if pargs.version not in ['v01', 'v02']:
         raise IOError("Bad version number")
 
     # URL
     url_page = 'http://www.ucolick.org/~xavier/HD-LLS/DR1/'
     url = url_page+'IGMspec_DB_{:s}.hdf5'.format(pargs.version)
-
+    
     # wget command
     subprocess.call(['wget', '--continue', '--timestamping', url])
 
