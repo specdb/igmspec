@@ -155,7 +155,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
             # A few by hand (pulled from Table 1)
             if 'n1317' in fname:
                 Rlist.append(Rdicts['HIRES']['C5'])
-                tval = datetime.datetime.strptime('2001-01-04', '%Y-%m-%d')
+                t = Time('2001-01-04', format='isot', out_subfmt='date')
+            else:
+                pdb.set_trace()
         else:
             if '/' in head['DATE-OBS']:
                 spl = head['DATE-OBS'].split('/')
@@ -195,7 +197,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     hdla100_meta.add_column(Column(gratinglist, name='GRATING'))
     hdla100_meta['INSTR'] = ['HIRES']*nspec
     hdla100_meta['TELESCOPE'] = ['Keck-I']*nspec
-    hdla100_meta.rename_column('Z_QSO', 'zem')
+    #hdla100_meta.rename_column('Z_QSO', 'zem')
 
     # Add HDLLS meta to hdf5
     if iiu.chk_meta(hdla100_meta):
