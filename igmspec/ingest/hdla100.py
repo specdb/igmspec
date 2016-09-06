@@ -108,7 +108,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     # Build spectra (and parse for meta)
     #if mk_test_file:
     #    hdla100_full = hdlls_full[0:3]
-    max_npix = 140000  # Just needs to be large enough
+    max_npix = 167000  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -151,27 +151,33 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         try:
             Rlist.append(iiu.set_resolution(head))
         except ValueError:
-            pdb.set_trace()
+            print(fname)
             # A few by hand (pulled from Table 1)
-            if 'J073149' in fname:
+            if 'n1317' in fname:
                 Rlist.append(Rdicts['HIRES']['C5'])
-                tval = datetime.datetime.strptime('2006-01-04', '%Y-%m-%d')
+                tval = datetime.datetime.strptime('2001-01-04', '%Y-%m-%d')
         else:
             if '/' in head['DATE-OBS']:
                 spl = head['DATE-OBS'].split('/')
                 t = Time(datetime.datetime(int(spl[2])+1900, int(spl[1]), int(spl[0])), format='datetime')
             else:
-                pdb.set_trace()
+                t = Time(head['DATE-OBS'], format='isot', out_subfmt='date')
         dateobslist.append(t.iso)
         # Grating
         try:
             gratinglist.append(head['XDISPERS'])
         except KeyError:
-            if t.value.year <= 1996:
+            try:
+                yr = t.value.year
+            except AttributeError:
+                yr = int(t.value[0:4])
+            if yr <= 1997:
                 gratinglist.append('RED')
             else:
+                gratinglist.append('RED')
                 print('grating issue...')
-                pdb.set_trace()
+                if 'n1317' not in fname:
+                    pdb.set_trace()
         # Only way to set the dataset correctly
         if chk_meta_only:
             continue

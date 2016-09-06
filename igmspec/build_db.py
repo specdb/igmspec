@@ -333,8 +333,10 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
     Returns
     -------
     """
+    import os
     # Read v1.X
-    v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'
+    #v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'
+    v01file = os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5'
     v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     print("Loading v01")
     v01hdf = h5py.File(v01file,'r')
