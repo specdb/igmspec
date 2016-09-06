@@ -108,7 +108,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     # Build spectra (and parse for meta)
     #if mk_test_file:
     #    hdla100_full = hdlls_full[0:3]
-    max_npix = 167000  # Just needs to be large enough
+    max_npix = 192000  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
