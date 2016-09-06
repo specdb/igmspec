@@ -17,6 +17,7 @@ Below is the list of surveys included in igmspec v1.0
 * :doc:`sdss`   [SDSS_DR7]
 * :doc:`ggg`   [GGG]
 * :doc:`hst_z2`   [HST_z2]
+* :doc:`twoqz`   [2QZ]
 
 Overview
 ========
@@ -82,6 +83,7 @@ MIKE        BOTH     Spectrum is a splice of MIKEb and MIKEr data
 SDSS        BLUE     Blue channel spectrograph
  ..         RED      Red channel spectrograph
  ..         BOTH     Spectrum includes data from both spectrographs
+2dF         300B     Blue channel spectrograph
 ==========  ======== ============================================
 
 Telescopes
@@ -99,6 +101,7 @@ Keck II         http://www.keckobservatory.org/
 Magellan/Clay   http://obs.carnegiescience.edu/Magellan
 Magellan/Baade  http://obs.carnegiescience.edu/Magellan
 SDSS 2.5-M      https://www.sdss3.org/instruments/telescope.php
+UKST            https://www.aao.gov.au/about-us/uk-schmidt-telescope
 ==============  ====================================================
 
 

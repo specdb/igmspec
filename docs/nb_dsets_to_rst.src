@@ -5,9 +5,9 @@
 
 # Requires pandoc https://github.com/jgm/pandoc/releases/tag/1.15.2
 
-filenames=( Simple_Usage
-     Simple_Scripts
-     Private_Ingest
+filenames=( BOSS_DR12
+     Myers_QSOs
+     2QZ
      )
 
 for n in "${filenames[@]}"
@@ -15,7 +15,7 @@ for n in "${filenames[@]}"
 do
 	echo examples/$n\.ipynb
 	echo $n\.rst
-	jupyter nbconvert examples/$n.ipynb --to rst;
+	jupyter nbconvert datasets/$n.ipynb --to rst;
 	sed -i '' "5 i\\
  :download:\`Download <examples/$n\.ipynb>\` this notebook.\\
 \\

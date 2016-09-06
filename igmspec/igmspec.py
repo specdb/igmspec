@@ -18,6 +18,8 @@ class IgmSpec(object):
 
     Parameters
     ----------
+    skip_test : bool, optional
+      Skip tests?  Highly *not* recommended
 
     Attributes
     ----------
@@ -25,7 +27,7 @@ class IgmSpec(object):
     idb : InterfaceDB
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, skip_test=False, **kwargs):
         """
         """
         # Init
@@ -33,8 +35,9 @@ class IgmSpec(object):
         self.idb = InterfaceDB(**kwargs)
         # Checks
         assert self.idb.db_file == self.qcat.db_file
-        for survey in self.idb.surveys:
-            assert survey in self.qcat.surveys
+        if not skip_test:
+            for survey in self.idb.surveys:
+                assert survey in self.qcat.surveys
 
     def spec_from_coord(self, coord, tol=5.*u.arcsec, isurvey=None, **kwargs):
         """ Radial search for spectra around given coordinate
@@ -73,10 +76,6 @@ class IgmSpec(object):
             surveys = self.qcat.surveys
         else:
             surveys = self.qcat.in_surveys(isurvey)
-
-        # Pop BOSS_DR12 for now
-        if 'BOSS_DR12' in surveys:
-            surveys.pop(surveys.index('BOSS_DR12'))
 
         # Load spectra
         spec, meta = self.idb.grab_spec(surveys, ids, **kwargs)
