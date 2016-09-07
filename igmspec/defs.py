@@ -26,6 +26,9 @@ def instruments():
         'HIRES': dict(gratings=['BLUE', 'RED', 'BOTH']),
         # Keck/ESI spectrometer -- ECH
         'ESI': dict(gratings=['ECH']),
+        # Keck/LRIS spectrometer
+        'LRISb': dict(gratings=['ECH']),
+        'LRISr': dict(gratings=['ECH']),
         # Magellan MIKE spectrometer
         'MIKE': dict(gratings=['BOTH']),   # HD-LLS spliced blue and red
         'MIKEb': dict(gratings=['BLUE']),
@@ -45,6 +48,7 @@ def instruments():
         'WFC3': dict(gratings=['G280']),
         # VLT
         'XSHOOTER': dict(gratings=['UVB,VIS,NIR']),
+        'ISAAC': dict(gratings=['SW_MRes']),
     }
     return inst_dict
 
@@ -162,6 +166,7 @@ def survey_flag(survey, iflag=None):
     #
     return survey_dict[survey]
 
+
 def get_res_dicts():
     """ Resolution dicts
 
@@ -180,6 +185,8 @@ def get_res_dicts():
                    'B5': HIRES1/0.861,
                    'E3': HIRES1/0.4,
                    }
+    LRISb_Rdict = {'400/3400': 500.}      # Assumes 1" slit
+    LRISr_Rdict = {'600/7500': 1595.}     # Assumes 1" slit
     MagE_Rdict = {'0.70': 4100./0.7}
     GMOS_Rdict = {'B600+_G5307': 844.,    # Assumes 1" slit
                   'B600+_G5323': 844.,
@@ -189,9 +196,24 @@ def get_res_dicts():
                   }
     #
     Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict, MagE=MagE_Rdict,
-                  GMOS=GMOS_Rdict, GNIRS=GNIRS_Rdict)
+                  GMOS=GMOS_Rdict, GNIRS=GNIRS_Rdict, LRISb=LRISb_Rdict,
+                  LRISr=LRISr_Rdict,
+                  )
     #
     return Rdicts
+
+
+def slit_dict():
+    """ Slit dict
+
+    Returns
+    -------
+    sdict : dict
+      Translates slit mask name to slit with in arcsec
+
+    """
+    sdict = {'long_1.0':1.0}
+    return sdict
 
 
 def get_req_clms():

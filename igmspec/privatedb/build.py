@@ -23,20 +23,21 @@ from igmspec import defs as igmsp_defs
 from igmspec.ingest import utils as iiu
 
 
-def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
+def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits',
+                                      'E.fits', 'N.fits')):
     """ Generate a list of FITS files within the file tree
 
     Parameters
     ----------
     tree_root : str
       Top level path of the tree of FITS files
+    skip_files : tuple
+      List of file roots to skip as primary files when ingesting
 
     Returns
     -------
     files : list
       List of FITS files
-    skip_files : tuple
-      List of file roots to skip as primary files when ingesting
 
     """
     walk = os.walk(tree_root)
@@ -92,6 +93,8 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
     """
     from igmspec.igmspec import IgmSpec
     igmsp = IgmSpec(skip_test=True)
+    Rdicts = igmsp_defs.get_res_dicts()
+    sdict = igmsp_defs.slit_dict()
     #
     coordlist = []
     for ifile in files:
@@ -209,6 +212,25 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
                     plist[key].append(tval.iso)
                 else:
                     plist[key].append(head[item])
+            # LRIS?
+            try:
+                instr = head['INSTRUME']
+            except KeyError:
+                instr = None
+            if instr == 'LRIS':
+                if 'GRATING' not in plist.keys():
+                    plist['GRATING'] = []
+                    plist['INSTR'] = []
+                    plist['R'] = []
+                if 'LRIS-R' in head['DETECTOR']:
+                    plist['GRATING'].append(head['GRANAME'])
+                    plist['INSTR'].append('LRISr')
+                else:
+                    plist['GRATING'].append(head['GRISNAME'])
+                    plist['INSTR'].append('LRISb')
+                # Resolution
+                res = Rdicts[plist['INSTR'][-1]][plist['GRATING'][-1]]
+                plist['R'].append(res/sdict[head['SLITNAME']])
         # Finish
         for key in parse_head.keys():
             maindb[key] = plist[key]
