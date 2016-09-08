@@ -48,7 +48,7 @@ def instruments():
         'ACS': dict(gratings=['PR200L']),
         'WFC3': dict(gratings=['G280']),
         # VLT
-        'XSHOOTER': dict(gratings=['UVB,VIS,NIR']),
+        'XSHOOTER': dict(gratings=['UVB,VIS,NIR,ALL']),
         'ISAAC': dict(gratings=['SW_MRes']),
     }
     return inst_dict
@@ -230,10 +230,13 @@ def slit_dict(slitname, req_long=True):
     try:
         swidth = sdict[slitname]
     except KeyError:
-        if ('long' not in slitname) & req_long:
-                swidth = 1.
-        else:
-            pdb.set_trace()
+        try:
+            swidth = float(slitname)
+        except ValueError:
+            if ('long' not in slitname) & req_long:
+                    swidth = 1.
+            else:
+                pdb.set_trace()
     #
     return swidth
 

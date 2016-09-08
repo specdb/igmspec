@@ -202,7 +202,10 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
                             plist[key].append(iiu.set_resolution(head))
                         except ValueError:
                             if mdict is not None:
-                                plist[key].append(mdict['R'])
+                                try:
+                                    plist[key].append(mdict['R'])
+                                except KeyError:
+                                    pdb.set_trace()
                             else:
                                 plist[key].append(0.)
                     else:
@@ -212,12 +215,17 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
                     plist[key].append(tval.iso)
                 else:
                     plist[key].append(head[item])
-            # LRIS?
+            # INSTRUMENT SPECIFIC
             try:
                 instr = head['INSTRUME']
             except KeyError:
                 instr = 'none'
-            if 'LRIS' in instr:
+            if 'MagE' in instr:
+                if 'R' not in plist.keys():
+                    plist['R'] = []
+                swidth = igmsp_defs.slit_dict(head['SLITNAME'])
+                plist['R'].append(4100./swidth)
+            elif 'LRIS' in instr:
                 if 'GRATING' not in plist.keys():
                     plist['GRATING'] = []
                     plist['INSTR'] = []
@@ -246,13 +254,8 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
                 plist['R'].append(res/swidth)
         # Finish
         for key in plist.keys():
-            try:
-                maindb[key] = plist[key]
-            except:
-                pdb.set_trace()
+            maindb[key] = plist[key]
     # mdict
-    if instr == "LRIS":
-        pdb.set_trace()
     if mdict is not None:
         for key,item in mdict.items():
             maindb[key] = [item]*len(meta)
