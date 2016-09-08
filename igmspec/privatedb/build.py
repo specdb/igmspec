@@ -16,6 +16,7 @@ from astropy.time import Time
 
 from linetools import utils as ltu
 from linetools.spectra import io as lsio
+from linetools.spectra.xspectrum1d import XSpectrum1D
 
 from igmspec.cat_utils import zem_from_radec
 from igmspec import build_db as ibdb
@@ -24,7 +25,7 @@ from igmspec.ingest import utils as iiu
 
 
 def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits',
-                                      'E.fits', 'N.fits')):
+                                      'E.fits', 'N.fits', 'old.fits')):
     """ Generate a list of FITS files within the file tree
 
     Parameters
@@ -94,7 +95,6 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
     from igmspec.igmspec import IgmSpec
     igmsp = IgmSpec(skip_test=True)
     Rdicts = igmsp_defs.get_res_dicts()
-    sdict = igmsp_defs.slit_dict()
     #
     coordlist = []
     for ifile in files:
@@ -216,13 +216,20 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
             try:
                 instr = head['INSTRUME']
             except KeyError:
-                instr = None
-            if instr == 'LRIS':
+                instr = 'none'
+            if 'LRIS' in instr:
                 if 'GRATING' not in plist.keys():
                     plist['GRATING'] = []
                     plist['INSTR'] = []
                     plist['R'] = []
-                if 'LRIS-R' in head['DETECTOR']:
+                try:
+                    det = head['DETECTOR']
+                except KeyError:
+                    if head['OUTFILE'] == 'lred':
+                        det = 'LRIS-R'
+                    else:
+                        det = 'LRIS-B'
+                if 'LRIS-R' in det:
                     plist['GRATING'].append(head['GRANAME'])
                     plist['INSTR'].append('LRISr')
                 else:
@@ -230,11 +237,22 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
                     plist['INSTR'].append('LRISb')
                 # Resolution
                 res = Rdicts[plist['INSTR'][-1]][plist['GRATING'][-1]]
-                plist['R'].append(res/sdict[head['SLITNAME']])
+                try:
+                    sname = head['SLITNAME']
+                except KeyError:
+                    swidth = 1.
+                else:
+                    swidth = igmsp_defs.slit_dict(sname)
+                plist['R'].append(res/swidth)
         # Finish
-        for key in parse_head.keys():
-            maindb[key] = plist[key]
+        for key in plist.keys():
+            try:
+                maindb[key] = plist[key]
+            except:
+                pdb.set_trace()
     # mdict
+    if instr == "LRIS":
+        pdb.set_trace()
     if mdict is not None:
         for key,item in mdict.items():
             maindb[key] = [item]*len(meta)
@@ -260,8 +278,21 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
     return maindb
 
 
+def dumb_spec():
+    """ Generate a dummy spectrum
+    Returns
+    -------
+
+    """
+    npix = 1000
+    dspec = XSpectrum1D.from_tuple((np.arange(npix)+5000., np.ones(npix),
+                                   np.ones(npix)))
+    #
+    return dspec
+
+
 def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
-                   refs=None, **kwargs):
+                   refs=None, verbose=False, badf=None, **kwargs):
     """ Ingest the spectra
     Parameters
     ----------
@@ -275,6 +306,8 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
       Only check meta file;  will not write
     refs : list, optional
       list of dicts with reference info
+    badf : list, optional
+      List of bad spectra [use only if you know what you are doing!]
 
     Returns
     -------
@@ -303,9 +336,17 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
     for jj,member in enumerate(meta['SPEC_FILE']):
         # Extract
         f = member
-        spec = lsio.readspec(f)
         # Parse name
         fname = f.split('/')[-1]
+        if verbose:
+            print(fname)
+        # Read
+        if badf is not None:
+            for ibadf in badf:
+                if ibadf in f:
+                    spec = dumb_spec()
+                else:
+                    spec = lsio.readspec(f)
         # npix
         head = spec.header
         npix = spec.npix
@@ -335,6 +376,7 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
             pdb.set_trace()
         hdf[sname]['meta'] = meta
     else:
+        pdb.set_trace()
         raise ValueError("meta file failed")
     # References
     if refs is not None:

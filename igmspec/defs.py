@@ -3,6 +3,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
+import pdb
 
 from collections import OrderedDict
 from astropy import units as u
@@ -185,8 +186,13 @@ def get_res_dicts():
                    'B5': HIRES1/0.861,
                    'E3': HIRES1/0.4,
                    }
-    LRISb_Rdict = {'400/3400': 500.}      # Assumes 1" slit
-    LRISr_Rdict = {'600/7500': 1595.}     # Assumes 1" slit
+    LRISb_Rdict = {'400/3400': 500.,      # Assumes 1" slit
+                   '1200/3400': 2180.,
+                   }
+    LRISr_Rdict = {'600/7500': 1595.,     # Assumes 1" slit
+                   '400/8500': 1232.,
+                   '1200/7500': 2*1595.,
+                   }
     MagE_Rdict = {'0.70': 4100./0.7}
     GMOS_Rdict = {'B600+_G5307': 844.,    # Assumes 1" slit
                   'B600+_G5323': 844.,
@@ -203,8 +209,14 @@ def get_res_dicts():
     return Rdicts
 
 
-def slit_dict():
+def slit_dict(slitname, req_long=True):
     """ Slit dict
+
+    Parameters
+    ----------
+    slitname : str
+    req_long : bool, optional
+      Require long in slit name.  If not present return 1.0
 
     Returns
     -------
@@ -212,8 +224,18 @@ def slit_dict():
       Translates slit mask name to slit with in arcsec
 
     """
-    sdict = {'long_1.0':1.0}
-    return sdict
+    sdict = {'long_1.0': 1.0,
+             'long_1.5': 1.5}
+    #
+    try:
+        swidth = sdict[slitname]
+    except KeyError:
+        if ('long' not in slitname) & req_long:
+                swidth = 1.
+        else:
+            pdb.set_trace()
+    #
+    return swidth
 
 
 def get_req_clms():
