@@ -207,6 +207,7 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
                                 except KeyError:
                                     pdb.set_trace()
                             else:
+                                pdb.set_trace()
                                 plist[key].append(0.)
                     else:
                         raise ValueError("Set something else for R")
@@ -220,12 +221,7 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
                 instr = head['INSTRUME']
             except KeyError:
                 instr = 'none'
-            if 'MagE' in instr:
-                if 'R' not in plist.keys():
-                    plist['R'] = []
-                swidth = igmsp_defs.slit_dict(head['SLITNAME'])
-                plist['R'].append(4100./swidth)
-            elif 'LRIS' in instr:
+            if 'LRIS' in instr:
                 if 'GRATING' not in plist.keys():
                     plist['GRATING'] = []
                     plist['INSTR'] = []
@@ -250,7 +246,7 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
                 except KeyError:
                     swidth = 1.
                 else:
-                    swidth = igmsp_defs.slit_dict(sname)
+                    swidth = igmsp_defs.slit_width(sname)
                 plist['R'].append(res/swidth)
         # Finish
         for key in plist.keys():

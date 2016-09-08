@@ -38,6 +38,10 @@ def instruments():
         'MagE': dict(gratings=['N/A']),
         # MMT BCS
         'MMT': dict(gratings=['??']),
+        'mmtbluechan': dict(gratings=['500GPM']),
+        # LBT/MODS
+        'MODS1B': dict(gratings=['G400L']),
+        'MODS1R': dict(gratings=['G670L']),
         # Gemini GMOS spectrometer
         'GMOS-S': dict(gratings=['R400', 'B600']),
         'GMOS-N': dict(gratings=['R400', 'B600']),
@@ -193,7 +197,8 @@ def get_res_dicts():
                    '400/8500': 1232.,
                    '1200/7500': 2*1595.,
                    }
-    MagE_Rdict = {'0.70': 4100./0.7}
+    MMT_Rdict = {'500GPM': 1430}          # Assumes 1" slit
+    MODS_Rdict = {'G400L': 1850, 'G670L': 2300.}          # Assumes 0.6" slit
     GMOS_Rdict = {'B600+_G5307': 844.,    # Assumes 1" slit
                   'B600+_G5323': 844.,
                   'B1200+_G5301': 1872.,
@@ -201,16 +206,17 @@ def get_res_dicts():
     GNIRS_Rdict = {'32/mm_G5506': 1700.,    # Assumes 0.3" slit
                   }
     #
-    Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict, MagE=MagE_Rdict,
+    Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict,
                   GMOS=GMOS_Rdict, GNIRS=GNIRS_Rdict, LRISb=LRISb_Rdict,
-                  LRISr=LRISr_Rdict,
+                  LRISr=LRISr_Rdict, MMT=MMT_Rdict, MODS1B=MODS_Rdict,
+                  MODS1R=MODS_Rdict,
                   )
     #
     return Rdicts
 
 
-def slit_dict(slitname, req_long=True):
-    """ Slit dict
+def slit_width(slitname, req_long=True):
+    """ Slit width
 
     Parameters
     ----------
@@ -225,7 +231,10 @@ def slit_dict(slitname, req_long=True):
 
     """
     sdict = {'long_1.0': 1.0,
-             'long_1.5': 1.5}
+             'long_1.5': 1.5,
+             '1.0x180': 1.0,  # MMT
+             'LS5x60x0.6': 0.6,  # MODS
+             }
     #
     try:
         swidth = sdict[slitname]

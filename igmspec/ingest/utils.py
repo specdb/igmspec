@@ -82,6 +82,10 @@ def set_resolution(head, instr=None):
                 instr = 'MagE'
             elif 'GMOS' in head['INSTRUME']:
                 instr = 'GMOS'
+            elif 'MODS1B' in head['INSTRUME']:
+                instr = 'MODS1B'
+            elif 'MODS1R' in head['INSTRUME']:
+                instr = 'MODS1R'
         else:
             pass
         if instr is None:
@@ -107,9 +111,18 @@ def set_resolution(head, instr=None):
             pdb.set_trace()
     elif instr == 'MagE':
         try:
-            return Rdicts[instr][head['SLITNAME'].strip()]
+            return 4100./defs.slit_width(head['SLITNAME'])
         except KeyError:
             print("Need to add {:s}".format(head['SLITNAME']))
             pdb.set_trace()
+    elif instr in ['MODS1B','MODS1R']:
+        try:
+            res = Rdicts[instr][head['GRATNAME']]*0.6
+        except KeyError:
+            print("Need to add {:s}".format(head['GRATNAME']))
+            pdb.set_trace()
+        else:
+            swidth = defs.slit_width(head['MASKNAME'])
+            return res/swidth
     else:
         raise IOError("Not read for this instrument")
