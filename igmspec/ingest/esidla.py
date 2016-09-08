@@ -36,8 +36,9 @@ def grab_meta():
     esidla_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HighzESIDLA/ascii_highz_rafelski.list', format='ascii')
     nspec = len(esidla_meta)
     # DATE
-    t = Time(list(esidla_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
-    esidla_meta.add_column(Column(t.iso, name='DATE-OBS'))
+    #t = Time(list(esidla_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    #esidla_meta.add_column(Column(t.iso, name='DATE-OBS'))
+    pdb.set_trace()  ## NEEDS FIXING!
     # Add zem
     esidla_meta['sig_zem'] = [0.]*nspec
     esidla_meta['flag_zem'] = [str('SDSS')]*nspec
