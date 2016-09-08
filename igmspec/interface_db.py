@@ -76,7 +76,10 @@ class InterfaceDB(object):
         #
         surveys = list(self.hdf.keys())
         surveys.pop(surveys.index('catalog'))
-        surveys.pop(surveys.index('quasars'))
+        try:
+            surveys.pop(surveys.index('quasars'))
+        except ValueError:
+            pass   # Private DB
         self.surveys = surveys
         if self.verbose:
             print("Available surveys: {}".format(self.surveys))

@@ -78,10 +78,14 @@ def set_resolution(head, instr=None):
         elif 'INSTRUME' in head.keys():
             if 'HIRES' in head['INSTRUME']:
                 instr = 'HIRES'
+            elif 'MIKE' in head['INSTRUME']:
+                instr = 'MIKE'
             elif 'MagE' in head['INSTRUME']:
                 instr = 'MagE'
             elif 'GMOS' in head['INSTRUME']:
                 instr = 'GMOS'
+            elif 'mmt' in head['INSTRUME']:
+                instr = 'mmt'
             elif 'MODS1B' in head['INSTRUME']:
                 instr = 'MODS1B'
             elif 'MODS1R' in head['INSTRUME']:
@@ -115,6 +119,15 @@ def set_resolution(head, instr=None):
         except KeyError:
             print("Need to add {:s}".format(head['SLITNAME']))
             pdb.set_trace()
+    elif 'mmt' in instr:
+        try:
+            res = Rdicts[instr][head['DISPERSE']]*0.6
+        except KeyError:
+            print("Need to add {:s}".format(head['DISPERSE']))
+            pdb.set_trace()
+        else:
+            swidth = defs.slit_width(head['APERTURE'])
+            return res/swidth
     elif instr in ['MODS1B','MODS1R']:
         try:
             res = Rdicts[instr][head['GRATNAME']]*0.6
@@ -123,6 +136,19 @@ def set_resolution(head, instr=None):
             pdb.set_trace()
         else:
             swidth = defs.slit_width(head['MASKNAME'])
+            return res/swidth
+    elif instr == 'MIKE':
+        try:
+            res = Rdicts[head['INSTRUME']]
+        except KeyError:
+            print("Need to add {:s}".format(instr))
+            pdb.set_trace()
+        else:
+            try:
+                swidth = defs.slit_width(head['SLITSIZE'])
+            except TypeError:
+                warnings.warn("MIKE slit not given in header. Assuming 1.0")
+                swidth = 1.
             return res/swidth
     else:
         raise IOError("Not read for this instrument")

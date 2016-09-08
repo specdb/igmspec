@@ -32,6 +32,8 @@ def instruments():
         'LRISr': dict(gratings=['ECH']),
         # Magellan MIKE spectrometer
         'MIKE': dict(gratings=['BOTH']),   # HD-LLS spliced blue and red
+        'MIKE-Blue': dict(gratings=['BLUE']),
+        'MIKE-Red': dict(gratings=['RED']),
         'MIKEb': dict(gratings=['BLUE']),
         'MIKEr': dict(gratings=['RED']),
         # Magellan MagE spectrometer
@@ -135,6 +137,7 @@ def get_db_table_format():
     # Return
     return idict
 
+
 def get_survey_dict():
     """ Return the survey dict
     Returns
@@ -167,6 +170,7 @@ def survey_flag(survey, iflag=None):
     flag_val : int
 
     """
+    pdb.set_trace()  # USE CATALOG
     survey_dict = get_survey_dict()
     #
     return survey_dict[survey]
@@ -197,7 +201,7 @@ def get_res_dicts():
                    '400/8500': 1232.,
                    '1200/7500': 2*1595.,
                    }
-    MMT_Rdict = {'500GPM': 1430}          # Assumes 1" slit
+    MMT_Rdict = {'500GPM': 1430, '800GPM': 1730.}          # Assumes 1" slit
     MODS_Rdict = {'G400L': 1850, 'G670L': 2300.}          # Assumes 0.6" slit
     GMOS_Rdict = {'B600+_G5307': 844.,    # Assumes 1" slit
                   'B600+_G5323': 844.,
@@ -208,9 +212,11 @@ def get_res_dicts():
     #
     Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict,
                   GMOS=GMOS_Rdict, GNIRS=GNIRS_Rdict, LRISb=LRISb_Rdict,
-                  LRISr=LRISr_Rdict, MMT=MMT_Rdict, MODS1B=MODS_Rdict,
+                  LRISr=LRISr_Rdict, mmt=MMT_Rdict, MODS1B=MODS_Rdict,
                   MODS1R=MODS_Rdict,
                   )
+    Rdicts['MIKE-Blue'] = 28000. # 1" slit
+    Rdicts['MIKE-Red'] = 22000. # 1" slit
     #
     return Rdicts
 

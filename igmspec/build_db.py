@@ -7,7 +7,7 @@ import igmspec
 import os
 
 import h5py
-import numbers
+import numbers, json
 import pdb
 
 from igmspec import defs
@@ -17,6 +17,8 @@ from igmspec.ingest import esidla
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 from astropy import units as u
+
+from linetools import utils as ltu
 
 
 def add_to_flag(cur_flag, add_flag):
@@ -332,7 +334,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
     hdf['catalog'].attrs['VERSION'] = version
     #hdf['catalog'].attrs['CAT_DICT'] = cdict
-    #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
+    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(defs.get_survey_dict()))
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
 
@@ -497,6 +499,6 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
     hdf['catalog'].attrs['VERSION'] = version
     #hdf['catalog'].attrs['CAT_DICT'] = cdict
-    #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
+    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(defs.get_survey_dict()))
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))

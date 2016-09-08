@@ -212,7 +212,7 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
                     else:
                         raise ValueError("Set something else for R")
                 elif key == 'DATE-OBS':
-                    tval = Time(head[item], format='isot', out_subfmt='date')
+                    tval = Time(head[item].replace('/','-'), format='isot', out_subfmt='date')
                     plist[key].append(tval.iso)
                 else:
                     plist[key].append(head[item])

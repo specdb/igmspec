@@ -49,7 +49,7 @@ def zem_from_radec(ra, dec, qsos, qtoler=2*u.arcsec):
     return zem, zsource
 
 
-def flag_to_surveys(flag):
+def flag_to_surveys(flag, survey_dict=None):
     """ Convert flag_survey to list of surveys
 
     Parameters
@@ -61,7 +61,8 @@ def flag_to_surveys(flag):
     surveys : list
 
     """
-    survey_dict = idefs.get_survey_dict()
+    if survey_dict is None:
+        survey_dict = idefs.get_survey_dict()
     #
     surveys = []
     for key,sflag in survey_dict.items():
