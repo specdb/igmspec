@@ -266,9 +266,12 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
     req_clms = igmsp_defs.get_req_clms()
     for clm in req_clms:
         if clm not in mkeys:
-            if clm not in ['NPIX','DATE-OBS','WV_MIN','WV_MAX']:  # Fille in ingest_spec
+            if clm not in ['NPIX','WV_MIN','WV_MAX']:  # File in ingest_spec
                 warnings.warn("Meta Column {:s} not defined.  Filling with DUMMY".format(clm))
-                maindb[clm] = ['DUMMY']*len(maindb)
+                if clm == 'DATE-OBS':
+                    maindb[clm] = ['9999-1-1']*len(maindb)
+                else:
+                    maindb[clm] = ['DUMMY']*len(maindb)
 
     # Return
     if debug:
@@ -346,6 +349,8 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
                     spec = dumb_spec()
                 else:
                     spec = lsio.readspec(f)
+        else:
+            spec = lsio.readspec(f)
         # npix
         head = spec.header
         npix = spec.npix
@@ -401,15 +406,18 @@ def mk_db(trees, names, outfil, **kwargs):
     -------
 
     """
+    from igmspec import build_db as ibdb
     # HDF5 file
     hdf = h5py.File(outfil,'w')
 
     # Defs
     zpri = igmsp_defs.z_priority()
+    sdict = {}
 
     # Main DB Table
     maindb, tkeys = ibdb.start_maindb(private=True)
     maindb['PRIV_ID'] = -1  # To get the indexing right
+    tkeys += ['PRIV_ID']
 
     # MAIN LOOP
     for ss,tree in enumerate(trees):
@@ -417,9 +425,22 @@ def mk_db(trees, names, outfil, **kwargs):
         # Files
         fits_files = grab_files(tree)
         # Meta
-        full_meta = mk_meta(fits_files, np.max(maindb['PRIV_ID']), **kwargs)
+        full_meta = mk_meta(fits_files, **kwargs)
+        # Survey IDs
+        flag_s = 2**ss
+        sdict[names[ss]] = flag_s
+        if ss == 0:
+            ids = np.arange(len(full_meta), dtype=int)
+            full_meta['PRIV_ID'] = ids
+            full_meta['flag_survey'] = flag_s
+            cut = full_meta
+        else:
+            cut, new, ids = ibdb.set_new_ids(maindb, full_meta, idkey='PRIV_ID')
+            cut['flag_survey'] = [flag_s]*len(cut)
+            midx = np.array(maindb['PRIV_ID'][ids[~new]])
+            maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
         # Catalog
-        cat_meta = full_meta[tkeys]
+        cat_meta = cut[tkeys]
         assert ibdb.chk_maindb_join(maindb, cat_meta)
         # Append
         maindb = vstack([maindb,cat_meta], join_type='exact')
@@ -432,6 +453,7 @@ def mk_db(trees, names, outfil, **kwargs):
     hdf['catalog'] = maindb
     hdf['catalog'].attrs['EPOCH'] = 2000.
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
+    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(sdict))
     #hdf['catalog'].attrs['VERSION'] = version
     #hdf['catalog'].attrs['CAT_DICT'] = cdict
     #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()
