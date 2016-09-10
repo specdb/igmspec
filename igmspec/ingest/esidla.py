@@ -26,7 +26,7 @@ igms_path = imp.find_module('igmspec')[1]
 
 
 def grab_meta():
-    """ Grab XQ-100 meta Table
+    """ Grab High-z ESI meta Table
 
     Returns
     -------
@@ -36,7 +36,9 @@ def grab_meta():
     esidla_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HighzESIDLA/ascii_highz_rafelski.list', format='ascii')
     nspec = len(esidla_meta)
     # DATE
-    t = Time(list(esidla_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    datearr = [day.split('/') for day in list(esidla_meta['ObsDate'])]
+    ndate = ['20'+str(day[2])+'-'+str(day[0])+'-'+str(day[1]) for day in datearr]
+    t = Time(ndate, out_subfmt='date')  # Fixes to YYYY-MM-DD
     esidla_meta.add_column(Column(t.iso, name='DATE-OBS'))
     # Add zem
     esidla_meta['sig_zem'] = [0.]*nspec
@@ -70,7 +72,7 @@ def meta_for_build(esidla_meta=None):
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
-    """ Append XQ-100 data to the h5 file
+    """ Append ESI data to the h5 file
 
     Parameters
     ----------
