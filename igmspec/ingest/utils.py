@@ -73,7 +73,7 @@ def set_resolution(head, instr=None):
     Rdicts = defs.get_res_dicts()
     # Grab instrument
     if instr is None:
-        if 'CURRINST' in head.keys():  # ESI
+        if 'CURRINST' in head.keys():  # ESI, NIRSPEC
             instr = head['CURRINST'].strip()
         elif 'INSTRUME' in head.keys():
             if 'HIRES' in head['INSTRUME']:
@@ -84,6 +84,10 @@ def set_resolution(head, instr=None):
                 instr = 'MagE'
             elif 'GMOS' in head['INSTRUME']:
                 instr = 'GMOS'
+            elif 'GNIRS' in head['INSTRUME']:
+                instr = 'GNIRS'
+            elif 'NIRI' in head['INSTRUME']:
+                instr = 'NIRI'
             elif 'mmt' in head['INSTRUME']:
                 instr = 'mmt'
             elif 'MODS1B' in head['INSTRUME']:
@@ -112,6 +116,30 @@ def set_resolution(head, instr=None):
             return Rdicts[instr][head['GRATING']]
         except KeyError:
             print("Need to add {:s}".format(head['GRATING']))
+            pdb.set_trace()
+    elif instr == 'GNIRS':
+        try:
+            res = Rdicts[instr][head['GRATING']]*0.3
+        except KeyError:
+            print("Need to add {:s}".format(head['GRATING']))
+            pdb.set_trace()
+        else:
+            swidth = defs.slit_width(head['SLIT'])
+            return res/swidth
+    elif instr == 'NIRI':
+        try:
+            res = Rdicts[instr][head['FILTER3']]/4.
+        except KeyError:
+            print("Need to add {:s}".format(head['FILTER3']))
+            pdb.set_trace()
+        else:
+            swidth = defs.slit_width(head['FPMASK'])  #PIXELS
+            return res*swidth
+    elif instr == 'NIRSPEC':  # LOW DISPERSION
+        try:
+            return 2000.*0.38/defs.slit_width(head['SLITNAME'])
+        except KeyError:
+            print("Need to add {:s}".format(head['SLITNAME']))
             pdb.set_trace()
     elif instr == 'MagE':
         try:

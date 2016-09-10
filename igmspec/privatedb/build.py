@@ -65,7 +65,7 @@ def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits',
 
 
 def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
-            mdict=None, parse_head=None, debug=False,
+            mdict=None, parse_head=None, debug=False, chkz=False,
             private_z=None, verbose=False, **kwargs):
     """ Generate a meta Table from an input list of files
 
@@ -86,6 +86,8 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
       Input meta data in dict form e.g.  mdict=dict(INSTR='ESI')
     private_z : Table, optional
       Table of private redshifts.  Must include RA, DEC, ZEM, ZEM_SOURCE
+    chkz : bool, optional
+      If any sources have no parseable redshift, hit a set_trace
 
     Returns
     -------
@@ -155,8 +157,11 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
             warnings.warn("Skipping {:d} entries without a parseable redshift".format(
                 np.sum(badz)))
         else:
-            raise ValueError("{:d} entries without a parseable redshift".format(
-                np.sum(badz)))
+            if chkz:
+                pdb.set_trace()
+            else:
+                raise ValueError("{:d} entries without a parseable redshift".format(
+                    np.sum(badz)))
     meta['zem'] = zem
     meta['sig_zem'] = 0.  # Need to add
     meta['flag_zem'] = zsource

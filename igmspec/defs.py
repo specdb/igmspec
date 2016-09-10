@@ -30,6 +30,8 @@ def instruments():
         # Keck/LRIS spectrometer
         'LRISb': dict(gratings=['ECH']),
         'LRISr': dict(gratings=['ECH']),
+        # Keck/NIRSPEC spectrometer
+        'NIRSPEC': dict(gratings=['Low-Res']),
         # Magellan MIKE spectrometer
         'MIKE': dict(gratings=['BOTH']),   # HD-LLS spliced blue and red
         'MIKE-Blue': dict(gratings=['BLUE']),
@@ -44,10 +46,11 @@ def instruments():
         # LBT/MODS
         'MODS1B': dict(gratings=['G400L']),
         'MODS1R': dict(gratings=['G670L']),
-        # Gemini GMOS spectrometer
+        # Gemini
         'GMOS-S': dict(gratings=['R400', 'B600']),
         'GMOS-N': dict(gratings=['R400', 'B600']),
         'GNIRS': dict(gratings=['ECH']),
+        'NIRI': dict(gratings=['Hgrism_G5203','Kgrism_G5204']),
         # UKST
         '2dF': dict(gratings=['300B']),
         # HST
@@ -56,6 +59,8 @@ def instruments():
         # VLT
         'XSHOOTER': dict(gratings=['UVB,VIS,NIR,ALL']),
         'ISAAC': dict(gratings=['SW_MRes']),
+        # Palomar
+        'TSpec': dict(gratings=['ECH']),
     }
     return inst_dict
 
@@ -208,12 +213,16 @@ def get_res_dicts():
                   'B1200+_G5301': 1872.,
                   }
     GNIRS_Rdict = {'32/mm_G5506': 1700.,    # Assumes 0.3" slit
+                   '32/mmSB_G5533': 1700.,
+                  }
+    NIRI_Rdict = {'Hgrism_G5203': 940.,    # Assumes 4 pixels
+                  'Kgrism_G5204': 780.,    # Assumes 4 pixels
                   }
     #
     Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict,
                   GMOS=GMOS_Rdict, GNIRS=GNIRS_Rdict, LRISb=LRISb_Rdict,
                   LRISr=LRISr_Rdict, mmt=MMT_Rdict, MODS1B=MODS_Rdict,
-                  MODS1R=MODS_Rdict,
+                  MODS1R=MODS_Rdict, NIRI=NIRI_Rdict,
                   )
     Rdicts['MIKE-Blue'] = 28000. # 1" slit
     Rdicts['MIKE-Red'] = 22000. # 1" slit
@@ -233,13 +242,16 @@ def slit_width(slitname, req_long=True):
     Returns
     -------
     sdict : dict
-      Translates slit mask name to slit with in arcsec
+      Translates slit mask name to slit with in arcsec or pixels
 
     """
     sdict = {'long_1.0': 1.0,
              'long_1.5': 1.5,
              '1.0x180': 1.0,  # MMT
              'LS5x60x0.6': 0.6,  # MODS
+             '0.30 arcsec': 0.3,  # GNIRS
+             'f6-4pix_G5212': 4., # NIRI
+             '42x0.570': 0.57, # NIRSPEC
              }
     #
     try:
