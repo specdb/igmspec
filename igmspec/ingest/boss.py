@@ -203,7 +203,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
         if full_file == 'None':
             continue
         # Extract
-        print("BOSS: Reading {:s}".format(full_file))
+        #print("BOSS: Reading {:s}".format(full_file))
         # Generate full file
         spec = lsio.readspec(full_file)
         # npix
@@ -212,7 +212,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
         #    pdb.set_trace()
         if npix < 10:
             full_file = get_specfil(row, hiz=True)
-            spec = lsio.readspec(full_file)
+            try:
+                spec = lsio.readspec(full_file)
+            except:
+                print("Missing: {:s}".format(full_file))
             npix = spec.npix
         elif npix > max_npix:
             raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
