@@ -200,6 +200,7 @@ def get_res_dicts():
                    'E3': HIRES1/0.4,
                    }
     LRISb_Rdict = {'400/3400': 500.,      # Assumes 1" slit
+                   '600/4000': 1000.,
                    '1200/3400': 2180.,
                    }
     LRISr_Rdict = {'600/7500': 1595.,     # Assumes 1" slit

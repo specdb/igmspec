@@ -41,7 +41,10 @@ def zem_from_radec(ra, dec, qsos, qtoler=2*u.arcsec):
     good = d2d < qtoler
     # Finish
     zem = np.zeros_like(ra)
-    zem[good] = qsos['ZEM'][idx[good]]
+    try:
+        zem[good] = qsos['ZEM'][idx[good]]
+    except IndexError:
+        pdb.set_trace()
     zsource = np.array(['NONENONE']*len(ra))
     zsource[good] = qsos['ZEM_SOURCE'][idx[good]]
 

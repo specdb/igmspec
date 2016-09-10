@@ -117,11 +117,21 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
             # Deal with .fits
             if ifile[i1-1] == '.':
                 i1 -= 1
-        # Get coord
-        try:
-            coord = ltu.radec_to_coord(ifile[i0:i1])
-        except (UnboundLocalError, ValueError):
-            pdb.set_trace()
+            # Get coord
+            try:
+                coord = ltu.radec_to_coord(ifile[i0:i1])
+            except (UnboundLocalError, ValueError):
+                pdb.set_trace()
+        else:
+            if private_z:
+                sname = ifile.split('/')[-1]
+                mt = np.where(private_z['SPEC_FILE'] == sname)[0]
+                if len(mt) != 1:
+                    raise IndexError("NO MATCH FOR {:s}".format(sname))
+                coord = ltu.radec_to_coord((private_z['RA'][mt],
+                                            private_z['DEC'][mt]))[0]
+            else:
+                raise NotImplementedError("NEED RA/DEC")
         coordlist.append(coord)
     coords = SkyCoord(ra=[coord.ra.degree for coord in coordlist], dec=[coord.dec.degree for coord in coordlist], unit='deg')
 
