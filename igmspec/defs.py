@@ -137,7 +137,8 @@ def get_survey_dict():
     survey_dict['GGG'] = 16         # Worseck et al. 201X
     survey_dict['HST_z2'] = 2**5    # O'Meara et al. 2011
     survey_dict['XQ-100'] = 2**6    # Lopez et al. 2016
-    survey_dict['2QZ'] = 2**7         # Croom et al.
+    survey_dict['2QZ'] = 2**7       # Croom et al.
+    survey_dict['ESI_DLA'] = 2**8   # Rafelski et al. 2012, 2014
     #
     return survey_dict
 
