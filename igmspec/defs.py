@@ -32,6 +32,8 @@ def instruments():
         'LRISr': dict(gratings=['ECH']),
         # Keck/NIRSPEC spectrometer
         'NIRSPEC': dict(gratings=['Low-Res']),
+        # Keck/MOSFIRE spectrometer
+        'MOSFIRE': dict(gratings=['H']),
         # Magellan MIKE spectrometer
         'MIKE': dict(gratings=['BOTH']),   # HD-LLS spliced blue and red
         'MIKE-Blue': dict(gratings=['BLUE']),
@@ -207,6 +209,8 @@ def get_res_dicts():
                    '400/8500': 1232.,
                    '1200/7500': 2*1595.,
                    }
+    MOSFIRE_Rdict = {'H': 3660,  # Assumes 0.7" slit
+                     }
     MMT_Rdict = {'500GPM': 1430, '800GPM': 1730.}          # Assumes 1" slit
     MODS_Rdict = {'G400L': 1850, 'G670L': 2300.}          # Assumes 0.6" slit
     GMOS_Rdict = {'B600+_G5307': 844.,    # Assumes 1" slit
@@ -223,7 +227,7 @@ def get_res_dicts():
     Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict,
                   GMOS=GMOS_Rdict, GNIRS=GNIRS_Rdict, LRISb=LRISb_Rdict,
                   LRISr=LRISr_Rdict, mmt=MMT_Rdict, MODS1B=MODS_Rdict,
-                  MODS1R=MODS_Rdict, NIRI=NIRI_Rdict,
+                  MODS1R=MODS_Rdict, NIRI=NIRI_Rdict, MOSFIRE=MOSFIRE_Rdict,
                   )
     Rdicts['MIKE-Blue'] = 28000. # 1" slit
     Rdicts['MIKE-Red'] = 22000. # 1" slit
@@ -253,6 +257,7 @@ def slit_width(slitname, req_long=True):
              '0.30 arcsec': 0.3,  # GNIRS
              'f6-4pix_G5212': 4., # NIRI
              '42x0.570': 0.57, # NIRSPEC
+             'LONGSLIT-46x0.7': 0.7, # MOSFIRE
              }
     #
     try:

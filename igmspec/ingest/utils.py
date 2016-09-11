@@ -78,6 +78,8 @@ def set_resolution(head, instr=None):
         elif 'INSTRUME' in head.keys():
             if 'HIRES' in head['INSTRUME']:
                 instr = 'HIRES'
+            elif 'MOSFIRE' in head['INSTRUME']:
+                instr = 'MOSFIRE'
             elif 'MIKE' in head['INSTRUME']:
                 instr = 'MIKE'
             elif 'MagE' in head['INSTRUME']:
@@ -117,6 +119,15 @@ def set_resolution(head, instr=None):
         except KeyError:
             print("Need to add {:s}".format(head['GRATING']))
             pdb.set_trace()
+    elif instr == 'MOSFIRE':
+        try:
+            res = Rdicts[instr][head['FILTER']]*0.7
+        except KeyError:
+            print("Need to add {:s}".format(head['FILTER']))
+            pdb.set_trace()
+        else:
+            swidth = defs.slit_width(head['MASKNAME'])
+            return res/swidth
     elif instr == 'GNIRS':
         try:
             res = Rdicts[instr][head['GRATING']]*0.3
