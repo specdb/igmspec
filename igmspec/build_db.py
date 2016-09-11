@@ -13,6 +13,7 @@ import pdb
 from igmspec import defs
 from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf, xq100
 from igmspec.ingest import esidla
+from igmspec.ingest import hst_cooksey as hst_c
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -405,6 +406,28 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         test = True
         maindb = dmaindb
 
+    ''' HST_Cooksey '''
+    if not mk_test_file:
+        sname = 'HST_Cooksey'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        hstc_meta = hst_c.meta_for_build()
+        # IDs
+        hstc_cut, new, hstc_ids = set_new_ids(maindb, hstc_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        hstc_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][hstc_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, hstc_cut)
+        maindb = vstack([maindb, hstc_cut], join_type='exact')
+        # Update hf5 file
+        if (not test):# or mk_test_file:
+            hst_c.hdf5_adddata(hdf, hstc_ids, sname, mk_test_file=mk_test_file)
+
+    """
     ''' ESI_DLA '''
     if not mk_test_file:
         sname = 'ESI_DLA'
@@ -426,8 +449,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         esidla.hdf5_adddata(hdf, esidla_ids, sname)#, mk_test_file=mk_test_file)
 
     ''' XQ-100 '''
-    #if not mk_test_file:
-    if False:
+    if not mk_test_file:
         sname = 'XQ-100'
         print('===============\n Doing {:s} \n==============\n'.format(sname))
         # Read
@@ -445,6 +467,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         maindb = vstack([maindb, xq100_cut], join_type='exact')
         # Update hf5 file
         xq100.hdf5_adddata(hdf, xq100_ids, sname)#, mk_test_file=mk_test_file)
+    """
 
     """
     ''' 2QZ '''
