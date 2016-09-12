@@ -424,8 +424,8 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         assert chk_maindb_join(maindb, hstc_cut)
         maindb = vstack([maindb, hstc_cut], join_type='exact')
         # Update hf5 file
-        if (not test):# or mk_test_file:
-            hst_c.hdf5_adddata(hdf, hstc_ids, sname, mk_test_file=mk_test_file)
+        #if (not test):# or mk_test_file:
+        hst_c.hdf5_adddata(hdf, hstc_ids, sname, mk_test_file=mk_test_file)
 
     """
     ''' ESI_DLA '''

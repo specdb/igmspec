@@ -40,6 +40,9 @@ def instruments():
         # HST
         'ACS': dict(gratings=['PR200L']),
         'WFC3': dict(gratings=['G280']),
+        # FUSE
+        'FUSE': dict(gratings=['LWRS_LIF'+det for det in ['1A','1B','2A','2B']]+
+                              ['LWRS_SIC'+det for det in ['1A','1B','2A','2B']]),
         # VLT
         'XSHOOTER': dict(gratings=['UVB,VIS,NIR']),
     }
@@ -178,7 +181,17 @@ def get_res_dicts():
                    'E3': HIRES1/0.4,
                    }
     MagE_Rdict = {'0.70': 4100./0.7}
+    FUSE_Rdict = {'LWRS_LIF1A': 15500.,  # All approximate, there is a wave dependence
+                  'LWRS_LIF2A': 18500.,
+                  'LWRS_LIF1B': 16000.,
+                  'LWRS_LIF2B': 14000.,
+                  'LWRS_SIC1A': 17500.,
+                  'LWRS_SIC2A': 15000.,
+                  'LWRS_SIC1B': 15000.,
+                  'LWRS_SIC2B': 16000.,
+                  }
     #
-    Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict, MagE=MagE_Rdict)
+    Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict, MagE=MagE_Rdict,
+                  FUSE=FUSE_Rdict)
     #
     return Rdicts

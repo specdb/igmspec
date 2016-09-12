@@ -14,6 +14,8 @@ from astropy.table import Table, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 from astropy import units as u
 from astropy.io.fits import Header
+from astropy.io import fits
+from astropy.time import Time
 
 from linetools.spectra import io as lsio
 from linetools import utils as ltu
@@ -25,16 +27,31 @@ from igmspec import defs
 
 
 def grab_meta():
-    """ Grab KODIAQ meta Table
+    """ Grab HST/FUSE Cooksey meta Table
     Returns
     -------
 
     """
     hstc_file = os.getenv('RAW_IGMSPEC')+'/HST_Cooksey/HSTQSO_pre-SM4.lst'
     hstc_meta = Table.read(hstc_file, format='ascii')
+    # Cutting those without proper header (for now)
+    badf = ['PKS2005-489lif1a.fits', 'NGC7469lif2a.fits', 'NGC7469sic2b.fits',
+            'NGC7469lif2b.fits', 'NGC7469sic2a.fits',
+            'AKN564lif1a.fits', 'AKN564lif1b.fits', 'AKN564lif2a.fits', 'AKN564lif2b.fits',
+            'AKN564sic1a.fits', 'AKN564sic1b.fits', 'AKN564sic2a.fits', 'AKN564sic2b.fits']
+    gdm = np.array([True]*len(hstc_meta))
+    for ibadf in badf:
+        mt = np.where(hstc_meta['SPEC_FILE'] == ibadf)[0]
+        gdm[mt] = False
+    #gdm = hstc_meta['INSTR'] != 'GHRS'
+    hstc_meta = hstc_meta[gdm]
+    gdf = hstc_meta['INSTR'] == 'FUSE'
+    hstc_meta = hstc_meta[gdf]
+    hstc_meta['TELESCOPE'] = 'FUSE'
     #
     hstc_meta.add_column(Column([2000.]*len(hstc_meta), name='EPOCH'))
     return hstc_meta
+
 
 def meta_for_build():
     """ Generates the meta data needed for the IGMSpec build
@@ -126,6 +143,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     wvmaxlist = []
     npixlist = []
     gratinglist = []
+    datelist = []
     # Loop
     #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
     path = os.getenv('RAW_IGMSPEC')+'/HST_Cooksey/'
@@ -140,7 +158,15 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         else:
             hext = 0
         print("HST_Cooksey: Reading {:s}".format(full_file))
-        spec = lsio.readspec(full_file, head_ext=hext)
+        try:
+            spec = lsio.readspec(full_file, head_ext=hext)
+        except: # BAD HEADER
+            hdu = fits.open(full_file)
+            head1 = hdu[1].header
+            hdu[1].verify('fix')
+            tbl = Table(hdu[1].data)
+            spec = lsio.readspec(tbl)
+            spec.meta['headers'][spec.select] = head1
         # npix
         npix = spec.npix
         if npix > max_npix:
@@ -154,14 +180,47 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
         # Meta
+        datet = None
         if row['INSTR'] == 'FUSE':
-            for ss in range(len(spec.header['HISTORY'])):
-                card = Header(spec.header['HISTORY'][ss])
-                pdb.set_trace()
-                if card.keys()[0] == 'APERTURE':
-                    pdb.set_trace()
-                    aper = Header(spec.header['HISTORY'][ss])
-        gratinglist.append(spec.header['GRATING'])
+            if 'HISTORY' in spec.header.keys():
+                ncards = len(spec.header['HISTORY'])
+                flg_H = True
+            else:
+                hdu = fits.open(full_file)
+                head0 = hdu[0].header
+                spec.meta['headers'][spec.select] = head0
+                ncards = len(head0)
+                flg_H = False
+            #
+            for ss in range(ncards):
+                if flg_H:
+                    try:
+                        card = Header.fromstring(spec.header['HISTORY'][ss])
+                    except:
+                        pdb.set_trace()
+                    try:
+                        ckey = card.keys()[0]
+                    except IndexError:
+                        continue
+                    else:
+                        card0 = card[0]
+                else:
+                    ckey, card0 = spec.header.keys()[ss], spec.header[ss]
+                # Parse
+                if ckey == 'APERTURE':
+                    aper = card0
+                elif ckey == 'DETECTOR':
+                    det = card0
+                elif ckey == 'APER_ACT': # Extracted aperture
+                    ext_ap = card0
+                elif ckey == 'DATE': # Extracted aperture
+                    datet = card0
+        if datet is None:
+            pdb.set_trace()
+            datet = spec.header['DATE-OBS']
+        t = Time(datet, format='isot', out_subfmt='date')  # Fixes to YYYY-MM-DD
+        datelist.append(t.iso)
+        gratinglist.append(ext_ap+det)
         Rlist.append(Rdicts[row['INSTR']][gratinglist[-1]])
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
@@ -176,7 +235,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     # Add columns
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
+    meta.add_column(Column(Rlist, name='R'))
+    meta.add_column(Column(gratinglist, name='GRATING'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
+    meta.add_column(Column(datelist, name='DATE-OBS'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
