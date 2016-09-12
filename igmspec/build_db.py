@@ -13,6 +13,7 @@ import pdb
 from igmspec import defs
 from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf, xq100
 from igmspec.ingest import esidla
+from igmspec.ingest import cos_halos
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -404,6 +405,26 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Finish
         test = True
         maindb = dmaindb
+
+    ''' COS-Halos '''
+    if not mk_test_file:
+        sname = 'COS-Halos'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        chalos_meta = cos_halos.meta_for_build()
+        # IDs
+        chalos_cut, new, chalos_ids = set_new_ids(maindb, chalos_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        chalos_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][chalos_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, chalos_cut)
+        maindb = vstack([maindb, chalos_cut], join_type='exact')
+        # Update hf5 file
+        cos_halos.hdf5_adddata(hdf, chalos_ids, sname)#, mk_test_file=mk_test_file)
 
     ''' ESI_DLA '''
     if not mk_test_file:
