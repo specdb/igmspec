@@ -10,10 +10,9 @@ import pdb
 import warnings
 import os, json, glob, imp
 
-from astropy.table import Table, Column
+from astropy.table import Table, Column, vstack
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 from astropy import units as u
-from astropy.io import fits
 from astropy.time import Time
 
 from linetools.spectra import io as lsio
@@ -30,28 +29,48 @@ def grab_meta():
     -------
 
     """
+    from time import strptime
     from igmspec.cat_utils import zem_from_radec
     from igmspec.igmspec import IgmSpec
+    from igmspec.defs import get_res_dicts
+    Rdicts = get_res_dicts()
     igmsp = IgmSpec(db_file=os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5', skip_test=True)
 
     summ_file = os.getenv('RAW_IGMSPEC')+'/COS-Halos/cos_halos_obs.ascii'
     chalos_meta = Table.read(summ_file, format='ascii')
     # RA/DEC, DATE
+    # Visits from this page: http://www.stsci.edu/cgi-bin/get-visit-status?id=11598&markupFormat=html
+    visit_file = os.getenv('RAW_IGMSPEC')+'/COS-Halos/cos_halos_visits.ascii'
+    ch_visits = Table.read(visit_file,format='ascii')
     ra = []
     dec = []
+    datet = []
     for row in chalos_meta:
         coord = ltu.radec_to_coord(row['QSO'])
         ra.append(coord.ra.value)
         dec.append(coord.dec.value)
+        #
+        visit = row['Visit']
+        mtv = np.where(ch_visits['Visit'] == visit)[0]
+        if len(mtv) != 1:
+            pdb.set_trace()
+        else:
+            chv = ch_visits['Start_UT'][mtv].data[0]
+        icmma = chv.find(',')
+        datet.append('{:s}-{:02d}-{:02d}'.format(
+                chv[icmma+1:icmma+5], strptime(chv[:3],'%b').tm_mon,
+                int(chv[3:icmma])))
     chalos_meta.add_column(Column(ra, name='RA'))
     chalos_meta.add_column(Column(dec, name='DEC'))
-    chalos_meta.add_column(Column(['2010-01-01']*len(chalos_meta), name='DATE-OBS'))
+    chalos_meta.add_column(Column(datet, name='DATE-OBS'))
     # Others
-    chalos_meta.add_column(Column(['HST']*len(chalos_meta), name='TELESCOPE'))
-    chalos_meta.add_column(Column(['COS']*len(chalos_meta), name='INSTR'))
+    chalos_meta.add_column(Column(['      ']*len(chalos_meta), name='TELESCOPE')) # Padding
+    chalos_meta.add_column(Column(['     ']*len(chalos_meta), name='INSTR')) # Padding for HIRES
     chalos_meta.add_column(Column(['G130M/G160M']*len(chalos_meta), name='GRATING'))
     chalos_meta.add_column(Column([20000.]*len(chalos_meta), name='R'))
     chalos_meta.add_column(Column([2000.]*len(chalos_meta), name='EPOCH'))
+    chalos_meta['INSTR'] = 'COS' # Deals with padding
+    chalos_meta['TELESCOPE'] = 'HST'
     # Myers for zem
     zem, zsource = zem_from_radec(chalos_meta['RA'], chalos_meta['DEC'], igmsp.idb.hdf)
     badz = zem <= 0.
@@ -60,6 +79,25 @@ def grab_meta():
     chalos_meta['zem'] = zem
     chalos_meta['sig_zem'] = 0.  # Need to add
     chalos_meta['flag_zem'] = zsource
+    # HIRES
+    hires_files = glob.glob(os.getenv('RAW_IGMSPEC')+'/COS-Halos/HIRES/J*f.fits.gz')
+    hires_tab = chalos_meta[0:0]
+    subnm = np.array([row['QSO'][4:9] for row in chalos_meta])
+    signs = np.array([row['QSO'][14] for row in chalos_meta])
+    for ifile in hires_files:
+        print(ifile)
+        fname = ifile.split('/')[-1]
+        mt = np.where((subnm == fname[0:5]) & (signs == fname[5]))[0]
+        if len(mt) != 1:
+            pdb.set_trace()
+        # Add row
+        hires_tab.add_row(chalos_meta[mt[0]])
+        hires_tab[-1]['INSTR'] = 'HIRES'
+        hires_tab[-1]['TELESCOPE'] = 'Keck I'
+        hires_tab[-1]['GRATING'] = 'Red'
+        hires_tab[-1]['R'] = Rdicts['HIRES']['C1']
+    # Combine
+    chalos_meta = vstack([chalos_meta, hires_tab])
     # Done
     return chalos_meta
 
@@ -70,8 +108,11 @@ def meta_for_build():
     -------
     meta : Table
     """
-    # Cut down to unique QSOs
     chalos_meta = grab_meta()
+    # Cut down to unique QSOs
+    names = np.array([name for name in chalos_meta['QSO']])
+    uni, uni_idx = np.unique(names, return_index=True)
+    chalos_meta = chalos_meta[uni_idx]
     #
     meta = Table()
     for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
@@ -130,7 +171,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 20000  # Just needs to be large enough
+    max_npix = 160000  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -151,8 +192,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     for jj,row in enumerate(meta):
         # Generate full file
         coord = ltu.radec_to_coord((row['RA'],row['DEC']))
-        full_file = path+'/J{:s}{:s}_nbin3_coadd.fits.gz'.format(coord.ra.to_string(unit=u.hour,sep='',pad=True)[0:4],
+        if row['INSTR'].strip() == 'COS':
+            full_file = path+'/J{:s}{:s}_nbin3_coadd.fits.gz'.format(coord.ra.to_string(unit=u.hour,sep='',pad=True)[0:4],
                                                coord.dec.to_string(sep='',pad=True,alwayssign=True)[0:5])
+        else: # HIRES
+            full_file = path+'/HIRES/J{:s}{:s}_f.fits.gz'.format(coord.ra.to_string(unit=u.hour,sep='',pad=True)[0:4], coord.dec.to_string(sep='',pad=True,alwayssign=True)[0:5])
         # Extract
         print("COS-Halos: Reading {:s}".format(full_file))
         spec = lsio.readspec(full_file)
@@ -198,7 +242,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         raise ValueError("meta file failed")
     # References
     refs = [dict(url='http://adsabs.harvard.edu/abs/2013ApJ...777...59T',
-                 bib='tumlinson+13')
+                 bib='tumlinson+13'),
+            dict(url='http://adsabs.harvard.edu/abs/2013ApJS..204...17W',
+                         bib='werk+13')
             ]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
