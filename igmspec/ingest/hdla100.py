@@ -40,7 +40,7 @@ def meta_for_build():
     dec = []
     coords = hdla100.coord
     cnt = 0
-    for coord in coords[0]:  
+    for coord in coords[0]:
         # Load
         names.append('J{:s}{:s}'.format(coord.ra.to_string(unit=u.hour, sep='', pad=True, precision=2),
                                        coord.dec.to_string(sep='', pad=True, precision=1)))
