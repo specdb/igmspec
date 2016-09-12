@@ -44,7 +44,8 @@ provided with BOSS catalogs.  It is quite extensive.
 Spectra
 =======
 
-v1.0 now includes all of the DR12 spectra.
+v1.0 now includes all of the DR12 spectra.  Note that some of these were
+downloaded by JXP (those at z>4.8 and those past v_5_7_0).
 
 Continua
 ========
