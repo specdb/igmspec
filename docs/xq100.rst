@@ -12,7 +12,7 @@ Sources
 The XQ-100 survey is a Large Programme and public spectral data release of
 100 quasars observed with the X-SHOOTER spectrometer on the VLT telescope.
 The full Data Release became available in 2016, as described in
-`Lopez et al. (2016) <http://adsabs.harvard.edu/abs/2016arXiv160708776L>`.
+`Lopez et al. (2016) <http://adsabs.harvard.edu/abs/2016arXiv160708776L>`_.
 
 
 Meta Data

@@ -13,6 +13,7 @@ import pdb
 from igmspec import defs
 from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf, xq100
 from igmspec.ingest import hdla100
+from igmspec.ingest import esidla
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -44,7 +45,7 @@ def add_to_flag(cur_flag, add_flag):
 
 
 def chk_maindb_join(maindb, newdb):
-    """ Check that new data is consistent with existing table
+    """Check that new data is consistent with existing table
 
     Parameters
     ----------
@@ -427,8 +428,29 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Update hf5 file
         hdla100.hdf5_adddata(hdf, hdla100_ids, sname)#, mk_test_file=mk_test_file)
 
-    ''' XQ-100 '''
+    ''' ESI-DLA '''
     if not mk_test_file:
+        sname = 'ESI_DLA'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        esidla_meta = esidla.meta_for_build()
+        # IDs
+        esidla_cut, new, esidla_ids = set_new_ids(maindb, esidla_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        esidla_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][esidla_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, esidla_cut)
+        maindb = vstack([maindb, esidla_cut], join_type='exact')
+        # Update hf5 file
+        esidla.hdf5_adddata(hdf, esidla_ids, sname)#, mk_test_file=mk_test_file)
+
+    ''' XQ-100 '''
+    #if not mk_test_file:
+    if False:
         sname = 'XQ-100'
         print('===============\n Doing {:s} \n==============\n'.format(sname))
         # Read
@@ -447,6 +469,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Update hf5 file
         xq100.hdf5_adddata(hdf, xq100_ids, sname)#, mk_test_file=mk_test_file)
 
+    """
     ''' 2QZ '''
     if not mk_test_file:
         sname = '2QZ'
@@ -467,6 +490,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Update hf5 file
         if (not test):# or mk_test_file:
             twodf.hdf5_adddata(hdf, tdf_ids, sname, mk_test_file=mk_test_file)
+    """
 
     ''' HST_z2 '''
     if not mk_test_file:
