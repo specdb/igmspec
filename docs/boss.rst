@@ -32,7 +32,7 @@ DR12Q_supbad  Bad spectra identified as quasars               No unique link
 
 For DR12Q, I have ignored the ~50 sources with Z_VI>0 but
 Z_PCA and Z_PIPE junk.  I noted that at least one of these
-doesn't have a proper spectrum.
+doesn't have a proper spectrum.  
 
 Meta Data
 =========
