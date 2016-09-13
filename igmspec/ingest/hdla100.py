@@ -151,13 +151,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         try:
             Rlist.append(iiu.set_resolution(head))
         except ValueError:
-            print(fname)
-            # A few by hand (pulled from Table 1)
-            if 'n1317' in fname:
-                Rlist.append(Rdicts['HIRES']['C5'])
-                t = Time('2001-01-04', format='isot', out_subfmt='date')
-            else:
-                pdb.set_trace()
+            raise ValueError("Header is required for {:s}".format(fname))
         else:
             if '/' in head['DATE-OBS']:
                 spl = head['DATE-OBS'].split('/')
@@ -176,10 +170,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
             if yr <= 1997:
                 gratinglist.append('RED')
             else:
-                gratinglist.append('RED')
-                print('grating issue...')
-                if 'n1317' not in fname:
-                    pdb.set_trace()
+                pdb.set_trace()
         # Only way to set the dataset correctly
         if chk_meta_only:
             continue
