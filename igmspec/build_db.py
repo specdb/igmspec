@@ -12,6 +12,8 @@ import pdb
 
 from igmspec import defs
 from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf, xq100
+from igmspec.ingest import hdla100
+from igmspec.ingest import esidla
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -352,8 +354,10 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
     Returns
     -------
     """
+    import os
     # Read v1.X
-    v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'
+    #v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'
+    v01file = os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5'
     v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     print("Loading v01")
     v01hdf = h5py.File(v01file,'r')
@@ -404,8 +408,49 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         test = True
         maindb = dmaindb
 
-    ''' XQ-100 '''
+    ''' HDLA100 '''
     if not mk_test_file:
+        sname = 'HDLA100'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        hdla100_meta, _ = hdla100.meta_for_build()
+        # IDs
+        hdla100_cut, new, hdla100_ids = set_new_ids(maindb, hdla100_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        hdla100_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][hdla100_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, hdla100_cut)
+        maindb = vstack([maindb, hdla100_cut], join_type='exact')
+        # Update hf5 file
+        hdla100.hdf5_adddata(hdf, hdla100_ids, sname)#, mk_test_file=mk_test_file)
+
+    ''' ESI-DLA '''
+    if not mk_test_file:
+        sname = 'ESI_DLA'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        esidla_meta = esidla.meta_for_build()
+        # IDs
+        esidla_cut, new, esidla_ids = set_new_ids(maindb, esidla_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        esidla_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][esidla_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, esidla_cut)
+        maindb = vstack([maindb, esidla_cut], join_type='exact')
+        # Update hf5 file
+        esidla.hdf5_adddata(hdf, esidla_ids, sname)#, mk_test_file=mk_test_file)
+
+    ''' XQ-100 '''
+    #if not mk_test_file:
+    if False:
         sname = 'XQ-100'
         print('===============\n Doing {:s} \n==============\n'.format(sname))
         # Read
@@ -424,6 +469,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Update hf5 file
         xq100.hdf5_adddata(hdf, xq100_ids, sname)#, mk_test_file=mk_test_file)
 
+    """
     ''' 2QZ '''
     if not mk_test_file:
         sname = '2QZ'
@@ -444,6 +490,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Update hf5 file
         if (not test):# or mk_test_file:
             twodf.hdf5_adddata(hdf, tdf_ids, sname, mk_test_file=mk_test_file)
+    """
 
     ''' HST_z2 '''
     if not mk_test_file:
