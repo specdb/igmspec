@@ -20,6 +20,7 @@ Below is the list of surveys included in igmspec v02
 * :doc:`twoqz`   [2QZ]
 * :doc:`esidla`   [ESI_DLA]
 * :doc:`xq100`   [XQ-100]
+* :doc:`cos_halos`   [COS-Halos]
 
 Overview
 ========
