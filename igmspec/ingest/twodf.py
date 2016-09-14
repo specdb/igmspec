@@ -166,6 +166,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     # Generate ID array from RA/DEC
     meta_IDs = IDs
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
+    gdm = np.array([True]*len(meta))
+
 
     # Add zem
 
@@ -211,7 +213,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         var = hdu[2].data
         sig = np.zeros_like(flux)
         gd = var > 0.
-        sig[gd] = np.sqrt(var)
+        if np.sum(gd) == 0:
+            print("{:s} has a bad var array.  Not including".format(fname))
+            gdm[jj] = False
+            continue
+        sig[gd] = np.sqrt(var[gd])
         # npix
         spec = XSpectrum1D.from_tuple((wave,flux,sig))
         npix = spec.npix

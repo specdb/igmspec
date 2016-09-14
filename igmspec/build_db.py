@@ -409,6 +409,27 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         test = True
         maindb = dmaindb
 
+    ''' 2QZ '''
+    if not mk_test_file:
+        sname = '2QZ'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        tdf_meta = twodf.meta_for_build()
+        # IDs
+        tdf_cut, new, tdf_ids = set_new_ids(maindb, tdf_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        tdf_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][tdf_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, tdf_cut)
+        maindb = vstack([maindb,tdf_cut], join_type='exact')
+        # Update hf5 file
+        twodf.hdf5_adddata(hdf, tdf_ids, sname)
+    pdb.set_trace()
+
     ''' COS-Halos '''
     if not mk_test_file:
         sname = 'COS-Halos'
@@ -490,28 +511,6 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Update hf5 file
         xq100.hdf5_adddata(hdf, xq100_ids, sname)#, mk_test_file=mk_test_file)
 
-    """
-    ''' 2QZ '''
-    if not mk_test_file:
-        sname = '2QZ'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        tdf_meta = twodf.meta_for_build()
-        # IDs
-        tdf_cut, new, tdf_ids = set_new_ids(maindb, tdf_meta)
-        nnew = np.sum(new)
-        # Survey flag
-        flag_s = defs.survey_flag(sname)
-        tdf_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-        midx = np.array(maindb['IGM_ID'][tdf_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Append
-        assert chk_maindb_join(maindb, tdf_cut)
-        maindb = vstack([maindb,tdf_cut], join_type='exact')
-        # Update hf5 file
-        if (not test):# or mk_test_file:
-            twodf.hdf5_adddata(hdf, tdf_ids, sname, mk_test_file=mk_test_file)
-    """
 
     ''' HST_z2 '''
     if not mk_test_file:
