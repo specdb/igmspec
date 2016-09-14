@@ -40,6 +40,7 @@ def instruments():
         # HST
         'ACS': dict(gratings=['PR200L']),
         'WFC3': dict(gratings=['G280']),
+        'COS': dict(gratings=['G130M', 'G160M', 'G130M/G160M']),
         # VLT
         'XSHOOTER': dict(gratings=['UVB,VIS,NIR']),
     }
@@ -123,6 +124,7 @@ def get_db_table_format():
     # Return
     return idict
 
+
 def get_survey_dict():
     """ Return the survey dict
     Returns
@@ -140,6 +142,7 @@ def get_survey_dict():
     survey_dict['HDLA100'] = 2**7   # Neeleman et al. 2013
     survey_dict['2QZ'] = 2**8       # Croom et al.
     survey_dict['ESI_DLA'] = 2**9   # Rafelski et al. 2012, 2014
+    survey_dict['COS-Halos'] = 2**10 # Tumlinson et al. 2013
     #
     return survey_dict
 
