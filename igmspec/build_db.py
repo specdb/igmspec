@@ -428,7 +428,6 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         maindb = vstack([maindb,tdf_cut], join_type='exact')
         # Update hf5 file
         twodf.hdf5_adddata(hdf, tdf_ids, sname)
-    pdb.set_trace()
 
     ''' COS-Halos '''
     if not mk_test_file:
