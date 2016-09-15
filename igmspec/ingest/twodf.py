@@ -166,6 +166,16 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     # Generate ID array from RA/DEC
     meta_IDs = IDs
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
+    gdm = np.array([True]*len(meta))
+
+    meta = meta[gdm]
+    for jj,row in enumerate(meta):
+        full_file = get_specfil(row)
+        if not os.path.isfile(full_file):
+            print("{:s} has no spectrum.  Not including".format(full_file))
+            gdm[jj] = False
+            continue
+    meta = meta[gdm]
 
     # Add zem
 
@@ -190,19 +200,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     maxpix = 0
     for jj,row in enumerate(meta):
         full_file = get_specfil(row)
-        # Extract
-        print("2QZ: Reading {:s}".format(full_file))
         # Parse name
         fname = full_file.split('/')[-1]
-        if debug:
-            if jj > 500:
-                speclist.append(str(fname))
-                if not os.path.isfile(full_file):
-                    raise IOError("2QZ file {:s} does not exist".format(full_file))
-                wvminlist.append(np.min(data['wave'][0][:npix]))
-                wvmaxlist.append(np.max(data['wave'][0][:npix]))
-                npixlist.append(npix)
-                continue
         # Read
         hdu = fits.open(full_file)
         head0 = hdu[0].header
@@ -211,11 +210,15 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         var = hdu[2].data
         sig = np.zeros_like(flux)
         gd = var > 0.
-        sig[gd] = np.sqrt(var)
+        if np.sum(gd) == 0:
+            print("{:s} has a bad var array.  Not including".format(fname))
+            gdm[jj] = False
+            continue
+        sig[gd] = np.sqrt(var[gd])
         # npix
         spec = XSpectrum1D.from_tuple((wave,flux,sig))
         npix = spec.npix
-        spec.header = head0
+        spec.meta['headers'][0] = head0
         if npix > max_npix:
             raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
         else:

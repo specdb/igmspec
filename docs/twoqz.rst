@@ -39,4 +39,6 @@ Spectra
 =======
 
 Spectra are straight from the long format of the
-server.  Bad pixels have sig=0.
+server.  Bad pixels have sig=0.  Note that we have
+not included spectra with error arrays having all zeros
+or those without a spectrum available via the website.
