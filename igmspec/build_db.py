@@ -14,6 +14,7 @@ from igmspec import defs
 from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf, xq100
 from igmspec.ingest import hdla100
 from igmspec.ingest import esidla
+from igmspec.ingest import hst_qso
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -407,6 +408,26 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Finish
         test = True
         maindb = dmaindb
+
+    ''' HSTQSO '''
+    if not mk_test_file:
+        sname = 'HSTQSO'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        hstqso_meta = hst_qso.meta_for_build()
+        # IDs
+        hstqso_cut, new, hstqso_ids = set_new_ids(maindb, hstqso_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        hstqso_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][hstqso_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, hstqso_cut)
+        maindb = vstack([maindb, hstqso_cut], join_type='exact')
+        # Update hf5 file
+        hst_qso.hdf5_adddata(hdf, hstqso_ids, sname)#, mk_test_file=mk_test_file)
 
     ''' HDLA100 '''
     if not mk_test_file:
