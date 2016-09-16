@@ -77,7 +77,7 @@ def grab_meta():
     return sdss_meta
 
 
-def meta_for_build():
+def meta_for_build(old=False):
     """ Load the meta info
     
     JXP made DR7 -- Should add some aspect of the official list..
@@ -101,14 +101,15 @@ def meta_for_build():
         keep[np.min(isep)] = True  # Only keep 1
     sdss_meta = sdss_meta[keep]
     # Cut one more (pair of QSOs)
-    bad_dup_c = SkyCoord(ra=193.96678*u.deg, dec=37.099741*u.deg)
-    coord = SkyCoord(ra=sdss_meta['RA'], dec=sdss_meta['DEC'], unit='deg')
-    sep = bad_dup_c.separation(coord)
-    assert np.sum(sep < 2*u.arcsec) == 2
-    badi = np.argmin(bad_dup_c.separation(coord))
-    keep = np.array([True]*len(sdss_meta))
-    keep[badi] = False
-    sdss_meta = sdss_meta[keep]
+    if old:
+        bad_dup_c = SkyCoord(ra=193.96678*u.deg, dec=37.099741*u.deg)
+        coord = SkyCoord(ra=sdss_meta['RA'], dec=sdss_meta['DEC'], unit='deg')
+        sep = bad_dup_c.separation(coord)
+        assert np.sum(sep < 2*u.arcsec) == 2
+        badi = np.argmin(bad_dup_c.separation(coord))
+        keep = np.array([True]*len(sdss_meta))
+        keep[badi] = False
+        sdss_meta = sdss_meta[keep]
     #
     nqso = len(sdss_meta)
     meta = Table()
