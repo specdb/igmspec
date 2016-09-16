@@ -258,8 +258,8 @@ def ver01(test=False, mk_test_file=False, **kwargs):
         sdss_cut = sdss_cut[0:100]
     maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
-    if not test:
-        sdss.hdf5_adddata(hdf, sdss_ids, sname, **kwargs)
+    #if not test:
+    sdss.hdf5_adddata(hdf, sdss_ids, sname, **kwargs)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
