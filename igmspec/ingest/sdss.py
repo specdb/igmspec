@@ -19,16 +19,23 @@ from linetools import utils as ltu
 
 from igmspec.ingest import utils as iiu
 
-def get_specfil(row):
+
+def get_specfil(row, dr7=False):
     """Parse the SDSS spectrum file
     Requires a link to the database Class
     """
-    path = os.getenv('RAW_IGMSPEC')+'/SDSS/spectro_DR7/1d_26/'
+    if dr7:
+        path = os.getenv('RAW_IGMSPEC')+'/SDSS/Schneider/'
+    else:
+        path = os.getenv('RAW_IGMSPEC')+'/SDSS/spectro_DR7/1d_26/'
     # Generate file name (DR4 is different)
     pnm = '{0:04d}'.format(row['PLATE'])
     fnm = '{0:03d}'.format(row['FIBERID'])
     mjd = str(row['MJD'])
-    sfil = path+pnm+'/1d/'+'spSpec-'
+    if dr7:
+        sfil = path+'spSpec-'
+    else:
+        sfil = path+pnm+'/1d/'+'spSpec-'
     # Finish
     specfil = sfil+mjd+'-'+pnm+'-'+fnm+'.fit.gz'  # Is usually gzipped
     return specfil
@@ -188,19 +195,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     maxpix = 0
     for jj,row in enumerate(meta):
         full_file = get_specfil(row)
+        if not os.path.isfile(full_file):
+            full_file = get_specfil(row, dr7=True)
         # Extract
         print("SDSS: Reading {:s}".format(full_file))
         # Parse name
         fname = full_file.split('/')[-1]
-        if debug:
-            if jj > 500:
-                speclist.append(str(fname))
-                if not os.path.isfile(full_file):
-                    raise IOError("SDSS file {:s} does not exist".format(full_file))
-                wvminlist.append(np.min(data['wave'][0][:npix]))
-                wvmaxlist.append(np.max(data['wave'][0][:npix]))
-                npixlist.append(npix)
-                continue
         # Generate full file
         spec = lsio.readspec(full_file)
         # npix
