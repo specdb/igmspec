@@ -23,7 +23,7 @@ def instruments():
         # Spectrograph for SDSS-I/II survey; http://classic.sdss.org/dr7/instruments/spectrographs/index.html
         'SDSS': dict(gratings=['BLUE', 'RED', 'BOTH']),
         # Keck/HIRES spectrometer -- BLUE/RED refer to the cross-disperser
-        'HIRES': dict(gratings=['BLUE', 'RED', 'BOTH']),
+        'HIRES': dict(gratings=['UV', 'BLUE', 'RED', 'BOTH']),
         # Keck/ESI spectrometer -- ECH
         'ESI': dict(gratings=['ECH']),
         # Magellan MIKE spectrometer
@@ -40,6 +40,7 @@ def instruments():
         # HST
         'ACS': dict(gratings=['PR200L']),
         'WFC3': dict(gratings=['G280']),
+        'COS': dict(gratings=['G130M', 'G160M', 'G130M/G160M']),
         # VLT
         'XSHOOTER': dict(gratings=['UVB,VIS,NIR']),
     }
@@ -123,6 +124,7 @@ def get_db_table_format():
     # Return
     return idict
 
+
 def get_survey_dict():
     """ Return the survey dict
     Returns
@@ -137,8 +139,10 @@ def get_survey_dict():
     survey_dict['GGG'] = 16         # Worseck et al. 201X
     survey_dict['HST_z2'] = 2**5    # O'Meara et al. 2011
     survey_dict['XQ-100'] = 2**6    # Lopez et al. 2016
-    survey_dict['2QZ'] = 2**7       # Croom et al.
-    survey_dict['ESI_DLA'] = 2**8   # Rafelski et al. 2012, 2014
+    survey_dict['HDLA100'] = 2**7   # Neeleman et al. 2013
+    survey_dict['2QZ'] = 2**8       # Croom et al.
+    survey_dict['ESI_DLA'] = 2**9   # Rafelski et al. 2012, 2014
+    survey_dict['COS-Halos'] = 2**10 # Tumlinson et al. 2013
     #
     return survey_dict
 
@@ -171,7 +175,9 @@ def get_res_dicts():
     ESI_Rdict = {'0.50_arcsec': 4545./0.5, '0.75_arcsec': 4545./0.75}
     HIRES1 = 36000.*1.148  # https://koa.ipac.caltech.edu/UserGuide/deckname_detail.html
     HIRES_Rdict = {'C1': HIRES1/0.861,
+                   'C2': HIRES1/0.861,
                    'C5': HIRES1/1.148,
+                   'D1': HIRES1/1.148,
                    'B2': HIRES1/0.574,
                    'B5': HIRES1/0.861,
                    'E3': HIRES1/0.4,

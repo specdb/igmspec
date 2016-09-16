@@ -41,10 +41,13 @@ def grab_meta():
     -------
     meta
     """
-    sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/SDSS_DR7_qso.fits.gz')
+    old = False
+    #sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/SDSS_DR7_qso.fits.gz')
+    sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/dr7qso.fit.gz')
     nspec = len(sdss_meta)
     # DATE
-    t = Time(list(sdss_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    #t = Time(list(sdss_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    t = Time(list(sdss_meta['SMJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
     sdss_meta.add_column(Column(t.iso, name='DATE-OBS'))
     # Add a few columns
     sdss_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
@@ -53,10 +56,14 @@ def grab_meta():
     sdss_meta.add_column(Column(['BOTH']*nspec, name='GRATING'))
     sdss_meta.add_column(Column(['SDSS 2.5-M']*nspec, name='TELESCOPE'))
     # Rename
-    sdss_meta.rename_column('RAOBJ', 'RA')
-    sdss_meta.rename_column('DECOBJ', 'DEC')
-    sdss_meta.rename_column('Z', 'zem')          # Some of these were corrected by QPQ
-    sdss_meta.rename_column('Z_ERR', 'sig_zem')
+    if old:
+        sdss_meta.rename_column('RAOBJ', 'RA')
+        sdss_meta.rename_column('DECOBJ', 'DEC')
+        sdss_meta.rename_column('Z_ERR', 'sig_zem')
+    else:
+        sdss_meta.rename_column('z', 'zem')          # Some of these were corrected by QPQ
+        sdss_meta['sig_zem'] = 0.
+        sdss_meta['flag_zem'] = 'SDSS-DR7'
     # Sort
     sdss_meta.sort('RA')
     # Return
@@ -100,7 +107,7 @@ def meta_for_build():
     meta = Table()
     for key in ['RA', 'DEC', 'zem', 'sig_zem']:
         meta[key] = sdss_meta[key]
-    meta['flag_zem'] = [str('SDSS')]*nqso
+    meta['flag_zem'] = [str('SDSS-DR7')]*nqso
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
@@ -123,6 +130,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     -------
 
     """
+    from igmspec.cat_utils import zem_from_radec
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     if sdss_hdf is not None:
@@ -152,7 +160,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     meta_IDs = IDs[idx]
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
-    # Add zem
+    # Fix zem
+    zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], hdf)
+    gdz = zem > 0.
+    meta['zem'][gdz] = zem[gdz]
+    meta['flag_zem'][gdz] = zem[gdz]
+
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
