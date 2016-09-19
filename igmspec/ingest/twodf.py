@@ -7,8 +7,6 @@ import numpy as np
 import os, json
 import pdb
 
-import datetime
-
 from astropy.table import Table, Column
 from astropy.io import fits
 from astropy.time import Time
