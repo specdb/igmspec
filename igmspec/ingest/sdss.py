@@ -41,14 +41,13 @@ def get_specfil(row, dr7=False):
     return specfil
 
 
-def grab_meta():
+def grab_meta(old=False):
     """ Grab SDSS meta Table
 
     Returns
     -------
     meta
     """
-    old = False
     #sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/SDSS_DR7_qso.fits.gz')
     sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/dr7qso.fit.gz')
     nspec = len(sdss_meta)
@@ -64,13 +63,14 @@ def grab_meta():
     sdss_meta.add_column(Column(['SDSS 2.5-M']*nspec, name='TELESCOPE'))
     # Rename
     if old:
+        # Some of these were corrected by QPQ
         sdss_meta.rename_column('RAOBJ', 'RA')
         sdss_meta.rename_column('DECOBJ', 'DEC')
         sdss_meta.rename_column('Z_ERR', 'sig_zem')
     else:
-        sdss_meta.rename_column('z', 'zem')          # Some of these were corrected by QPQ
+        sdss_meta.rename_column('z', 'zem')
         sdss_meta['sig_zem'] = 0.
-        sdss_meta['flag_zem'] = 'SDSS-DR7'
+        sdss_meta['flag_zem'] = '          '
     # Sort
     sdss_meta.sort('RA')
     # Return
@@ -79,9 +79,10 @@ def grab_meta():
 
 def meta_for_build(old=False):
     """ Load the meta info
-    
-    JXP made DR7 -- Should add some aspect of the official list..
-      Am worried about the coordinates some..
+
+    old : bool, optional
+      JXP made DR7 -- Should add some aspect of the official list..
+        Am worried about the coordinates some..
 
     Returns
     -------
@@ -113,9 +114,8 @@ def meta_for_build(old=False):
     #
     nqso = len(sdss_meta)
     meta = Table()
-    for key in ['RA', 'DEC', 'zem', 'sig_zem']:
+    for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
         meta[key] = sdss_meta[key]
-    meta['flag_zem'] = [str('SDSS-DR7')]*nqso
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
@@ -172,7 +172,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], hdf['quasars'].value)
     gdz = zem > 0.
     meta['zem'][gdz] = zem[gdz]
-    meta['flag_zem'][gdz] = zsource[gdz]
+    pdb.set_trace()
+    meta['flag_zem'] = zsource
+    meta['flag_zem'][~gdz] = 'SDSS-DR7'
 
 
     # Build spectra (and parse for meta)
