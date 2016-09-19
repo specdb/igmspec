@@ -540,7 +540,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
     hdf['catalog'].attrs['VERSION'] = version
-    #hdf['catalog'].attrs['CAT_DICT'] = cdict
     hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(defs.get_survey_dict()))
+    #hdf['catalog'].attrs['CAT_DICT'] = cdict
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
