@@ -3,6 +3,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
+import pdb
 
 from collections import OrderedDict
 from astropy import units as u
@@ -26,22 +27,43 @@ def instruments():
         'HIRES': dict(gratings=['UV', 'BLUE', 'RED', 'BOTH']),
         # Keck/ESI spectrometer -- ECH
         'ESI': dict(gratings=['ECH']),
+        # Keck/LRIS spectrometer
+        'LRISb': dict(gratings=['ECH']),
+        'LRISr': dict(gratings=['ECH']),
+        # Keck/NIRSPEC spectrometer
+        'NIRSPEC': dict(gratings=['Low-Res']),
+        # Keck/MOSFIRE spectrometer
+        'MOSFIRE': dict(gratings=['H']),
         # Magellan MIKE spectrometer
         'MIKE': dict(gratings=['BOTH']),   # HD-LLS spliced blue and red
+        'MIKE-Blue': dict(gratings=['BLUE']),
+        'MIKE-Red': dict(gratings=['RED']),
         'MIKEb': dict(gratings=['BLUE']),
         'MIKEr': dict(gratings=['RED']),
         # Magellan MagE spectrometer
         'MagE': dict(gratings=['N/A']),
-        # Gemini GMOS spectrometer
+        # MMT BCS
+        'MMT': dict(gratings=['??']),
+        'mmtbluechan': dict(gratings=['500GPM']),
+        # LBT/MODS
+        'MODS1B': dict(gratings=['G400L']),
+        'MODS1R': dict(gratings=['G670L']),
+        # Gemini
         'GMOS-S': dict(gratings=['R400', 'B600']),
         'GMOS-N': dict(gratings=['R400', 'B600']),
+        'GNIRS': dict(gratings=['ECH']),
+        'NIRI': dict(gratings=['Hgrism_G5203','Kgrism_G5204']),
         # UKST
         '2dF': dict(gratings=['300B']),
         # HST
         'ACS': dict(gratings=['PR200L']),
         'WFC3': dict(gratings=['G280']),
+        'COS': dict(gratings=['G130M', 'G160M', 'G130M/G160M']),
         # VLT
-        'XSHOOTER': dict(gratings=['UVB,VIS,NIR']),
+        'XSHOOTER': dict(gratings=['UVB,VIS,NIR,ALL']),
+        'ISAAC': dict(gratings=['SW_MRes']),
+        # Palomar
+        'TSpec': dict(gratings=['ECH']),
     }
     return inst_dict
 
@@ -123,6 +145,7 @@ def get_db_table_format():
     # Return
     return idict
 
+
 def get_survey_dict():
     """ Return the survey dict
     Returns
@@ -140,6 +163,7 @@ def get_survey_dict():
     survey_dict['HDLA100'] = 2**7   # Neeleman et al. 2013
     survey_dict['2QZ'] = 2**8       # Croom et al.
     survey_dict['ESI_DLA'] = 2**9   # Rafelski et al. 2012, 2014
+    survey_dict['COS-Halos'] = 2**10 # Tumlinson et al. 2013
     #
     return survey_dict
 
@@ -156,9 +180,11 @@ def survey_flag(survey, iflag=None):
     flag_val : int
 
     """
+    pdb.set_trace()  # USE CATALOG
     survey_dict = get_survey_dict()
     #
     return survey_dict[survey]
+
 
 def get_res_dicts():
     """ Resolution dicts
@@ -169,7 +195,8 @@ def get_res_dicts():
       dict of R dicts
 
     """
-    ESI_Rdict = {'0.50_arcsec': 4545./0.5, '0.75_arcsec': 4545./0.75}
+    ESI_Rdict = {'0.50_arcsec': 4545./0.5, '0.75_arcsec': 4545./0.75,
+                 '1.00_arcsec': 4545./1., 'Unknown': 4545./1.}
     HIRES1 = 36000.*1.148  # https://koa.ipac.caltech.edu/UserGuide/deckname_detail.html
     HIRES_Rdict = {'C1': HIRES1/0.861,
                    'C2': HIRES1/0.861,
@@ -179,8 +206,87 @@ def get_res_dicts():
                    'B5': HIRES1/0.861,
                    'E3': HIRES1/0.4,
                    }
-    MagE_Rdict = {'0.70': 4100./0.7}
+    LRISb_Rdict = {'400/3400': 500.,      # Assumes 1" slit
+                   '600/4000': 1000.,
+                   '1200/3400': 2180.,
+                   }
+    LRISr_Rdict = {'600/7500': 1595.,     # Assumes 1" slit
+                   '400/8500': 1232.,
+                   '1200/7500': 2*1595.,
+                   }
+    MOSFIRE_Rdict = {'H': 3660,  # Assumes 0.7" slit
+                     }
+    MMT_Rdict = {'500GPM': 1430, '800GPM': 1730.}          # Assumes 1" slit
+    MODS_Rdict = {'G400L': 1850, 'G670L': 2300.}          # Assumes 0.6" slit
+    GMOS_Rdict = {'B600+_G5307': 844.,    # Assumes 1" slit
+                  'B600+_G5323': 844.,
+                  'B1200+_G5301': 1872.,
+                  }
+    GNIRS_Rdict = {'32/mm_G5506': 1700.,    # Assumes 0.3" slit
+                   '32/mmSB_G5533': 1700.,
+                  }
+    NIRI_Rdict = {'Hgrism_G5203': 940.,    # Assumes 4 pixels
+                  'Kgrism_G5204': 780.,    # Assumes 4 pixels
+                  }
     #
-    Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict, MagE=MagE_Rdict)
+    Rdicts = dict(ESI=ESI_Rdict, HIRES=HIRES_Rdict,
+                  GMOS=GMOS_Rdict, GNIRS=GNIRS_Rdict, LRISb=LRISb_Rdict,
+                  LRISr=LRISr_Rdict, mmt=MMT_Rdict, MODS1B=MODS_Rdict,
+                  MODS1R=MODS_Rdict, NIRI=NIRI_Rdict, MOSFIRE=MOSFIRE_Rdict,
+                  )
+    Rdicts['MIKE-Blue'] = 28000. # 1" slit
+    Rdicts['MIKE-Red'] = 22000. # 1" slit
     #
     return Rdicts
+
+
+def slit_width(slitname, req_long=True):
+    """ Slit width
+
+    Parameters
+    ----------
+    slitname : str
+    req_long : bool, optional
+      Require long in slit name.  If not present return 1.0
+
+    Returns
+    -------
+    sdict : dict
+      Translates slit mask name to slit with in arcsec or pixels
+
+    """
+    sdict = {'long_1.0': 1.0,
+             'long_1.5': 1.5,
+             '1.0x180': 1.0,  # MMT
+             'LS5x60x0.6': 0.6,  # MODS
+             '0.30 arcsec': 0.3,  # GNIRS
+             'f6-4pix_G5212': 4., # NIRI
+             '42x0.570': 0.57, # NIRSPEC
+             'LONGSLIT-46x0.7': 0.7, # MOSFIRE
+             }
+    #
+    try:
+        swidth = sdict[slitname]
+    except KeyError:
+        try:
+            swidth = float(slitname)
+        except ValueError:
+            if ('long' not in slitname) & req_long:
+                    swidth = 1.
+            else:
+                pdb.set_trace()
+    #
+    return swidth
+
+
+def get_req_clms():
+    """
+    Returns
+    -------
+    req_clms : list
+      List of required columns for meta data
+    """
+    req_clms = ['RA', 'DEC', 'EPOCH', 'zem', 'R', 'WV_MIN',
+            'WV_MAX', 'DATE-OBS', 'SURVEY_ID', 'NPIX', 'SPEC_FILE',
+            'INSTR', 'GRATING', 'TELESCOPE', 'IGM_ID']
+    return req_clms

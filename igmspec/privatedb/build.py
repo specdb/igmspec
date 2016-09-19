@@ -6,38 +6,39 @@ import numpy as np
 import os, glob
 import json
 import h5py
-import datetime
 import warnings
 import pdb
 
-
-from igmspec import defs
-from igmspec.ingest import utils as iiu
-
 from astropy.table import Table, vstack, Column
-from astropy.coordinates import SkyCoord
+from astropy.io import fits
+from astropy.coordinates import SkyCoord, match_coordinates_sky
+from astropy.time import Time
 
 from linetools import utils as ltu
 from linetools.spectra import io as lsio
+from linetools.spectra.xspectrum1d import XSpectrum1D
 
 from igmspec.cat_utils import zem_from_radec
 from igmspec import build_db as ibdb
+from igmspec import defs as igmsp_defs
+from igmspec.ingest import utils as iiu
 
 
-def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
+def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits',
+                                      'E.fits', 'N.fits', 'old.fits')):
     """ Generate a list of FITS files within the file tree
 
     Parameters
     ----------
     tree_root : str
       Top level path of the tree of FITS files
+    skip_files : tuple
+      List of file roots to skip as primary files when ingesting
 
     Returns
     -------
     files : list
       List of FITS files
-    skip_files : tuple
-      List of file roots to skip as primary files when ingesting
 
     """
     walk = os.walk(tree_root)
@@ -63,7 +64,9 @@ def grab_files(tree_root, skip_files=('c.fits', 'C.fits', 'e.fits', 'E.fits')):
     return pfiles
 
 
-def mk_meta(files, fname=False, stype='QSO', skip_badz=False, **kwargs):
+def mk_meta(files, fname=False, stype='QSO', skip_badz=False,
+            mdict=None, parse_head=None, debug=False, chkz=False,
+            private_z=None, verbose=False, **kwargs):
     """ Generate a meta Table from an input list of files
 
     Parameters
@@ -77,6 +80,14 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False, **kwargs):
         where x cannot be a #. or +/-
     skip_badz : bool, optional
       Skip spectra without a parseable redshift (using the Myers catalog)
+    parse_head : dict, optional
+      Parse header for meta info with this dict
+    mdict : dict, optional
+      Input meta data in dict form e.g.  mdict=dict(INSTR='ESI')
+    private_z : Table, optional
+      Table of private redshifts.  Must include RA, DEC, ZEM, ZEM_SOURCE
+    chkz : bool, optional
+      If any sources have no parseable redshift, hit a set_trace
 
     Returns
     -------
@@ -85,6 +96,7 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False, **kwargs):
     """
     from igmspec.igmspec import IgmSpec
     igmsp = IgmSpec(skip_test=True)
+    Rdicts = igmsp_defs.get_res_dicts()
     #
     coordlist = []
     for ifile in files:
@@ -102,11 +114,24 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False, **kwargs):
                 else:
                     i1 = ii
                     break
-        # Get coord
-        try:
-            coord = ltu.radec_to_coord(ifile[i0:i1])
-        except UnboundLocalError:
-            pdb.set_trace()
+            # Deal with .fits
+            if ifile[i1-1] == '.':
+                i1 -= 1
+            # Get coord
+            try:
+                coord = ltu.radec_to_coord(ifile[i0:i1])
+            except (UnboundLocalError, ValueError):
+                pdb.set_trace()
+        else:
+            if private_z:
+                sname = ifile.split('/')[-1]
+                mt = np.where(private_z['SPEC_FILE'] == sname)[0]
+                if len(mt) != 1:
+                    raise IndexError("NO MATCH FOR {:s}".format(sname))
+                coord = ltu.radec_to_coord((private_z['RA'][mt],
+                                            private_z['DEC'][mt]))[0]
+            else:
+                raise NotImplementedError("NEED RA/DEC")
         coordlist.append(coord)
     coords = SkyCoord(ra=[coord.ra.degree for coord in coordlist], dec=[coord.dec.degree for coord in coordlist], unit='deg')
 
@@ -126,37 +151,165 @@ def mk_meta(files, fname=False, stype='QSO', skip_badz=False, **kwargs):
     meta['RA'] = coords.ra.deg
     meta['DEC'] = coords.dec.deg
     meta['STYPE'] = [stype]*len(meta)
-    meta['PRIV_ID'] = np.arange(len(meta)).astype(int)
+    #meta['PRIV_ID'] = np.arange(len(meta)).astype(int) + (max_pid+1)
     meta['flag_survey'] = [1]*len(meta)
 
-    # Redshift from Myers
-    zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], igmsp.idb.hdf)
+    # Redshift from Myers (and more)
+    myers = Table(igmsp.idb.hdf['quasars'].value)
+    if private_z is not None:
+        zqsos = vstack([myers, private_z])
+    else:
+        zqsos = myers
+    zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], zqsos)
     badz = zem <= 0.
     if np.sum(badz) > 0:
         if skip_badz:
             warnings.warn("Skipping {:d} entries without a parseable redshift".format(
                 np.sum(badz)))
         else:
-            raise ValueError("{:d} entries without a parseable redshift".format(
-                np.sum(badz)))
+            if chkz:
+                pdb.set_trace()
+            else:
+                raise ValueError("{:d} entries without a parseable redshift".format(
+                    np.sum(badz)))
     meta['zem'] = zem
     meta['sig_zem'] = 0.  # Need to add
     meta['flag_zem'] = zsource
     # Cut
     meta = meta[~badz]
 
+    # igmspec IDs
+    meta['IGM_ID'] = [-9999]*len(meta)
+    c_igmsp = SkyCoord(ra=igmsp.qcat.cat['RA'], dec=igmsp.qcat.cat['DEC'], unit='deg')
+    c_new = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
+    # Find new sources
+    idx, d2d, d3d = match_coordinates_sky(c_new, c_igmsp, nthneighbor=1)
+    cdict = igmsp_defs.get_cat_dict()
+    mtch = d2d < cdict['match_toler']
+    meta['IGM_ID'][mtch] = igmsp.qcat.cat['IGM_ID'][idx[mtch]]
+
     # Stack (primarily as a test)
-    maindb = vstack([maindb,meta], join_type='exact')
+    try:
+        maindb = vstack([maindb,meta], join_type='exact')
+    except:
+        pdb.set_trace()
     maindb = maindb[1:]
 
-    # Add other meta info (as desired)
+    # SPEC_FILE
     maindb['SPEC_FILE'] = np.array(files)[~badz]
+
+    # Try Header?
+    if parse_head is not None:
+        # Setup to store
+        plist = {}
+        for key in parse_head.keys():
+            plist[key] = []
+        # Loop on files
+        for sfile in maindb['SPEC_FILE']:
+            if verbose:
+                print('Parsing {:s}'.format(sfile))
+            head = fits.open(sfile)[0].header
+            for key,item in parse_head.items():
+                # R
+                if key == 'R':
+                    if parse_head[key] == True:
+                        try:
+                            plist[key].append(iiu.set_resolution(head))
+                        except ValueError:
+                            if mdict is not None:
+                                try:
+                                    plist[key].append(mdict['R'])
+                                except KeyError:
+                                    pdb.set_trace()
+                            else:
+                                pdb.set_trace()
+                                plist[key].append(0.)
+                    else:
+                        raise ValueError("Set something else for R")
+                elif key == 'DATE-OBS':
+                    tval = Time(head[item].replace('/','-'), format='isot', out_subfmt='date')
+                    plist[key].append(tval.iso)
+                else:
+                    plist[key].append(head[item])
+            # INSTRUMENT SPECIFIC
+            try:
+                instr = head['INSTRUME']
+            except KeyError:
+                instr = 'none'
+            if 'LRIS' in instr:
+                if 'GRATING' not in plist.keys():
+                    plist['GRATING'] = []
+                    plist['INSTR'] = []
+                    plist['R'] = []
+                try:
+                    det = head['DETECTOR']
+                except KeyError:
+                    if head['OUTFILE'] == 'lred':
+                        det = 'LRIS-R'
+                    else:
+                        det = 'LRIS-B'
+                if 'LRIS-R' in det:
+                    plist['GRATING'].append(head['GRANAME'])
+                    plist['INSTR'].append('LRISr')
+                else:
+                    plist['GRATING'].append(head['GRISNAME'])
+                    plist['INSTR'].append('LRISb')
+                # Resolution
+                res = Rdicts[plist['INSTR'][-1]][plist['GRATING'][-1]]
+                try:
+                    sname = head['SLITNAME']
+                except KeyError:
+                    swidth = 1.
+                else:
+                    swidth = igmsp_defs.slit_width(sname)
+                plist['R'].append(res/swidth)
+        # Finish
+        for key in plist.keys():
+            maindb[key] = plist[key]
+    # mdict
+    if mdict is not None:
+        for key,item in mdict.items():
+            maindb[key] = [item]*len(meta)
+
+    # EPOCH
+    if 'EPOCH' not in maindb.keys():
+        warnings.warn("EPOCH not defined.  Filling with 2000.")
+        maindb['EPOCH'] = 2000.
+
+    # Fill in empty columns with warning
+    mkeys = maindb.keys()
+    req_clms = igmsp_defs.get_req_clms()
+    for clm in req_clms:
+        if clm not in mkeys:
+            if clm not in ['NPIX','WV_MIN','WV_MAX']:  # File in ingest_spec
+                warnings.warn("Meta Column {:s} not defined.  Filling with DUMMY".format(clm))
+                if clm == 'DATE-OBS':
+                    maindb[clm] = ['9999-1-1']*len(maindb)
+                else:
+                    maindb[clm] = ['DUMMY']*len(maindb)
+
     # Return
+    if debug:
+        maindb[['IGM_ID', 'RA', 'DEC', 'SPEC_FILE']].pprint(max_width=120)
+        pdb.set_trace()
     return maindb
 
 
+def dumb_spec():
+    """ Generate a dummy spectrum
+    Returns
+    -------
+
+    """
+    npix = 1000
+    dspec = XSpectrum1D.from_tuple((np.arange(npix)+5000., np.ones(npix),
+                                   np.ones(npix)))
+    #
+    return dspec
+
+
 def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
-                   refs=None):
+                   refs=None, verbose=False, badf=None, **kwargs):
     """ Ingest the spectra
     Parameters
     ----------
@@ -170,6 +323,8 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
       Only check meta file;  will not write
     refs : list, optional
       list of dicts with reference info
+    badf : list, optional
+      List of bad spectra [use only if you know what you are doing!]
 
     Returns
     -------
@@ -191,21 +346,26 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
-    Rlist = []
     wvminlist = []
     wvmaxlist = []
-    dateobslist = []
     npixlist = []
-    instrlist = []
-    gratinglist = []
-    telelist = []
     # Loop
     for jj,member in enumerate(meta['SPEC_FILE']):
         # Extract
         f = member
-        spec = lsio.readspec(f)
         # Parse name
         fname = f.split('/')[-1]
+        if verbose:
+            print(fname)
+        # Read
+        if badf is not None:
+            for ibadf in badf:
+                if ibadf in f:
+                    spec = dumb_spec()
+                else:
+                    spec = lsio.readspec(f)
+        else:
+            spec = lsio.readspec(f)
         # npix
         head = spec.header
         npix = spec.npix
@@ -221,38 +381,21 @@ def ingest_spectra(hdf, sname, meta, max_npix=10000, chk_meta_only=False,
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
-        # Dummy
-        instrlist.append('HIRES')
-        telelist.append('Keck-I')
-        gratinglist.append('BOTH')
-        #Rlist.append(iiu.set_resolution(head))
-        Rlist.append(2000.)
-        tval = datetime.datetime.strptime(head['DATE-OBS'], '%Y-%m-%d')
-        dateobslist.append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
-        #if chk_meta_only:
-        #    continue
         # Set
         spec_set[jj] = data
 
     # Add columns
-    nmeta = len(meta)
-    meta.add_column(Column([2000.]*nmeta, name='EPOCH'))
     meta.add_column(Column(npixlist, name='NPIX'))
-    meta.add_column(Column([str(date) for date in dateobslist], name='DATE-OBS'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    meta.add_column(Column(Rlist, name='R'))
-    meta.add_column(Column(np.arange(nmeta,dtype=int),name='SURVEY_ID'))
-    meta.add_column(Column(gratinglist, name='GRATING'))
-    meta.add_column(Column(instrlist, name='INSTR'))
-    meta.add_column(Column(telelist, name='TELESCOPE'))
 
     # Add HDLLS meta to hdf5
-    if iiu.chk_meta(meta, skip_igmid=True):
+    if iiu.chk_meta(meta):#, skip_igmid=True):
         if chk_meta_only:
             pdb.set_trace()
         hdf[sname]['meta'] = meta
     else:
+        pdb.set_trace()
         raise ValueError("meta file failed")
     # References
     if refs is not None:
@@ -278,35 +421,54 @@ def mk_db(trees, names, outfil, **kwargs):
     -------
 
     """
+    from igmspec import build_db as ibdb
     # HDF5 file
     hdf = h5py.File(outfil,'w')
 
     # Defs
-    zpri = defs.z_priority()
+    zpri = igmsp_defs.z_priority()
+    sdict = {}
 
     # Main DB Table
     maindb, tkeys = ibdb.start_maindb(private=True)
+    maindb['PRIV_ID'] = -1  # To get the indexing right
+    tkeys += ['PRIV_ID']
 
     # MAIN LOOP
     for ss,tree in enumerate(trees):
+        print('Working on tree: {:s}'.format(tree))
         # Files
         fits_files = grab_files(tree)
         # Meta
         full_meta = mk_meta(fits_files, **kwargs)
+        # Survey IDs
+        flag_s = 2**ss
+        sdict[names[ss]] = flag_s
+        if ss == 0:
+            ids = np.arange(len(full_meta), dtype=int)
+            full_meta['PRIV_ID'] = ids
+            full_meta['flag_survey'] = flag_s
+            cut = full_meta
+        else:
+            cut, new, ids = ibdb.set_new_ids(maindb, full_meta, idkey='PRIV_ID')
+            cut['flag_survey'] = [flag_s]*len(cut)
+            midx = np.array(maindb['PRIV_ID'][ids[~new]])
+            maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
         # Catalog
-        cat_meta = full_meta[tkeys]
+        cat_meta = cut[tkeys]
         assert ibdb.chk_maindb_join(maindb, cat_meta)
         # Append
         maindb = vstack([maindb,cat_meta], join_type='exact')
         if ss == 0:
             maindb = maindb[1:]  # Eliminate dummy line
         # Ingest
-        ingest_spectra(hdf, names[ss], full_meta)
+        ingest_spectra(hdf, names[ss], full_meta, **kwargs)
 
-    # Finish
+    # Write
     hdf['catalog'] = maindb
     hdf['catalog'].attrs['EPOCH'] = 2000.
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
+    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(sdict))
     #hdf['catalog'].attrs['VERSION'] = version
     #hdf['catalog'].attrs['CAT_DICT'] = cdict
     #hdf['catalog'].attrs['SURVEY_DICT'] = defs.get_survey_dict()

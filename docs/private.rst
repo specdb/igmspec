@@ -21,7 +21,7 @@ Setup
 
 The main input is a directory tree containing the
 FITS files of individual spectra.  It may contain
-sub-folders.::
+sub-folders, e.g.::
 
     tree = os.getenv('DROPBOX_DIR')+'/QSOPairs/data/MMT_redux/'
 
