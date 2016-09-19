@@ -137,7 +137,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             gratinglist.append('R400')
         else:
             full_file = path+row['name']+'_B600.fits.gz'
-            gratinglist.append('B400')
+            gratinglist.append('B600')
         # Extract
         print("GGG: Reading {:s}".format(full_file))
         spec = lsio.readspec(full_file)

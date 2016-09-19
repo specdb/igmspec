@@ -61,6 +61,7 @@ class QueryCatalog(object):
         -------
 
         """
+        import json
         #
         if db_file is None:
             db_file = idbu.grab_dbfile()
@@ -68,6 +69,11 @@ class QueryCatalog(object):
         hdf = h5py.File(db_file,'r')
         self.cat = Table(hdf['catalog'].value)
         self.db_file = db_file
+        # Survey dict
+        try: # BACKWARD COMP FOR A BIT
+            self.survey_dict = json.loads(hdf['catalog'].attrs['SURVEY_DICT'])
+        except:
+            self.survey_dict = None
         hdf.close()
 
     def in_surveys(self, input_surveys, return_list=True):
@@ -126,7 +132,10 @@ class QueryCatalog(object):
         fs = cut_cat['flag_survey']
         msk = np.array([False]*len(cut_cat))
         for survey in surveys:
-            flag = idefs.survey_flag(survey)
+            try:
+                flag = self.survey_dict[survey]
+            except:
+                flag = idefs.survey_flag(survey)
             # In the survey?
             query = (fs % (flag*2)) >= flag
             if np.sum(query) > 0:
@@ -265,6 +274,7 @@ class QueryCatalog(object):
         print("Survey key:")
         for survey in self.surveys:
             print("    {:s}: {:d}".format(survey, idefs.get_survey_dict()[survey]))
+            #print("    {:s}: {:d}".format(survey, idefs.get_survey_dict()[survey]))
 
     def setup(self):
         """ Set up a few things, e.g. SkyCoord for the catalog
@@ -281,11 +291,10 @@ class QueryCatalog(object):
         self.cat['zem'].format = '6.3f'
         self.cat['sig_zem'].format = '5.3f'
         # Surveys
-        surveys = idefs.get_survey_dict()
         unif = np.unique(self.cat['flag_survey'])
         all_surveys = []
         for ifs in unif:
-            all_surveys += icu.flag_to_surveys(ifs)
+            all_surveys += icu.flag_to_surveys(ifs, self.survey_dict)
         self.surveys = list(np.unique(all_surveys))
 
     def __repr__(self):

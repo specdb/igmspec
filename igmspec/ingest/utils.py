@@ -6,22 +6,19 @@ import numpy as np
 import warnings
 import pdb
 
-def chk_meta(meta, skip_igmid=False):
+def chk_meta(meta):#, skip_igmid=False):
     """ Vettes a meta Table prior to its being ingested into the hdf
 
     Parameters
     ----------
     meta
-    skip_igmid : bool, optional
-      Skips IGM_ID as required
-      Used for personal DB
 
     Returns
     -------
     chk : bool
 
     """
-    from igmspec.defs import instruments
+    from igmspec.defs import instruments, get_req_clms
     from astropy.time import Time
     from astropy.table import Column
     # Init
@@ -29,11 +26,7 @@ def chk_meta(meta, skip_igmid=False):
 
     chk = True
     # Required columns
-    req_clms = ['RA', 'DEC', 'EPOCH', 'zem', 'R', 'WV_MIN',
-                'WV_MAX', 'DATE-OBS', 'SURVEY_ID', 'NPIX', 'SPEC_FILE',
-                'INSTR', 'GRATING', 'TELESCOPE']
-    if not skip_igmid:
-        req_clms += ['IGM_ID']
+    req_clms = get_req_clms()
     meta_keys = meta.keys()
     for clm in req_clms:
         if clm not in meta_keys:
@@ -80,13 +73,29 @@ def set_resolution(head, instr=None):
     Rdicts = defs.get_res_dicts()
     # Grab instrument
     if instr is None:
-        if 'CURRINST' in head.keys():  # ESI
+        if 'CURRINST' in head.keys():  # ESI, NIRSPEC
             instr = head['CURRINST'].strip()
         elif 'INSTRUME' in head.keys():
             if 'HIRES' in head['INSTRUME']:
                 instr = 'HIRES'
+            elif 'MOSFIRE' in head['INSTRUME']:
+                instr = 'MOSFIRE'
+            elif 'MIKE' in head['INSTRUME']:
+                instr = 'MIKE'
             elif 'MagE' in head['INSTRUME']:
                 instr = 'MagE'
+            elif 'GMOS' in head['INSTRUME']:
+                instr = 'GMOS'
+            elif 'GNIRS' in head['INSTRUME']:
+                instr = 'GNIRS'
+            elif 'NIRI' in head['INSTRUME']:
+                instr = 'NIRI'
+            elif 'mmt' in head['INSTRUME']:
+                instr = 'mmt'
+            elif 'MODS1B' in head['INSTRUME']:
+                instr = 'MODS1B'
+            elif 'MODS1R' in head['INSTRUME']:
+                instr = 'MODS1R'
         else:
             pass
         if instr is None:
@@ -104,11 +113,81 @@ def set_resolution(head, instr=None):
         except KeyError:
             print("Need to add {:s}".format(head['DECKNAME']))
             pdb.set_trace()
-    elif instr == 'MagE':
+    elif instr == 'GMOS':
         try:
-            return Rdicts[instr][head['SLITNAME'].strip()]
+            return Rdicts[instr][head['GRATING']]
+        except KeyError:
+            print("Need to add {:s}".format(head['GRATING']))
+            pdb.set_trace()
+    elif instr == 'MOSFIRE':
+        try:
+            res = Rdicts[instr][head['FILTER']]*0.7
+        except KeyError:
+            print("Need to add {:s}".format(head['FILTER']))
+            pdb.set_trace()
+        else:
+            swidth = defs.slit_width(head['MASKNAME'])
+            return res/swidth
+    elif instr == 'GNIRS':
+        try:
+            res = Rdicts[instr][head['GRATING']]*0.3
+        except KeyError:
+            print("Need to add {:s}".format(head['GRATING']))
+            pdb.set_trace()
+        else:
+            swidth = defs.slit_width(head['SLIT'])
+            return res/swidth
+    elif instr == 'NIRI':
+        try:
+            res = Rdicts[instr][head['FILTER3']]/4.
+        except KeyError:
+            print("Need to add {:s}".format(head['FILTER3']))
+            pdb.set_trace()
+        else:
+            swidth = defs.slit_width(head['FPMASK'])  #PIXELS
+            return res*swidth
+    elif instr == 'NIRSPEC':  # LOW DISPERSION
+        try:
+            return 2000.*0.38/defs.slit_width(head['SLITNAME'])
         except KeyError:
             print("Need to add {:s}".format(head['SLITNAME']))
             pdb.set_trace()
+    elif instr == 'MagE':
+        try:
+            return 4100./defs.slit_width(head['SLITNAME'])
+        except KeyError:
+            print("Need to add {:s}".format(head['SLITNAME']))
+            pdb.set_trace()
+    elif 'mmt' in instr:
+        try:
+            res = Rdicts[instr][head['DISPERSE']]*0.6
+        except KeyError:
+            print("Need to add {:s}".format(head['DISPERSE']))
+            pdb.set_trace()
+        else:
+            swidth = defs.slit_width(head['APERTURE'])
+            return res/swidth
+    elif instr in ['MODS1B','MODS1R']:
+        try:
+            res = Rdicts[instr][head['GRATNAME']]*0.6
+        except KeyError:
+            print("Need to add {:s}".format(head['GRATNAME']))
+            pdb.set_trace()
+        else:
+            swidth = defs.slit_width(head['MASKNAME'])
+            return res/swidth
+    elif instr == 'MIKE':
+        try:
+            res = Rdicts[head['INSTRUME']]
+        except KeyError:
+            print("Need to add {:s}".format(instr))
+            pdb.set_trace()
+        else:
+            try:
+                swidth = defs.slit_width(head['SLITSIZE'])
+            except TypeError:
+                warnings.warn("MIKE slit not given in header. Assuming 1.0")
+                swidth = 1.
+            return res/swidth
     else:
         raise IOError("Not read for this instrument")

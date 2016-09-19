@@ -13,7 +13,7 @@ from astropy.coordinates import SkyCoord, match_coordinates_sky
 from igmspec import defs as idefs
 
 
-def zem_from_radec(ra, dec, hdf, qtoler=2*u.arcsec):
+def zem_from_radec(ra, dec, qsos, qtoler=2*u.arcsec):
     """ Parse quasar catalog (Myers) for zem
 
     Parameters
@@ -22,8 +22,8 @@ def zem_from_radec(ra, dec, hdf, qtoler=2*u.arcsec):
       RA in deg
     dec : list or array
       DEC in deg
-    hdf : pointer to HDF file
-      Must contain quasar catalog in ['quasars']
+    qsos : Table
+      Must contain RA,DEC,ZEM_SOURCE
 
     Returns
     -------
@@ -35,14 +35,16 @@ def zem_from_radec(ra, dec, hdf, qtoler=2*u.arcsec):
     # Generate coordinates
     icoord = SkyCoord(ra=ra, dec=dec, unit='deg')
     # Quasar catalog
-    qsos = hdf['quasars'].value
     qcoord = SkyCoord(ra=qsos['RA'], dec=qsos['DEC'], unit='deg')
     # Match
     idx, d2d, d3d = match_coordinates_sky(icoord, qcoord, nthneighbor=1)
     good = d2d < qtoler
     # Finish
     zem = np.zeros_like(ra)
-    zem[good] = qsos['ZEM'][idx[good]]
+    try:
+        zem[good] = qsos['ZEM'][idx[good]]
+    except IndexError:
+        pdb.set_trace()
     zsource = np.array(['NONENONE']*len(ra))
     zsource[good] = qsos['ZEM_SOURCE'][idx[good]]
 
@@ -50,7 +52,7 @@ def zem_from_radec(ra, dec, hdf, qtoler=2*u.arcsec):
     return zem, zsource
 
 
-def flag_to_surveys(flag):
+def flag_to_surveys(flag, survey_dict=None):
     """ Convert flag_survey to list of surveys
 
     Parameters
@@ -62,7 +64,8 @@ def flag_to_surveys(flag):
     surveys : list
 
     """
-    survey_dict = idefs.get_survey_dict()
+    if survey_dict is None:
+        survey_dict = idefs.get_survey_dict()
     #
     surveys = []
     for key,sflag in survey_dict.items():

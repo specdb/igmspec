@@ -76,12 +76,16 @@ class InterfaceDB(object):
         #
         surveys = list(self.hdf.keys())
         surveys.pop(surveys.index('catalog'))
-        surveys.pop(surveys.index('quasars'))
+        try:
+            surveys.pop(surveys.index('quasars'))
+        except ValueError:
+            pass   # Private DB
         self.surveys = surveys
         if self.verbose:
             print("Available surveys: {}".format(self.surveys))
 
-    def grab_ids(self, survey, IGM_IDs, meta=None, match_meta=None):
+    def grab_ids(self, survey, IGM_IDs, meta=None, match_meta=None,
+                 private=False):
         """ Grab the rows in a survey matching IGM_IDs
 
         Parameters
@@ -94,6 +98,8 @@ class InterfaceDB(object):
           Meta data for the survey (usually read from hdf)
         match_meta : dict, optional
           key/value to filter spec with, e.g. {'INSTR': HIRES}
+        private : bool, optional
+          Private DB?
 
         Returns
         ------
@@ -108,7 +114,10 @@ class InterfaceDB(object):
         if meta is None:
             meta = Table(self.hdf[survey]['meta'].value)  # This could be too slow..
             meta.meta = dict(survey=survey)
-        match_survey = np.in1d(meta['IGM_ID'], IGM_IDs)
+        if private:
+            match_survey = np.in1d(meta['PRIV_ID'], IGM_IDs)
+        else:
+            match_survey = np.in1d(meta['IGM_ID'], IGM_IDs)
         # Match meta?
         if match_meta is not None:
             for key,value in match_meta.items():
