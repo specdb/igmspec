@@ -15,6 +15,7 @@ from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf,
 from igmspec.ingest import hdla100
 from igmspec.ingest import esidla
 from igmspec.ingest import cos_halos
+from igmspec.ingest import cos_dwarfs
 
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -412,6 +413,26 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Finish
         test = True
         maindb = dmaindb
+
+    ''' COS-Dwarfs '''
+    if not mk_test_file:
+        sname = 'COS-Dwarfs'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        cdwarfs_meta = cos_dwarfs.meta_for_build()
+        # IDs
+        cdwarfs_cut, new, cdwarfs_ids = set_new_ids(maindb, cdwarfs_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = defs.survey_flag(sname)
+        cdwarfs_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][cdwarfs_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert chk_maindb_join(maindb, cdwarfs_cut)
+        maindb = vstack([maindb, cdwarfs_cut], join_type='exact')
+        # Update hf5 file
+        cos_dwarfs.hdf5_adddata(hdf, cdwarfs_ids, sname)#, mk_test_file=mk_test_file)
 
     ''' 2QZ '''
     if not mk_test_file:
