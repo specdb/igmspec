@@ -17,7 +17,7 @@ from astropy import units as u
 from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
-from igmspec.ingest import utils as iiu
+from specdb.build.utils import chk_meta
 
 def get_specfil(row):
     """Parse the SDSS spectrum file
@@ -221,7 +221,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
-    if iiu.chk_meta(meta):
+    if chk_meta(meta):
         if chk_meta_only:
             pdb.set_trace()
         hdf[sname]['meta'] = meta
