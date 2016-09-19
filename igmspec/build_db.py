@@ -10,6 +10,8 @@ import h5py
 import numbers, json
 import pdb
 
+from specdb.build import utils as sdbbu
+
 from igmspec import defs
 from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf, xq100
 from igmspec.ingest import hdla100
@@ -22,173 +24,6 @@ from astropy.coordinates import SkyCoord, match_coordinates_sky
 from astropy import units as u
 
 from linetools import utils as ltu
-
-
-def add_to_flag(cur_flag, add_flag):
-    """ Add a bitwise flag to an existing flat
-
-    Parameters
-    ----------
-    cur_flag : int or ndarray
-    add_flag : int
-
-    Returns
-    -------
-    new_flag : int or ndarray
-
-    """
-    if isinstance(cur_flag, numbers.Integral):
-        if (cur_flag % add_flag) < (add_flag//2):
-            cur_flag += add_flag
-        return cur_flag
-    else:  # Array
-        mods = cur_flag % add_flag
-        upd = mods < (add_flag//2)
-        cur_flag[upd] += add_flag
-        return cur_flag
-
-
-def chk_maindb_join(maindb, newdb):
-    """Check that new data is consistent with existing table
-
-    Parameters
-    ----------
-    maindb : Table
-    newdb : Table
-
-    Returns
-    -------
-    answer : bool
-
-    """
-    # One way
-    for key in newdb.keys():
-        try:
-            assert key in maindb.keys()
-        except AssertionError:
-            pdb.set_trace()
-            return False
-    return True
-
-
-def chk_for_duplicates(maindb):
-    """ Generate new IGM_IDs for an input DB
-
-    Parameters
-    ----------
-    maindb : Table
-
-    Return
-    ------
-    result : bool
-      * True = pass
-      * False = fail
-    """
-    c_main = SkyCoord(ra=maindb['RA'], dec=maindb['DEC'], unit='deg')
-    # Find candidate dups
-    idx, d2d, d3d = match_coordinates_sky(c_main, c_main, nthneighbor=2)
-    cand_dups = d2d < 2*u.arcsec
-    # Finish
-    if np.sum(cand_dups) > 0:
-        return False
-    else:
-        return True
-
-
-def get_new_ids(maindb, newdb, chk=True, idkey='IGM_ID'):
-    """ Generate new IGM_IDs for an input DB
-
-    Parameters
-    ----------
-    maindb : Table
-    newdb : Table
-    chk : bool, optional
-      Perform some checks
-    idkey : str, optional
-      Key for ID
-
-    Returns
-    -------
-    ids : ndarray (int)
-      Old IDs are filled with negative their value
-      New IDs are generated as needed
-
-    """
-    cdict = defs.get_cat_dict()
-    IDs = np.zeros(len(newdb), dtype=int)
-    # Setup
-    c_main = SkyCoord(ra=maindb['RA'], dec=maindb['DEC'], unit='deg')
-    c_new = SkyCoord(ra=newdb['RA'], dec=newdb['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_new, c_main, nthneighbor=1)
-    new = d2d > cdict['match_toler']
-    # Old IDs
-    IDs[~new] = -1 * maindb[idkey][idx[~new]]
-    nnew = np.sum(new)
-    # New IDs
-    if nnew > 0:
-        # Generate
-        newID = np.max(maindb[idkey]) + 1
-        newIDs = newID + np.arange(nnew, dtype=int)
-        # Insert
-        IDs[new] = newIDs
-    if chk:
-        print("The following sources were previously in the DB")
-        print(newdb[~new])
-    # Return
-    return IDs
-
-
-def set_new_ids(maindb, newdb, chk=True, idkey='IGM_ID'):
-    """ Set the new IDs
-    Parameters
-    ----------
-    maindb
-    newdb
-    toler
-    chk
-
-    Returns
-    -------
-    cut_db : Table
-      Cut to the new QSOs
-    new : bool array
-    ids : ID values
-
-    """
-    # IDs
-    ids = get_new_ids(maindb, newdb, idkey=idkey)  # Includes new and old
-    # Truncate
-    new = ids > 0
-    cut_db = newdb[new]
-    cut_db.add_column(Column(ids[new], name=idkey))
-    # Reset IDs to all positive
-    ids = np.abs(ids)
-    #
-    return cut_db, new, ids
-
-
-def start_maindb(private=False):
-    """ Start the main DB catalog
-
-    Returns
-    -------
-    maindb : Table
-    tkeys : list
-      List of columns in the table
-    private : bool, optional
-      Private DB?
-
-    """
-    idict = defs.get_db_table_format()
-    #if private:
-    #    idict['PRIV_ID'] = 0
-        #idict.pop('IGM_ID')
-    tkeys = idict.keys()
-    lst = [[idict[tkey]] for tkey in tkeys]
-    maindb = Table(lst, names=tkeys)
-    # Return
-    return maindb, tkeys
 
 
 def ver01(test=False, mk_test_file=False, **kwargs):
@@ -220,7 +55,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     myers.add_to_hdf(hdf)
 
     # Main DB Table
-    maindb, tkeys = start_maindb()
+    maindb, tkeys = sdbbu.start_maindb()
 
     ''' BOSS_DR12 '''
     # Read
@@ -234,14 +69,14 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     flag_s = defs.survey_flag('BOSS_DR12')
     boss_meta.add_column(Column([flag_s]*nboss, name='flag_survey'))
     # Check
-    assert chk_maindb_join(maindb, boss_meta)
+    assert sdbbu.chk_maindb_join(maindb, boss_meta)
     # Append
     maindb = vstack([maindb,boss_meta], join_type='exact')
     if mk_test_file:
         maindb = maindb[1:100]  # Eliminate dummy line
     else:
         maindb = maindb[1:]  # Eliminate dummy line
-    tmp=chk_for_duplicates(maindb)
+    tmp=sdbbu.chk_for_duplicates(maindb)
     if not test:
         boss.hdf5_adddata(hdf, boss_ids, sname, **kwargs)
 
@@ -250,7 +85,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     print('===============\n Doing {:s} \n===============\n'.format(sname))
     sdss_meta = sdss.meta_for_build()
     # IDs
-    sdss_cut, new, sdss_ids = set_new_ids(maindb, sdss_meta)
+    sdss_cut, new, sdss_ids = sdbbu.set_new_ids(maindb, sdss_meta)
     nnew = np.sum(new)
     # Survey flag
     flag_s = defs.survey_flag(sname)
@@ -258,7 +93,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     midx = np.array(maindb['IGM_ID'][sdss_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
     # Append
-    assert chk_maindb_join(maindb, sdss_cut)
+    assert sdbbu.chk_maindb_join(maindb, sdss_cut)
     if mk_test_file:
         sdss_cut = sdss_cut[0:100]
     maindb = vstack([maindb, sdss_cut], join_type='exact')
@@ -271,7 +106,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     print('==================\n Doing {:s} \n==================\n'.format(sname))
     kodiaq_meta = kodiaq.meta_for_build()
     # IDs
-    kodiaq_cut, new, kodiaq_ids = set_new_ids(maindb, kodiaq_meta)
+    kodiaq_cut, new, kodiaq_ids = sdbbu.set_new_ids(maindb, kodiaq_meta)
     nnew = np.sum(new)
     # Survey flag
     flag_s = defs.survey_flag(sname)
@@ -279,7 +114,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     midx = np.array(maindb['IGM_ID'][kodiaq_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
     # Append
-    assert chk_maindb_join(maindb, kodiaq_cut)
+    assert sdbbu.chk_maindb_join(maindb, kodiaq_cut)
     maindb = vstack([maindb,kodiaq_cut], join_type='exact')
     # Update hf5 file
     if not test:
@@ -291,7 +126,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     # Read
     hdlls_meta = hdlls.meta_for_build()
     # IDs
-    hdlls_cut, new, hdlls_ids = set_new_ids(maindb, hdlls_meta)
+    hdlls_cut, new, hdlls_ids = sdbbu.set_new_ids(maindb, hdlls_meta)
     nnew = np.sum(new)
     # Survey flag
     flag_s = defs.survey_flag(sname)
@@ -299,7 +134,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     midx = np.array(maindb['IGM_ID'][hdlls_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
     # Append
-    assert chk_maindb_join(maindb, hdlls_cut)
+    assert sdbbu.chk_maindb_join(maindb, hdlls_cut)
     maindb = vstack([maindb,hdlls_cut], join_type='exact')
     # Update hf5 file
     if (not test) or mk_test_file:
@@ -310,7 +145,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     print('===============\n Doing {:s} \n==============\n'.format(sname))
     ggg_meta = ggg.meta_for_build()
     # IDs
-    ggg_cut, new, ggg_ids = set_new_ids(maindb, ggg_meta)
+    ggg_cut, new, ggg_ids = sdbbu.set_new_ids(maindb, ggg_meta)
     nnew = np.sum(new)
     # Survey flag
     flag_s = defs.survey_flag(sname)
@@ -318,14 +153,14 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     midx = np.array(maindb['IGM_ID'][ggg_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
     # Append
-    assert chk_maindb_join(maindb, ggg_cut)
+    assert sdbbu.chk_maindb_join(maindb, ggg_cut)
     maindb = vstack([maindb,ggg_cut], join_type='exact')
     # Update hf5 file
     if not mk_test_file:
         ggg.hdf5_adddata(hdf, ggg_ids, sname)
 
     # Check for duplicates
-    if not chk_for_duplicates(maindb):
+    if not sdbbu.chk_for_duplicates(maindb):
         raise ValueError("Failed duplicates")
 
     # Check for junk
@@ -421,7 +256,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Read
         hstqso_meta = hst_qso.meta_for_build()
         # IDs
-        hstqso_cut, new, hstqso_ids = set_new_ids(maindb, hstqso_meta)
+        hstqso_cut, new, hstqso_ids = sdbbu.set_new_ids(maindb, hstqso_meta)
         nnew = np.sum(new)
         # Survey flag
         flag_s = defs.survey_flag(sname)
@@ -429,7 +264,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         midx = np.array(maindb['IGM_ID'][hstqso_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
         # Append
-        assert chk_maindb_join(maindb, hstqso_cut)
+        assert sdbbu.chk_maindb_join(maindb, hstqso_cut)
         maindb = vstack([maindb, hstqso_cut], join_type='exact')
         # Update hf5 file
         hst_qso.hdf5_adddata(hdf, hstqso_ids, sname)#, mk_test_file=mk_test_file)
@@ -441,7 +276,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Read
         tdf_meta = twodf.meta_for_build()
         # IDs
-        tdf_cut, new, tdf_ids = set_new_ids(maindb, tdf_meta)
+        tdf_cut, new, tdf_ids = sdbbu.set_new_ids(maindb, tdf_meta)
         nnew = np.sum(new)
         # Survey flag
         flag_s = defs.survey_flag(sname)
@@ -449,7 +284,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         midx = np.array(maindb['IGM_ID'][tdf_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
         # Append
-        assert chk_maindb_join(maindb, tdf_cut)
+        assert sdbbu.chk_maindb_join(maindb, tdf_cut)
         maindb = vstack([maindb,tdf_cut], join_type='exact')
         # Update hf5 file
         twodf.hdf5_adddata(hdf, tdf_ids, sname)
@@ -461,7 +296,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Read
         chalos_meta = cos_halos.meta_for_build()
         # IDs
-        chalos_cut, new, chalos_ids = set_new_ids(maindb, chalos_meta)
+        chalos_cut, new, chalos_ids = sdbbu.set_new_ids(maindb, chalos_meta)
         nnew = np.sum(new)
         # Survey flag
         flag_s = defs.survey_flag(sname)
@@ -469,7 +304,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         midx = np.array(maindb['IGM_ID'][chalos_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
         # Append
-        assert chk_maindb_join(maindb, chalos_cut)
+        assert sdbbu.chk_maindb_join(maindb, chalos_cut)
         maindb = vstack([maindb, chalos_cut], join_type='exact')
         # Update hf5 file
         cos_halos.hdf5_adddata(hdf, chalos_ids, sname)#, mk_test_file=mk_test_file)
@@ -481,7 +316,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Read
         hdla100_meta, _ = hdla100.meta_for_build()
         # IDs
-        hdla100_cut, new, hdla100_ids = set_new_ids(maindb, hdla100_meta)
+        hdla100_cut, new, hdla100_ids = sdbbu.set_new_ids(maindb, hdla100_meta)
         nnew = np.sum(new)
         # Survey flag
         flag_s = defs.survey_flag(sname)
@@ -489,7 +324,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         midx = np.array(maindb['IGM_ID'][hdla100_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
         # Append
-        assert chk_maindb_join(maindb, hdla100_cut)
+        assert sdbbu.chk_maindb_join(maindb, hdla100_cut)
         maindb = vstack([maindb, hdla100_cut], join_type='exact')
         # Update hf5 file
         hdla100.hdf5_adddata(hdf, hdla100_ids, sname)#, mk_test_file=mk_test_file)
@@ -501,7 +336,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Read
         esidla_meta = esidla.meta_for_build()
         # IDs
-        esidla_cut, new, esidla_ids = set_new_ids(maindb, esidla_meta)
+        esidla_cut, new, esidla_ids = sdbbu.set_new_ids(maindb, esidla_meta)
         nnew = np.sum(new)
         # Survey flag
         flag_s = defs.survey_flag(sname)
@@ -509,7 +344,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         midx = np.array(maindb['IGM_ID'][esidla_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
         # Append
-        assert chk_maindb_join(maindb, esidla_cut)
+        assert sdbbu.chk_maindb_join(maindb, esidla_cut)
         maindb = vstack([maindb, esidla_cut], join_type='exact')
         # Update hf5 file
         esidla.hdf5_adddata(hdf, esidla_ids, sname)#, mk_test_file=mk_test_file)
@@ -522,7 +357,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Read
         xq100_meta = xq100.meta_for_build()
         # IDs
-        xq100_cut, new, xq100_ids = set_new_ids(maindb, xq100_meta)
+        xq100_cut, new, xq100_ids = sdbbu.set_new_ids(maindb, xq100_meta)
         nnew = np.sum(new)
         # Survey flag
         flag_s = defs.survey_flag(sname)
@@ -530,7 +365,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         midx = np.array(maindb['IGM_ID'][xq100_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
         # Append
-        assert chk_maindb_join(maindb, xq100_cut)
+        assert sdbbu.chk_maindb_join(maindb, xq100_cut)
         maindb = vstack([maindb, xq100_cut], join_type='exact')
         # Update hf5 file
         xq100.hdf5_adddata(hdf, xq100_ids, sname)#, mk_test_file=mk_test_file)
@@ -543,7 +378,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Read
         hstz2_meta = hst_z2.meta_for_build()
         # IDs
-        hstz2_cut, new, hstz2_ids = set_new_ids(maindb, hstz2_meta)
+        hstz2_cut, new, hstz2_ids = sdbbu.set_new_ids(maindb, hstz2_meta)
         nnew = np.sum(new)
         if nnew > 0:
             raise ValueError("All of these should be in SDSS")
