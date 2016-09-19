@@ -169,7 +169,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
     # Fix zem
-    zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], hdf)
+    pdb.set_trace()
+    zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], hdf['quasars'].value)
     gdz = zem > 0.
     meta['zem'][gdz] = zem[gdz]
     meta['flag_zem'][gdz] = zem[gdz]

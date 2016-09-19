@@ -37,6 +37,7 @@ def zem_from_radec(ra, dec, qsos, qtoler=2*u.arcsec):
     # Quasar catalog
     qcoord = SkyCoord(ra=qsos['RA'], dec=qsos['DEC'], unit='deg')
     # Match
+    pdb.set_trace()
     idx, d2d, d3d = match_coordinates_sky(icoord, qcoord, nthneighbor=1)
     good = d2d < qtoler
     # Finish
