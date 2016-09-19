@@ -164,6 +164,7 @@ def get_survey_dict():
     survey_dict['2QZ'] = 2**8       # Croom et al.
     survey_dict['ESI_DLA'] = 2**9   # Rafelski et al. 2012, 2014
     survey_dict['COS-Halos'] = 2**10 # Tumlinson et al. 2013
+    survey_dict['HSTQSO'] = 2**12 # Ribaudo et al. 2011; Neeleman et al. 2016
     #
     return survey_dict
 
@@ -180,7 +181,6 @@ def survey_flag(survey, iflag=None):
     flag_val : int
 
     """
-    pdb.set_trace()  # USE CATALOG
     survey_dict = get_survey_dict()
     #
     return survey_dict[survey]

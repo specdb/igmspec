@@ -75,11 +75,12 @@ def grab_meta():
         hstqso_meta[jj]['DEC'] = radec['DEC'][mt]
     # RENAME
     hstqso_meta.rename_column('GRATE', 'GRATING')
+    hstqso_meta.rename_column('QSO_ZEM', 'zem')
     hstqso_meta.rename_column('INST', 'INSTR')
     # ADD
     hstqso_meta.add_column(Column(['HST']*nspec, name='TELESCOPE'))
-    pdb.set_trace()
     return hstqso_meta
+
 
 def meta_for_build():
     """ Generates the meta data needed for the IGMSpec build
@@ -87,19 +88,23 @@ def meta_for_build():
     -------
     meta : Table
     """
-    # Cut down to unique QSOs
-    hstz2_meta = grab_meta()
-    names = np.array([name[0:26] for name in hstz2_meta['qso']])
-    uni, uni_idx = np.unique(names, return_index=True)
-    hstz2_meta = hstz2_meta[uni_idx]
-    nqso = len(hstz2_meta)
+    # Meta
+    hstqso_meta = grab_meta()
+    # Cut down to unique sources
+    coord = SkyCoord(ra=hstqso_meta['RA'], dec=hstqso_meta['DEC'], unit='deg')
+    idx, d2d, d3d = match_coordinates_sky(coord, coord, nthneighbor=2)
+    dups = np.where(d2d < 0.5*u.arcsec)[0]
+    keep = np.array([True]*len(hstqso_meta))
+    keep[dups] = False
+    hstqso_meta = hstqso_meta[keep]
+    nqso = len(hstqso_meta)
     #
     meta = Table()
-    meta['RA'] = hstz2_meta['RA']
-    meta['DEC'] = hstz2_meta['DEC']
-    meta['zem'] = hstz2_meta['zem']
+    meta['RA'] = hstqso_meta['RA']
+    meta['DEC'] = hstqso_meta['DEC']
+    meta['zem'] = hstqso_meta['zem']
     meta['sig_zem'] = [0.]*nqso
-    meta['flag_zem'] = [str('SDSS_PIPE')]*nqso
+    meta['flag_zem'] = [str('UNKWN')]*nqso
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
