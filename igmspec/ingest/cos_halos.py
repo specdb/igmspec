@@ -32,7 +32,7 @@ def grab_meta():
     from time import strptime
     from igmspec.cat_utils import zem_from_radec
     from igmspec.igmspec import IgmSpec
-    from igmspec.defs import get_res_dicts
+    from specdb.defs import get_res_dicts
     Rdicts = get_res_dicts()
     igmsp = IgmSpec(db_file=os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5', skip_test=True)
 

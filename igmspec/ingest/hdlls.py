@@ -97,7 +97,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     -------
 
     """
-    from igmspec import defs
+    from specdb import defs
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     hdlls_grp = hdf.create_group(sname)

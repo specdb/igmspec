@@ -4,15 +4,14 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import igmspec
-import os
 
 import h5py
-import numbers, json
+import json
 import pdb
 
+from specdb import defs
 from specdb.build import utils as sdbbu
 
-from igmspec import defs
 from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf, xq100
 from igmspec.ingest import hdla100
 from igmspec.ingest import esidla
@@ -20,8 +19,6 @@ from igmspec.ingest import cos_halos
 from igmspec.ingest import hst_qso
 
 from astropy.table import Table, vstack, Column
-from astropy.coordinates import SkyCoord, match_coordinates_sky
-from astropy import units as u
 
 from linetools import utils as ltu
 
