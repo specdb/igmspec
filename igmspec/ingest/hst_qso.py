@@ -95,7 +95,12 @@ def meta_for_build():
     idx, d2d, d3d = match_coordinates_sky(coord, coord, nthneighbor=2)
     dups = np.where(d2d < 0.5*u.arcsec)[0]
     keep = np.array([True]*len(hstqso_meta))
-    keep[dups] = False
+    for idup in dups:
+        dcoord = SkyCoord(ra=hstqso_meta['RA'][idup], dec=hstqso_meta['DEC'][idup], unit='deg')
+        sep = dcoord.separation(coord)
+        isep = np.where(sep < 0.5*u.arcsec)[0]
+        keep[isep] = False
+        keep[np.min(isep)] = True  # Only keep 1
     hstqso_meta = hstqso_meta[keep]
     nqso = len(hstqso_meta)
     #
@@ -137,7 +142,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     meta = grab_meta()
     bmeta = meta_for_build()
     # Checks
-    if sname != 'HST_z2':
+    if sname != 'HSTQSO':
         raise IOError("Not expecting this survey..")
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")
@@ -151,7 +156,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     # Find new sources
     idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
     if np.sum(d2d > 0.1*u.arcsec):
-        raise ValueError("Bad matches in HST_z2")
+        pdb.set_trace()
+        raise ValueError("Bad matches in HSTQSO")
     meta_IDs = IDs[idx]
 
     # Loop me to bid the full survey catalog
@@ -159,7 +165,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 300  # Just needs to be large enough
+    max_npix = 20000  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -178,8 +184,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     speclist = []
     # Loop
     #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
-    path = os.getenv('RAW_IGMSPEC')+'/HST_z2/'
+    path = os.getenv('RAW_IGMSPEC')+'/HSTQSO/'
     maxpix = 0
+    pdb.set_trace()
     for jj,row in enumerate(meta):
         # Generate full file
         if row['INSTR'] == 'ACS':
