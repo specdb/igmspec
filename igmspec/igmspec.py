@@ -6,8 +6,6 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import pdb
 import warnings
 
-from astropy import units as u
-
 from specdb.specdb import SpecDB
 
 
