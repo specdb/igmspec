@@ -168,19 +168,17 @@ def get_survey_dict():
     return survey_dict
 
 
-def survey_flag(survey, iflag=None):
+def survey_flag(survey):
     """ Defines bitwise survey flag for IGMspec
     Parameters
     ----------
     survey : str
       Name of the survey
-    iflag : int, optional
     Returns
     -------
     flag_val : int
 
     """
-    pdb.set_trace()  # USE CATALOG
     survey_dict = get_survey_dict()
     #
     return survey_dict[survey]
