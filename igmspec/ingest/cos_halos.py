@@ -18,8 +18,7 @@ from astropy.time import Time
 from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
-from igmspec.ingest import utils as iiu
-
+from specdb.build.utils import chk_meta
 #igms_path = imp.find_module('igmspec')[1]
 
 
@@ -32,7 +31,7 @@ def grab_meta():
     from time import strptime
     from igmspec.cat_utils import zem_from_radec
     from igmspec.igmspec import IgmSpec
-    from igmspec.defs import get_res_dicts
+    from specdb.defs import get_res_dicts
     Rdicts = get_res_dicts()
     igmsp = IgmSpec(db_file=os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5', skip_test=True)
 
@@ -72,7 +71,7 @@ def grab_meta():
     chalos_meta['INSTR'] = 'COS' # Deals with padding
     chalos_meta['TELESCOPE'] = 'HST'
     # Myers for zem
-    zem, zsource = zem_from_radec(chalos_meta['RA'], chalos_meta['DEC'], igmsp.idb.hdf)
+    zem, zsource = zem_from_radec(chalos_meta['RA'], chalos_meta['DEC'], Table(igmsp.idb.hdf['quasars'].value))
     badz = zem <= 0.
     if np.sum(badz) > 0:
         raise ValueError("Bad zem in COS-Halos")
@@ -234,7 +233,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     meta.add_column(Column(np.arange(nspec,dtype=int), name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
-    if iiu.chk_meta(meta):
+    if chk_meta(meta):
         if chk_meta_only:
             pdb.set_trace()
         hdf[sname]['meta'] = meta

@@ -7,7 +7,6 @@
 
 filenames=( Simple_Usage
      Simple_Scripts
-     Private_Ingest
      )
 
 for n in "${filenames[@]}"
