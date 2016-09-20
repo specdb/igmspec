@@ -15,7 +15,7 @@ from linetools.spectra import io as lsio
 from linetools.spectra.xspectrum1d import XSpectrum1D
 from linetools import utils as ltu
 
-from igmspec.ingest import utils as iiu
+from specdb.build.utils import chk_meta
 
 def get_specfil(row):
     """Parse the 2QZ spectrum file
@@ -247,7 +247,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
-    if iiu.chk_meta(meta):
+    if chk_meta(meta):
         if chk_meta_only:
             pdb.set_trace()
         hdf[sname]['meta'] = meta

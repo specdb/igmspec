@@ -17,7 +17,8 @@ from astropy import units as u
 from linetools import utils as ltu
 from linetools.spectra import io as lsio
 
-from igmspec.ingest import utils as iiu
+from specdb.build.utils import chk_for_duplicates
+from specdb.build.utils import chk_meta
 
 
 def grab_meta():
@@ -73,7 +74,6 @@ def meta_for_build():
     -------
 
     """
-    from igmspec.build_db import chk_for_duplicates
     boss_meta = grab_meta()
     # Cut down to unique
     c_main = SkyCoord(ra=boss_meta['RA'], dec=boss_meta['DEC'], unit='deg')
@@ -271,7 +271,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
     meta.add_column(Column([2000.]*len(meta), name='EPOCH'))
 
     # Add HDLLS meta to hdf5
-    if iiu.chk_meta(meta):
+    if chk_meta(meta):
         if chk_meta_only:
             pdb.set_trace()
         hdf[sname]['meta'] = meta
