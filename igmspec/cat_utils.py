@@ -40,7 +40,7 @@ def zem_from_radec(ra, dec, qsos, qtoler=2*u.arcsec):
     idx, d2d, d3d = match_coordinates_sky(icoord, qcoord, nthneighbor=1)
     good = d2d < qtoler
     # Finish
-    zem = np.zeros_like(ra)
+    zem = np.zeros_like(ra.data)
     try:
         zem[good] = qsos['ZEM'][idx[good]]
     except IndexError:
