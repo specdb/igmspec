@@ -69,7 +69,7 @@ def flag_to_surveys(flag, survey_dict=None):
     #
     surveys = []
     for key,sflag in survey_dict.items():
-        if flag % (2**sflag) >= sflag:
+        if flag % (2*sflag) >= sflag:
             surveys.append(key)
     # Return
     return surveys

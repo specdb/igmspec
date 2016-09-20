@@ -18,6 +18,7 @@ from linetools import utils as ltu
 from linetools.spectra import io as lsio
 
 from specdb.build.utils import chk_meta
+from specdb.build.utils import set_resolution
 
 igms_path = imp.find_module('igmspec')[1]
 
@@ -149,7 +150,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
         try:
-            Rlist.append(iiu.set_resolution(head))
+            Rlist.append(set_resolution(head))
         except ValueError:
             raise ValueError("Header is required for {:s}".format(fname))
         else:

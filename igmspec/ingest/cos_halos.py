@@ -71,7 +71,7 @@ def grab_meta():
     chalos_meta['INSTR'] = 'COS' # Deals with padding
     chalos_meta['TELESCOPE'] = 'HST'
     # Myers for zem
-    zem, zsource = zem_from_radec(chalos_meta['RA'], chalos_meta['DEC'], igmsp.idb.hdf)
+    zem, zsource = zem_from_radec(chalos_meta['RA'], chalos_meta['DEC'], Table(igmsp.idb.hdf['quasars'].value))
     badz = zem <= 0.
     if np.sum(badz) > 0:
         raise ValueError("Bad zem in COS-Halos")

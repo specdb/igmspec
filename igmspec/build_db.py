@@ -264,7 +264,8 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         assert sdbbu.chk_maindb_join(maindb, hstqso_cut)
         maindb = vstack([maindb, hstqso_cut], join_type='exact')
         # Update hf5 file
-        hst_qso.hdf5_adddata(hdf, hstqso_ids, sname)#, mk_test_file=mk_test_file)
+        if False:
+            hst_qso.hdf5_adddata(hdf, hstqso_ids, sname)#, mk_test_file=mk_test_file)
 
     ''' 2QZ '''
     if not mk_test_file:
@@ -347,8 +348,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         esidla.hdf5_adddata(hdf, esidla_ids, sname)#, mk_test_file=mk_test_file)
 
     ''' XQ-100 '''
-    #if not mk_test_file:
-    if False:
+    if not mk_test_file:
         sname = 'XQ-100'
         print('===============\n Doing {:s} \n==============\n'.format(sname))
         # Read
@@ -384,8 +384,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         midx = np.array(maindb['IGM_ID'][hstz2_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
         # Update hf5 file
-        if (not test):# or mk_test_file:
-            hst_z2.hdf5_adddata(hdf, hstz2_ids, sname, mk_test_file=mk_test_file)
+        hst_z2.hdf5_adddata(hdf, hstz2_ids, sname, mk_test_file=mk_test_file)
 
     # Finish
     hdf['catalog'] = maindb
