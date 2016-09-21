@@ -93,12 +93,12 @@ def meta_for_build():
     # Cut down to unique sources
     coord = SkyCoord(ra=hstqso_meta['RA'], dec=hstqso_meta['DEC'], unit='deg')
     idx, d2d, d3d = match_coordinates_sky(coord, coord, nthneighbor=2)
-    dups = np.where(d2d < 0.5*u.arcsec)[0]
+    dups = np.where(d2d < 1.5*u.arcsec)[0]  # Closest lens is ~2"
     keep = np.array([True]*len(hstqso_meta))
     for idup in dups:
         dcoord = SkyCoord(ra=hstqso_meta['RA'][idup], dec=hstqso_meta['DEC'][idup], unit='deg')
         sep = dcoord.separation(coord)
-        isep = np.where(sep < 0.5*u.arcsec)[0]
+        isep = np.where(sep < 1.5*u.arcsec)[0]
         keep[isep] = False
         keep[np.min(isep)] = True  # Only keep 1
     hstqso_meta = hstqso_meta[keep]
@@ -155,7 +155,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
     # Find new sources
     idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 0.1*u.arcsec):
+    if np.sum(d2d > 1.5*u.arcsec):
         pdb.set_trace()
         raise ValueError("Bad matches in HSTQSO")
     meta_IDs = IDs[idx]
@@ -165,7 +165,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 20000  # Just needs to be large enough
+    max_npix = 61000  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -186,15 +186,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
     path = os.getenv('RAW_IGMSPEC')+'/HSTQSO/'
     maxpix = 0
-    pdb.set_trace()
     for jj,row in enumerate(meta):
         # Generate full file
-        if row['INSTR'] == 'ACS':
-            full_file = path+row['qso']+'.fits.gz'
-        elif row['INSTR'] == 'WFC3':
-            coord = ltu.radec_to_coord((row['RA'],row['DEC']))
-            full_file = path+'/J{:s}{:s}_wfc3.fits.gz'.format(coord.ra.to_string(unit=u.hour,sep='',precision=2,pad=True),
-                                               coord.dec.to_string(sep='',pad=True,alwayssign=True,precision=1))
+        full_file = path+row['SPEC_FILE']+'.gz'
         # Extract
         print("HST_z2: Reading {:s}".format(full_file))
         hduf = fits.open(full_file)
