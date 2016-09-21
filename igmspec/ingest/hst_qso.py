@@ -44,7 +44,7 @@ def grab_meta():
         else:
             tab_date = vstack([tab_date, Table.read(date_file, format='ascii')])
     # RA/DEC, DATE
-    hstqso_meta.add_column(Column(['1000-01-01']*nspec, name='DATE-OBS'))
+    hstqso_meta.add_column(Column(['2000-01-01']*nspec, name='DATE-OBS'))
     for jj,row in enumerate(hstqso_meta):
         if row['INST'] == 'COS':
             continue
@@ -58,6 +58,8 @@ def grab_meta():
             mt1 = mt1[0] # TAKING THE FIRST ONE
         joe_date = tab_date['DATE-OBS'][mt1].split('-')
         hstqso_meta[jj]['DATE-OBS'] = '{:s}-{:02d}-{:02d}'.format(joe_date[0], int(joe_date[1]), int(joe_date[2]))
+        if int(joe_date[1]) > 12:
+            pdb.set_trace()
         # RA/DEC
         if row['INST'] != 'FOS':
             continue
@@ -73,6 +75,12 @@ def grab_meta():
             mt = mt[0]
         hstqso_meta[jj]['RA'] = radec['RA'][mt]
         hstqso_meta[jj]['DEC'] = radec['DEC'][mt]
+    # TEST
+    from astropy.time import Time
+    try:
+        tval = Time(list(hstqso_meta['DATE-OBS'].data), format='iso')
+    except:
+        pdb.set_trace()
     # RENAME
     hstqso_meta.rename_column('GRATE', 'GRATING')
     hstqso_meta.rename_column('QSO_ZEM', 'zem')
@@ -176,12 +184,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
-    Rlist = []
     wvminlist = []
     wvmaxlist = []
-    gratinglist = []
     npixlist = []
-    speclist = []
+    Rlist = []
     # Loop
     #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
     path = os.getenv('RAW_IGMSPEC')+'/HSTQSO/'
@@ -209,7 +215,21 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
         # Meta
-        speclist.append(str(fname))
+        if 'FOS-L' in fname:
+            Rlist.append(300.)
+        elif 'FOS-H' in fname:
+            Rlist.append(14000.)
+        elif 'STIS' in fname:
+            if row['GRATING'] == 'G230L':
+                Rlist.append(700.)
+            elif row['GRATING'] == 'G140L':
+                Rlist.append(1200.)
+            else:
+                raise ValueError("Bad STIS grating")
+        elif 'COS' in fname:
+            Rlist.append(18000.)  # Approximate, depends on G140L vs G230L
+        else:
+            raise ValueError("Missing instrument!")
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
@@ -222,10 +242,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     print("Max pix = {:d}".format(maxpix))
     # Add columns
     meta.add_column(Column([2000.]*nspec, name='EPOCH'))
-    meta.add_column(Column(speclist, name='SPEC_FILE'))
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
+    meta.add_column(Column(Rlist, name='R'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
