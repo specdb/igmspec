@@ -23,6 +23,8 @@ from astropy.table import Table, vstack, Column
 
 from linetools import utils as ltu
 
+from igmspec.defs import get_survey_dict
+survey_dict = get_survey_dict()
 
 def ver01(test=False, mk_test_file=False, **kwargs):
     """ Build version 1.0
@@ -64,7 +66,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     boss_ids = np.arange(nboss,dtype=int)
     boss_meta.add_column(Column(boss_ids, name='IGM_ID'))
     # Survey flag
-    flag_s = defs.survey_flag('BOSS_DR12')
+    flag_s = survey_dict[sname]
     boss_meta.add_column(Column([flag_s]*nboss, name='flag_survey'))
     # Check
     assert sdbbu.chk_maindb_join(maindb, boss_meta)
@@ -86,7 +88,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     sdss_cut, new, sdss_ids = sdbbu.set_new_ids(maindb, sdss_meta)
     nnew = np.sum(new)
     # Survey flag
-    flag_s = defs.survey_flag(sname)
+    flag_s = survey_dict[sname]
     sdss_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
     midx = np.array(maindb['IGM_ID'][sdss_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
@@ -107,7 +109,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     kodiaq_cut, new, kodiaq_ids = sdbbu.set_new_ids(maindb, kodiaq_meta)
     nnew = np.sum(new)
     # Survey flag
-    flag_s = defs.survey_flag(sname)
+    flag_s = survey_dict[sname]
     kodiaq_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
     midx = np.array(maindb['IGM_ID'][kodiaq_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
@@ -146,7 +148,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     ggg_cut, new, ggg_ids = sdbbu.set_new_ids(maindb, ggg_meta)
     nnew = np.sum(new)
     # Survey flag
-    flag_s = defs.survey_flag(sname)
+    flag_s = survey_dict[sname]
     ggg_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
     midx = np.array(maindb['IGM_ID'][ggg_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
@@ -170,7 +172,11 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
     hdf['catalog'].attrs['VERSION'] = version
     #hdf['catalog'].attrs['CAT_DICT'] = cdict
-    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(defs.get_survey_dict()))
+    hdfkeys = hdf.keys()
+    for dkey in survey_dict.keys():
+        if dkey not in hdfkeys:
+            survey_dict.pop(dkey, None)
+    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict))
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
 
@@ -257,7 +263,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         hstqso_cut, new, hstqso_ids = sdbbu.set_new_ids(maindb, hstqso_meta)
         nnew = np.sum(new)
         # Survey flag
-        flag_s = defs.survey_flag(sname)
+        flag_s = survey_dict[sname]
         hstqso_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
         midx = np.array(maindb['IGM_ID'][hstqso_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
@@ -275,15 +281,15 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Read
         cdwarfs_meta = cos_dwarfs.meta_for_build()
         # IDs
-        cdwarfs_cut, new, cdwarfs_ids = set_new_ids(maindb, cdwarfs_meta)
+        cdwarfs_cut, new, cdwarfs_ids = sdbbu.set_new_ids(maindb, cdwarfs_meta)
         nnew = np.sum(new)
         # Survey flag
-        flag_s = defs.survey_flag(sname)
+        flag_s = survey_dict[sname]
         cdwarfs_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
         midx = np.array(maindb['IGM_ID'][cdwarfs_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
         # Append
-        assert chk_maindb_join(maindb, cdwarfs_cut)
+        assert sdbbu.chk_maindb_join(maindb, cdwarfs_cut)
         maindb = vstack([maindb, cdwarfs_cut], join_type='exact')
         # Update hf5 file
         cos_dwarfs.hdf5_adddata(hdf, cdwarfs_ids, sname)#, mk_test_file=mk_test_file)
@@ -298,7 +304,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         tdf_cut, new, tdf_ids = sdbbu.set_new_ids(maindb, tdf_meta)
         nnew = np.sum(new)
         # Survey flag
-        flag_s = defs.survey_flag(sname)
+        flag_s = survey_dict[sname]
         tdf_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
         midx = np.array(maindb['IGM_ID'][tdf_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
@@ -318,7 +324,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         chalos_cut, new, chalos_ids = sdbbu.set_new_ids(maindb, chalos_meta)
         nnew = np.sum(new)
         # Survey flag
-        flag_s = defs.survey_flag(sname)
+        flag_s = survey_dict[sname]
         chalos_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
         midx = np.array(maindb['IGM_ID'][chalos_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
@@ -338,7 +344,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         hdla100_cut, new, hdla100_ids = sdbbu.set_new_ids(maindb, hdla100_meta)
         nnew = np.sum(new)
         # Survey flag
-        flag_s = defs.survey_flag(sname)
+        flag_s = survey_dict[sname]
         hdla100_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
         midx = np.array(maindb['IGM_ID'][hdla100_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
@@ -358,7 +364,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         esidla_cut, new, esidla_ids = sdbbu.set_new_ids(maindb, esidla_meta)
         nnew = np.sum(new)
         # Survey flag
-        flag_s = defs.survey_flag(sname)
+        flag_s = survey_dict[sname]
         esidla_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
         midx = np.array(maindb['IGM_ID'][esidla_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
@@ -378,7 +384,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         xq100_cut, new, xq100_ids = sdbbu.set_new_ids(maindb, xq100_meta)
         nnew = np.sum(new)
         # Survey flag
-        flag_s = defs.survey_flag(sname)
+        flag_s = survey_dict[sname]
         xq100_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
         midx = np.array(maindb['IGM_ID'][xq100_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
@@ -401,7 +407,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         if nnew > 0:
             raise ValueError("All of these should be in SDSS")
         # Survey flag
-        flag_s = defs.survey_flag(sname)
+        flag_s = survey_dict(sname)
         midx = np.array(maindb['IGM_ID'][hstz2_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
         # Update hf5 file
@@ -413,7 +419,11 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
     hdf['catalog'].attrs['VERSION'] = version
-    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(defs.get_survey_dict()))
+    hdfkeys = hdf.keys()
+    for dkey in survey_dict.keys():
+        if dkey not in hdfkeys:
+            survey_dict.pop(dkey, None)
+    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict()))
     #hdf['catalog'].attrs['CAT_DICT'] = cdict
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))

@@ -20,7 +20,8 @@ from linetools import utils as ltu
 
 from pyigm.cgm.cos_halos import COSDwarfs
 
-from igmspec.ingest import utils as iiu
+from specdb.build.utils import chk_meta
+
 
 #igms_path = imp.find_module('igmspec')[1]
 
@@ -31,19 +32,38 @@ def grab_meta():
     -------
 
     """
+    from time import strptime
     cosdwarfs = COSDwarfs()
     cosdwarfs.load_sys(tfile=cosdwarfs.cdir+'/cos-dwarfs_systems.v1.1.tar.gz', chk_lowz=False)
+    visit_file = os.getenv('RAW_IGMSPEC')+'/COS-Dwarfs/HST_Observing_Dates.dat'
+    cd_visits = Table.read(visit_file,format='ascii')
 
     # Coord
     lst = [getattr(cgm_abs.igm_sys, 'coord') for cgm_abs in cosdwarfs.cgm_abs]
     ra = [coord.ra.value for coord in lst]
     dec = [coord.dec.value for coord in lst]
 
+    # Short names
+    shrt_names = [name.split('_')[0] for name in cosdwarfs.name]
+
     cdwarfs_meta = Table()
     cdwarfs_meta['RA'] = ra
     cdwarfs_meta['DEC'] = dec
-    cdwarfs_meta['DATE-OBS'] = '1999-9-9'
     # RA/DEC, DATE
+    datet = []
+    for kk,row in enumerate(cdwarfs_meta):
+        #
+        name = shrt_names[kk]
+        mtv = np.where(cd_visits['QSO'] == name)[0]
+        if len(mtv) != 1:
+            pdb.set_trace()
+        else:
+            chv = cd_visits['Start_UT'][mtv].data[0]
+        icmma = chv.find(',')
+        datet.append('{:s}-{:02d}-{:02d}'.format(
+                chv[icmma+1:icmma+5], strptime(chv[:3],'%b').tm_mon,
+                int(chv[3:icmma])))
+    cdwarfs_meta.add_column(Column(datet, name='DATE-OBS'))
     # Others
     cdwarfs_meta.add_column(Column(['G130M/G160M']*len(cdwarfs_meta), name='GRATING'))
     cdwarfs_meta.add_column(Column([20000.]*len(cdwarfs_meta), name='R'))
@@ -186,7 +206,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     meta.add_column(Column(np.arange(nspec,dtype=int), name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
-    if iiu.chk_meta(meta):
+    if chk_meta(meta):
         if chk_meta_only:
             pdb.set_trace()
         hdf[sname]['meta'] = meta
