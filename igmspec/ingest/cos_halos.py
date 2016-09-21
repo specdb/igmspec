@@ -29,7 +29,7 @@ def grab_meta():
 
     """
     from time import strptime
-    from igmspec.cat_utils import zem_from_radec
+    from specdb.zem.utils import zem_from_radec
     from igmspec.igmspec import IgmSpec
     from specdb.defs import get_res_dicts
     Rdicts = get_res_dicts()

@@ -407,7 +407,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         if nnew > 0:
             raise ValueError("All of these should be in SDSS")
         # Survey flag
-        flag_s = survey_dict(sname)
+        flag_s = survey_dict[sname]
         midx = np.array(maindb['IGM_ID'][hstz2_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
         # Update hf5 file
@@ -423,7 +423,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
     for dkey in survey_dict.keys():
         if dkey not in hdfkeys:
             survey_dict.pop(dkey, None)
-    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict()))
+    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict))
     #hdf['catalog'].attrs['CAT_DICT'] = cdict
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
