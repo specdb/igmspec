@@ -19,7 +19,6 @@ Contents
 
    installing
    datasets
-   usage
    scripts
 
 
