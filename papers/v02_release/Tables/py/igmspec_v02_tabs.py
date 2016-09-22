@@ -53,7 +53,7 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     tbfil.write('\\tablecaption{{\\it igmspec} DATASETS \\label{tab:datasets}}\n')
     #tbfil.write('\\tabletypesize{\\tiny}\n')
     tbfil.write('\\tablehead{\\colhead{Survey} & \\colhead{$N_{\\rm source}^a$} \n')
-    tbfil.write('& \\colhead{$N_{\\rm spec}^b$} & \\colhead{$\\lambda_{\\rm min}\n')
+    tbfil.write('& \\colhead{$N_{\\rm spec}^b$} & \\colhead{$\\lambda_{\\rm min}$}\n')
     tbfil.write('& \\colhead{$\\lambda_{\\rm max}$} & \\colhead{$R^c$} \n')
     tbfil.write('& \\colhead{References} & \\colhead{Website} \n')
     tbfil.write('} \n')
@@ -72,6 +72,7 @@ def mktab_datasets(outfil='tab_datasets.tex'):
         meta = igmsp.idb.hdf[survey]['meta']
 
         # Survey
+        survey.replace('_','\\_')
         tbfil.write(survey)
 
         # N sources
