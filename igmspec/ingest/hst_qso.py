@@ -32,6 +32,7 @@ def grab_meta():
     """
     summ_file = os.getenv('RAW_IGMSPEC')+'/HSTQSO/hstqso.lst'
     hstqso_meta = Table.read(summ_file, format='ascii')
+    spec_files = [str(ii) for ii in hstqso_meta['SPEC_FILE'].data]
     nspec = len(hstqso_meta)
     # RA/DEC
     radec_file = os.getenv('RAW_IGMSPEC')+'/HSTQSO/all_qso_table.txt'
@@ -47,6 +48,7 @@ def grab_meta():
     hstqso_meta.add_column(Column(['2000-01-01']*nspec, name='DATE-OBS'))
     for jj,row in enumerate(hstqso_meta):
         if row['INST'] == 'COS':
+            spec_files[jj] = str(row['QSO_ALT_NAME']+'_hsla.fits')
             continue
         # DATE
         spec = row['SPEC_FILE'].split('.')[0]
@@ -81,6 +83,9 @@ def grab_meta():
         tval = Time(list(hstqso_meta['DATE-OBS'].data), format='iso')
     except:
         pdb.set_trace()
+    # REPLACE
+    hstqso_meta.rename_column('SPEC_FILE', 'ORIG_SPEC_FILE')
+    hstqso_meta['SPEC_FILE'] = spec_files
     # RENAME
     hstqso_meta.rename_column('GRATE', 'GRATING')
     hstqso_meta.rename_column('QSO_ZEM', 'zem')
@@ -198,7 +203,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         # Extract
         print("HST_z2: Reading {:s}".format(full_file))
         hduf = fits.open(full_file)
-        head = hduf[0].header
+        head0 = hduf[0].header
         spec = lsio.readspec(full_file)
         # Parse name
         fname = full_file.split('/')[-1]
@@ -226,9 +231,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
                 Rlist.append(1200.)
             else:
                 raise ValueError("Bad STIS grating")
-        elif 'COS' in fname:
-            Rlist.append(18000.)  # Approximate, depends on G140L vs G230L
+        elif 'hsla' in fname:  # COS
+            Rlist.append(18000.)
+            row['DATE-OBS'] = hduf[1].data['DATEOBS'][0][0]
         else:
+            pdb.set_trace()
             raise ValueError("Missing instrument!")
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
@@ -256,8 +263,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     else:
         raise ValueError("meta file failed")
     # References
-    refs = [dict(url='http://adsabs.harvard.edu/abs/2011ApJS..195...16O',
-                 bib='omeara11')
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2011ApJ...736...42R',
+                 bib='ribuado11'),
+            dict(url='http://adsabs.harvard.edu/abs/2016ApJ...818..113N',
+                         bib='neeleman16'),
             ]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
