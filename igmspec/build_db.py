@@ -178,6 +178,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
 
     # Finish
     hdf['catalog'] = maindb
+    hdf['catalog'].attrs['NAME'] = 'igmspec'
     hdf['catalog'].attrs['EPOCH'] = 2000.
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
     hdf['catalog'].attrs['VERSION'] = version
@@ -433,6 +434,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
 
     # Finish
     hdf['catalog'] = maindb
+    hdf['catalog'].attrs['NAME'] = 'igmspec'
     hdf['catalog'].attrs['EPOCH'] = 2000.
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
