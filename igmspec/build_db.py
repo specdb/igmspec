@@ -331,7 +331,8 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
         assert sdbbu.chk_maindb_join(maindb, tdf_cut)
         maindb = vstack([maindb,tdf_cut], join_type='exact')
         # Update hf5 file
-        twodf.hdf5_adddata(hdf, tdf_ids, sname)
+        if not test:
+            twodf.hdf5_adddata(hdf, tdf_ids, sname)
 
     ''' COS-Halos '''
     if not mk_test_file:
