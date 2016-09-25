@@ -3,7 +3,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import igmspec
+import os, warnings
 
 import h5py
 import json
@@ -12,6 +12,7 @@ import pdb
 from specdb import defs
 from specdb.build import utils as sdbbu
 
+import igmspec
 from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf, xq100
 from igmspec.ingest import hdla100
 from igmspec.ingest import esidla
@@ -26,7 +27,7 @@ from linetools import utils as ltu
 from igmspec.defs import get_survey_dict
 survey_dict = get_survey_dict()
 
-def ver01(test=False, mk_test_file=False, **kwargs):
+def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
     """ Build version 1.0
 
     Parameters
@@ -49,6 +50,14 @@ def ver01(test=False, mk_test_file=False, **kwargs):
         test = True
     else:
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    # Chk clobber
+    if os.path.isfile(outfil):
+        if clobber:
+            warnings.warn("Overwriting previous DB file {:s}".format(outfil))
+        else:
+            warnings.warn("Not overwiting previous DB file.  Use clobber=True to do so")
+            return
+    # Begin
     hdf = h5py.File(outfil,'w')
 
     ''' Myers QSOs '''
@@ -181,7 +190,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     print("Wrote {:s} DB file".format(outfil))
 
 
-def ver02(test=False, mk_test_file=False, skip_copy=False):
+def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -216,6 +225,14 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         test = True
     else:
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    # Chk clobber
+    if os.path.isfile(outfil):
+        if clobber:
+            warnings.warn("Overwriting previous DB file {:s}".format(outfil))
+        else:
+            warnings.warn("Not overwiting previous DB file.  Use clobber=True to do so")
+            return
+    # Begin
     hdf = h5py.File(outfil,'w')
 
     # Copy over the old stuff
