@@ -7,6 +7,7 @@ import os, warnings
 
 import h5py
 import json
+import datetime
 import pdb
 
 from specdb import defs
@@ -180,7 +181,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
     hdf['catalog'].attrs['EPOCH'] = 2000.
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
     hdf['catalog'].attrs['VERSION'] = version
-    #hdf['catalog'].attrs['CAT_DICT'] = cdict
+    hdf['catalog'].attrs['CREATION_DATE'] = str(datetime.date.today().strftime('%Y-%b-%d'))
     hdfkeys = hdf.keys()
     for dkey in survey_dict.keys():
         if dkey not in hdfkeys:
@@ -436,11 +437,11 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
     hdf['catalog'].attrs['VERSION'] = version
+    hdf['catalog'].attrs['CREATION_DATE'] = str(datetime.date.today().strftime('%Y-%b-%d'))
     hdfkeys = hdf.keys()
     for dkey in survey_dict.keys():
         if dkey not in hdfkeys:
             survey_dict.pop(dkey, None)
     hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict))
-    #hdf['catalog'].attrs['CAT_DICT'] = cdict
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
