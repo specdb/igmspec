@@ -8,11 +8,9 @@ import os, sys
 import json, yaml
 import pdb
 
-from astropy.table import Table
-from astropy import units as u
-from astropy.coordinates import SkyCoord, match_coordinates_sky
+#from astropy.table import Table
+#from astropy import units as u
 
-from linetools.abund import ions as lai
 
 from specdb.specdb import IgmSpec
 
@@ -61,13 +59,16 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     tbfil.write('\\startdata \n')
 
     # Looping on systems
+    restrict = False
     for survey in surveys:
         # Restrict
-        if survey == 'BOSS_DR12':
-            pdb.set_trace()
-        elif survey == 'SDSS_DR7':
-            print("SKIPPING SDSS FOR NOW")
-            continue
+        if restrict:
+            if survey == 'BOSS_DR12':
+                pdb.set_trace()
+            elif survey == 'SDSS_DR7':
+                print("SKIPPING SDSS FOR NOW")
+                continue
+        print("Working on survey={:s}".format(survey))
         # Setup
         meta = igmsp.idb.hdf[survey]['meta']
 
