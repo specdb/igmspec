@@ -45,18 +45,17 @@ def mktab_datasets(outfil='tab_datasets.tex'):
 
     # Header
     tbfil.write('\\clearpage\n')
-    tbfil.write('\\begin{deluxetable}{lccccccc}\n')
-    tbfil.write('\\rotate\n')
-    tbfil.write('\\tablewidth{0pc}\n')
-    tbfil.write('\\tablecaption{{\\it igmspec} DATASETS \\label{tab:datasets}}\n')
+    tbfil.write('\\begin{table}[ht]\n')
+    tbfil.write('\\caption{{\\it igmspec} DATASETS \\label{tab:datasets}}\n')
     #tbfil.write('\\tabletypesize{\\tiny}\n')
-    tbfil.write('\\tablehead{\\colhead{Survey} & \\colhead{$N_{\\rm source}^a$} \n')
-    tbfil.write('& \\colhead{$N_{\\rm spec}^b$} & \\colhead{$\\lambda_{\\rm min}$}\n')
-    tbfil.write('& \\colhead{$\\lambda_{\\rm max}$} & \\colhead{$R^c$} \n')
-    tbfil.write('& \\colhead{References} & \\colhead{Website} \n')
-    tbfil.write('} \n')
+    tbfil.write('\\begin{tabular}{lccccc}\n')
+    tbfil.write('Survey & $N_{\\rm source}^a$} \n')
+    tbfil.write('& $N_{\\rm spec}^b$ & $\\lambda_{\\rm min}$\n')
+    tbfil.write('& $\\lambda_{\\rm max}$ & $R^c$ \\ \n')
+    #tbfil.write('& References & Website \n')
+    #tbfil.write('} \n')
 
-    tbfil.write('\\startdata \n')
+    tbfil.write('\\hline \n')
 
     # Looping on systems
     restrict = False
@@ -104,13 +103,15 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     tbfil.write('\\hline \n')
 
 
-    tbfil.write('\\enddata \n')
+    #tbfil.write('\\enddata \n')
     #tbfil.write('\\tablecomments{This table is available as a YAML file at ')
     #tbfil.write('http://blah')
     #tbfil.write('} \n')
-    tbfil.write('\\tablenotetext{a}{Number of positive detections constraining the model.}')
+    tbfil.write('\\multicolumn{6}{l}{{$^a$}{Number of positive detections constraining the model.}}')
+    #tbfil.write('\\tablenotetext{a}{Number of positive detections constraining the model.}')
     # End
-    tbfil.write('\\end{deluxetable} \n')
+    tbfil.write('\\end{tabular} \n')
+    tbfil.write('\\end{table} \n')
 
     tbfil.close()
 
