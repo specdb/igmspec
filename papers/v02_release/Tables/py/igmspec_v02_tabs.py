@@ -8,7 +8,7 @@ import os, sys
 import json, yaml
 import pdb
 
-#from astropy.table import Table
+from astropy.table import Table
 #from astropy import units as u
 
 
@@ -61,6 +61,8 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     # Looping on systems
     restrict = False
     for survey in surveys:
+        if survey == 'quasars':
+            continue
         # Restrict
         if restrict:
             if survey == 'BOSS_DR12':
@@ -70,7 +72,7 @@ def mktab_datasets(outfil='tab_datasets.tex'):
                 continue
         print("Working on survey={:s}".format(survey))
         # Setup
-        meta = igmsp.idb.hdf[survey]['meta']
+        meta = Table(igmsp.idb.hdf[survey]['meta'].value)
 
         # Survey
         survey.replace('_','\\_')
