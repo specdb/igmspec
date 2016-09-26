@@ -190,6 +190,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
     hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict))
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
+    print("Update DB info in specdb.defs.dbase_info !!")
 
 
 def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
@@ -447,3 +448,4 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict))
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
+    print("Update DB info in specdb.defs.dbase_info !!")
