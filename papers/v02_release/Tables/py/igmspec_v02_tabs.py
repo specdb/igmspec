@@ -14,7 +14,7 @@ from astropy.coordinates import SkyCoord, match_coordinates_sky
 
 from linetools.abund import ions as lai
 
-from igmspec.igmspec import IgmSpec
+from specdb.specdb import IgmSpec
 
 
 # Local
