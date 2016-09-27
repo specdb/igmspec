@@ -32,6 +32,7 @@ def grab_meta():
     """
     summ_file = os.getenv('RAW_IGMSPEC')+'/HSTQSO/hstqso.lst'
     hstqso_meta = Table.read(summ_file, format='ascii')
+    spec_files = [str(ii) for ii in hstqso_meta['SPEC_FILE'].data]
     nspec = len(hstqso_meta)
     # RA/DEC
     radec_file = os.getenv('RAW_IGMSPEC')+'/HSTQSO/all_qso_table.txt'
@@ -44,9 +45,10 @@ def grab_meta():
         else:
             tab_date = vstack([tab_date, Table.read(date_file, format='ascii')])
     # RA/DEC, DATE
-    hstqso_meta.add_column(Column(['1000-01-01']*nspec, name='DATE-OBS'))
+    hstqso_meta.add_column(Column(['2000-01-01']*nspec, name='DATE-OBS'))
     for jj,row in enumerate(hstqso_meta):
         if row['INST'] == 'COS':
+            spec_files[jj] = str(row['QSO_ALT_NAME']+'_hsla.fits')
             continue
         # DATE
         spec = row['SPEC_FILE'].split('.')[0]
@@ -58,6 +60,8 @@ def grab_meta():
             mt1 = mt1[0] # TAKING THE FIRST ONE
         joe_date = tab_date['DATE-OBS'][mt1].split('-')
         hstqso_meta[jj]['DATE-OBS'] = '{:s}-{:02d}-{:02d}'.format(joe_date[0], int(joe_date[1]), int(joe_date[2]))
+        if int(joe_date[1]) > 12:
+            pdb.set_trace()
         # RA/DEC
         if row['INST'] != 'FOS':
             continue
@@ -73,6 +77,15 @@ def grab_meta():
             mt = mt[0]
         hstqso_meta[jj]['RA'] = radec['RA'][mt]
         hstqso_meta[jj]['DEC'] = radec['DEC'][mt]
+    # TEST
+    from astropy.time import Time
+    try:
+        tval = Time(list(hstqso_meta['DATE-OBS'].data), format='iso')
+    except:
+        pdb.set_trace()
+    # REPLACE
+    hstqso_meta.rename_column('SPEC_FILE', 'ORIG_SPEC_FILE')
+    hstqso_meta['SPEC_FILE'] = spec_files
     # RENAME
     hstqso_meta.rename_column('GRATE', 'GRATING')
     hstqso_meta.rename_column('QSO_ZEM', 'zem')
@@ -93,12 +106,12 @@ def meta_for_build():
     # Cut down to unique sources
     coord = SkyCoord(ra=hstqso_meta['RA'], dec=hstqso_meta['DEC'], unit='deg')
     idx, d2d, d3d = match_coordinates_sky(coord, coord, nthneighbor=2)
-    dups = np.where(d2d < 0.5*u.arcsec)[0]
+    dups = np.where(d2d < 1.5*u.arcsec)[0]  # Closest lens is ~2"
     keep = np.array([True]*len(hstqso_meta))
     for idup in dups:
         dcoord = SkyCoord(ra=hstqso_meta['RA'][idup], dec=hstqso_meta['DEC'][idup], unit='deg')
         sep = dcoord.separation(coord)
-        isep = np.where(sep < 0.5*u.arcsec)[0]
+        isep = np.where(sep < 1.5*u.arcsec)[0]
         keep[isep] = False
         keep[np.min(isep)] = True  # Only keep 1
     hstqso_meta = hstqso_meta[keep]
@@ -155,7 +168,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
     # Find new sources
     idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 0.1*u.arcsec):
+    if np.sum(d2d > 1.5*u.arcsec):
         pdb.set_trace()
         raise ValueError("Bad matches in HSTQSO")
     meta_IDs = IDs[idx]
@@ -165,7 +178,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 20000  # Just needs to be large enough
+    max_npix = 61000  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -176,29 +189,21 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
-    Rlist = []
     wvminlist = []
     wvmaxlist = []
-    gratinglist = []
     npixlist = []
-    speclist = []
+    Rlist = []
     # Loop
     #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
     path = os.getenv('RAW_IGMSPEC')+'/HSTQSO/'
     maxpix = 0
-    pdb.set_trace()
     for jj,row in enumerate(meta):
         # Generate full file
-        if row['INSTR'] == 'ACS':
-            full_file = path+row['qso']+'.fits.gz'
-        elif row['INSTR'] == 'WFC3':
-            coord = ltu.radec_to_coord((row['RA'],row['DEC']))
-            full_file = path+'/J{:s}{:s}_wfc3.fits.gz'.format(coord.ra.to_string(unit=u.hour,sep='',precision=2,pad=True),
-                                               coord.dec.to_string(sep='',pad=True,alwayssign=True,precision=1))
+        full_file = path+row['SPEC_FILE']+'.gz'
         # Extract
         print("HST_z2: Reading {:s}".format(full_file))
         hduf = fits.open(full_file)
-        head = hduf[0].header
+        head0 = hduf[0].header
         spec = lsio.readspec(full_file)
         # Parse name
         fname = full_file.split('/')[-1]
@@ -215,7 +220,23 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
         # Meta
-        speclist.append(str(fname))
+        if 'FOS-L' in fname:
+            Rlist.append(300.)
+        elif 'FOS-H' in fname:
+            Rlist.append(14000.)
+        elif 'STIS' in fname:
+            if row['GRATING'] == 'G230L':
+                Rlist.append(700.)
+            elif row['GRATING'] == 'G140L':
+                Rlist.append(1200.)
+            else:
+                raise ValueError("Bad STIS grating")
+        elif 'hsla' in fname:  # COS
+            Rlist.append(18000.)
+            row['DATE-OBS'] = hduf[1].data['DATEOBS'][0][0]
+        else:
+            pdb.set_trace()
+            raise ValueError("Missing instrument!")
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
@@ -228,10 +249,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     print("Max pix = {:d}".format(maxpix))
     # Add columns
     meta.add_column(Column([2000.]*nspec, name='EPOCH'))
-    meta.add_column(Column(speclist, name='SPEC_FILE'))
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
+    meta.add_column(Column(Rlist, name='R'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
@@ -242,8 +263,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     else:
         raise ValueError("meta file failed")
     # References
-    refs = [dict(url='http://adsabs.harvard.edu/abs/2011ApJS..195...16O',
-                 bib='omeara11')
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2011ApJ...736...42R',
+                 bib='ribuado11'),
+            dict(url='http://adsabs.harvard.edu/abs/2016ApJ...818..113N',
+                         bib='neeleman16'),
             ]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)

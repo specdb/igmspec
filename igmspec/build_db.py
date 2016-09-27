@@ -271,8 +271,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         assert sdbbu.chk_maindb_join(maindb, hstqso_cut)
         maindb = vstack([maindb, hstqso_cut], join_type='exact')
         # Update hf5 file
-        if False:
-            hst_qso.hdf5_adddata(hdf, hstqso_ids, sname)#, mk_test_file=mk_test_file)
+        hst_qso.hdf5_adddata(hdf, hstqso_ids, sname)#, mk_test_file=mk_test_file)
 
     ''' COS-Dwarfs '''
     if not mk_test_file:
