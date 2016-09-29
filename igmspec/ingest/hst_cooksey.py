@@ -20,8 +20,9 @@ from astropy.time import Time
 from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
-from igmspec.ingest import utils as iiu
-from igmspec import defs
+#from igmspec.ingest import utils as iiu
+from specdb.build.utils import chk_meta
+from specdb import defs
 
 #igms_path = imp.find_module('igmspec')[1]
 
@@ -35,19 +36,27 @@ def grab_meta():
     hstc_file = os.getenv('RAW_IGMSPEC')+'/HST_Cooksey/HSTQSO_pre-SM4.lst'
     hstc_meta = Table.read(hstc_file, format='ascii')
     # Cutting those without proper header (for now)
-    badf = ['PKS2005-489lif1a.fits', 'NGC7469lif2a.fits', 'NGC7469sic2b.fits',
-            'NGC7469lif2b.fits', 'NGC7469sic2a.fits',
-            'AKN564lif1a.fits', 'AKN564lif1b.fits', 'AKN564lif2a.fits', 'AKN564lif2b.fits',
-            'AKN564sic1a.fits', 'AKN564sic1b.fits', 'AKN564sic2a.fits', 'AKN564sic2b.fits']
+    #badf = ['PKS2005-489lif1a.fits', 'NGC7469lif2a.fits', 'NGC7469sic2b.fits',
+    #        'NGC7469lif2b.fits', 'NGC7469sic2a.fits',
+    #        'AKN564lif1a.fits', 'AKN564lif1b.fits', 'AKN564lif2a.fits', 'AKN564lif2b.fits',
+    #        'AKN564sic1a.fits', 'AKN564sic1b.fits', 'AKN564sic2a.fits', 'AKN564sic2b.fits']
+    badf = []
     gdm = np.array([True]*len(hstc_meta))
     for ibadf in badf:
         mt = np.where(hstc_meta['SPEC_FILE'] == ibadf)[0]
         gdm[mt] = False
-    #gdm = hstc_meta['INSTR'] != 'GHRS'
+    for jj, row in enumerate(hstc_meta):  # Skip continua
+        if '_c.fits' in row['SPEC_FILE']:
+            gdm[jj] = False
+        if '_E.fits' in row['SPEC_FILE']:
+            gdm[jj] = False
+        if row['INSTR'] == 'GHRS':
+            gdm[jj] = False
     hstc_meta = hstc_meta[gdm]
     gdf = hstc_meta['INSTR'] == 'FUSE'
-    hstc_meta = hstc_meta[gdf]
+    #hstc_meta = hstc_meta[gdf]
     hstc_meta['TELESCOPE'] = 'FUSE'
+    hstc_meta[~gdf]['TELESCOPE'] = 'HST'
     #
     hstc_meta.add_column(Column([2000.]*len(hstc_meta), name='EPOCH'))
     return hstc_meta
@@ -105,7 +114,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     meta = grab_meta()
     bmeta = meta_for_build()
     # Checks
-    if sname != 'HST_Cooksey':
+    if sname != 'LowzMetals':
         raise IOError("Not expecting this survey..")
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")
@@ -127,7 +136,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 30000  # Just needs to be large enough
+    max_npix = 40000  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -144,6 +153,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     npixlist = []
     gratinglist = []
     datelist = []
+    badf = []
+    badstis = []
     # Loop
     #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
     path = os.getenv('RAW_IGMSPEC')+'/HST_Cooksey/'
@@ -167,6 +178,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
             tbl = Table(hdu[1].data)
             spec = lsio.readspec(tbl)
             spec.meta['headers'][spec.select] = head1
+            # Continuum
+            cfile = full_file.replace('.fits', '_c.fits')
+            if os.path.isfile(cfile):
+                spec.data['co'][spec.select] = fits.open(cfile)[0].data
         # npix
         npix = spec.npix
         if npix > max_npix:
@@ -215,13 +230,30 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
                     ext_ap = card0
                 elif ckey == 'DATE': # Extracted aperture
                     datet = card0
+            gratinglist.append(ext_ap+det)
+        elif row['INSTR'] == 'STIS':
+            try:
+                datet = spec.header['DATE']
+            except KeyError:
+                badstis.append(full_file)
+                datet = '8999-9-9'
+                gratinglist.append('G230M')
+            else:
+                gratinglist.append(spec.header['OPT_ELEM'])
         if datet is None:
-            pdb.set_trace()
-            datet = spec.header['DATE-OBS']
+            try:
+                datet = spec.header['DATE-OBS']
+            except KeyError:
+                print("Missing Header for file: {:s}".format(full_file))
+                badf.append(full_file)
+                datet = '9999-9-9'
         t = Time(datet, format='isot', out_subfmt='date')  # Fixes to YYYY-MM-DD
         datelist.append(t.iso)
-        gratinglist.append(ext_ap+det)
-        Rlist.append(Rdicts[row['INSTR']][gratinglist[-1]])
+        try:
+            Rlist.append(Rdicts[row['INSTR']][gratinglist[-1]])
+        except KeyError:
+            print(gratinglist[-1])
+            pdb.set_trace()
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
@@ -231,6 +263,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         spec_set[jj] = data
 
     #
+    if (len(badstis)+len(badf)) > 0:
+        print("We still have bad headers")
+        pdb.set_trace()
     print("Max pix = {:d}".format(maxpix))
     # Add columns
     meta.add_column(Column(npixlist, name='NPIX'))
@@ -242,7 +277,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
-    if iiu.chk_meta(meta):
+    if chk_meta(meta):
         if chk_meta_only:
             pdb.set_trace()
         hdf[sname]['meta'] = meta

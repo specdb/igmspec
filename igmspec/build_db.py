@@ -256,20 +256,20 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
 
     ''' HST_Cooksey '''
     if not mk_test_file:
-        sname = 'HST_Cooksey'
+        sname = 'LowzMetals'
         print('===============\n Doing {:s} \n==============\n'.format(sname))
         # Read
         hstc_meta = hst_c.meta_for_build()
         # IDs
-        hstc_cut, new, hstc_ids = set_new_ids(maindb, hstc_meta)
+        hstc_cut, new, hstc_ids = sdbbu.set_new_ids(maindb, hstc_meta)
         nnew = np.sum(new)
         # Survey flag
-        flag_s = defs.survey_flag(sname)
+        flag_s = survey_dict[sname]
         hstc_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
         midx = np.array(maindb['IGM_ID'][hstc_ids[~new]])
         maindb['flag_survey'][midx] += flag_s
         # Append
-        assert chk_maindb_join(maindb, hstc_cut)
+        assert sdbbu.chk_maindb_join(maindb, hstc_cut)
         maindb = vstack([maindb, hstc_cut], join_type='exact')
         # Update hf5 file
         #if (not test):# or mk_test_file:
