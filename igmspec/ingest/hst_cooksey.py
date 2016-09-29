@@ -114,7 +114,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     meta = grab_meta()
     bmeta = meta_for_build()
     # Checks
-    if sname != 'LowzMetals':
+    if sname != 'UVpSM4':
         raise IOError("Not expecting this survey..")
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")

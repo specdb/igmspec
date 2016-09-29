@@ -256,7 +256,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
 
     ''' HST_Cooksey '''
     if not mk_test_file:
-        sname = 'LowzMetals'
+        sname = 'UVpSM4'
         print('===============\n Doing {:s} \n==============\n'.format(sname))
         # Read
         hstc_meta = hst_c.meta_for_build()
