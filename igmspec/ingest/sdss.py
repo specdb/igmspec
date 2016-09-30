@@ -17,34 +17,45 @@ from astropy import units as u
 from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
-from igmspec.ingest import utils as iiu
+from specdb.build.utils import chk_meta
 
-def get_specfil(row):
+
+def get_specfil(row, dr7=False):
     """Parse the SDSS spectrum file
     Requires a link to the database Class
     """
-    path = os.getenv('SDSSPATH')+'/DR7_QSO/spectro/1d_26/'
+    if dr7:
+        path = os.getenv('RAW_IGMSPEC')+'/SDSS/Schneider/'
+    else:
+        path = os.getenv('RAW_IGMSPEC')+'/SDSS/spectro_DR7/1d_26/'
     # Generate file name (DR4 is different)
     pnm = '{0:04d}'.format(row['PLATE'])
-    fnm = '{0:03d}'.format(row['FIBERID'])
-    mjd = str(row['MJD'])
-    sfil = path+pnm+'/1d/'+'spSpec-'
+    #fnm = '{0:03d}'.format(row['FIBERID'])
+    fnm = '{0:03d}'.format(row['FIBER'])
+    #mjd = str(row['MJD'])
+    mjd = str(row['SMJD'])
+    if dr7:
+        sfil = path+'spSpec-'
+    else:
+        sfil = path+pnm+'/1d/'+'spSpec-'
     # Finish
     specfil = sfil+mjd+'-'+pnm+'-'+fnm+'.fit.gz'  # Is usually gzipped
     return specfil
 
 
-def grab_meta():
+def grab_meta(old=False):
     """ Grab SDSS meta Table
 
     Returns
     -------
     meta
     """
-    sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/SDSS_DR7_qso.fits.gz')
+    #sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/SDSS_DR7_qso.fits.gz')
+    sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/dr7qso.fit.gz')
     nspec = len(sdss_meta)
     # DATE
-    t = Time(list(sdss_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    #t = Time(list(sdss_meta['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    t = Time(list(sdss_meta['SMJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
     sdss_meta.add_column(Column(t.iso, name='DATE-OBS'))
     # Add a few columns
     sdss_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
@@ -53,20 +64,27 @@ def grab_meta():
     sdss_meta.add_column(Column(['BOTH']*nspec, name='GRATING'))
     sdss_meta.add_column(Column(['SDSS 2.5-M']*nspec, name='TELESCOPE'))
     # Rename
-    sdss_meta.rename_column('RAOBJ', 'RA')
-    sdss_meta.rename_column('DECOBJ', 'DEC')
-    sdss_meta.rename_column('Z', 'zem')          # Some of these were corrected by QPQ
-    sdss_meta.rename_column('Z_ERR', 'sig_zem')
+    if old:
+        # Some of these were corrected by QPQ
+        sdss_meta.rename_column('RAOBJ', 'RA')
+        sdss_meta.rename_column('DECOBJ', 'DEC')
+        sdss_meta.rename_column('Z_ERR', 'sig_zem')
+    else:
+        sdss_meta.rename_column('z', 'zem')
+        sdss_meta['sig_zem'] = 0.
+        sdss_meta['flag_zem'] = '          '
     # Sort
     sdss_meta.sort('RA')
     # Return
     return sdss_meta
 
 
-def meta_for_build():
+def meta_for_build(old=False):
     """ Load the meta info
-    JXP made DR7 -- Should add some aspect of the official list..
-      Am worried about the coordinates some..
+
+    old : bool, optional
+      JXP made DR7 -- Should add some aspect of the official list..
+        Am worried about the coordinates some..
 
     Returns
     -------
@@ -86,20 +104,20 @@ def meta_for_build():
         keep[np.min(isep)] = True  # Only keep 1
     sdss_meta = sdss_meta[keep]
     # Cut one more (pair of QSOs)
-    bad_dup_c = SkyCoord(ra=193.96678*u.deg, dec=37.099741*u.deg)
-    coord = SkyCoord(ra=sdss_meta['RA'], dec=sdss_meta['DEC'], unit='deg')
-    sep = bad_dup_c.separation(coord)
-    assert np.sum(sep < 2*u.arcsec) == 2
-    badi = np.argmin(bad_dup_c.separation(coord))
-    keep = np.array([True]*len(sdss_meta))
-    keep[badi] = False
-    sdss_meta = sdss_meta[keep]
+    if old:
+        bad_dup_c = SkyCoord(ra=193.96678*u.deg, dec=37.099741*u.deg)
+        coord = SkyCoord(ra=sdss_meta['RA'], dec=sdss_meta['DEC'], unit='deg')
+        sep = bad_dup_c.separation(coord)
+        assert np.sum(sep < 2*u.arcsec) == 2
+        badi = np.argmin(bad_dup_c.separation(coord))
+        keep = np.array([True]*len(sdss_meta))
+        keep[badi] = False
+        sdss_meta = sdss_meta[keep]
     #
     nqso = len(sdss_meta)
     meta = Table()
-    for key in ['RA', 'DEC', 'zem', 'sig_zem']:
+    for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
         meta[key] = sdss_meta[key]
-    meta['flag_zem'] = [str('SDSS')]*nqso
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
@@ -122,6 +140,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     -------
 
     """
+    from igmspec.cat_utils import zem_from_radec
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     if sdss_hdf is not None:
@@ -151,7 +170,13 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     meta_IDs = IDs[idx]
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
-    # Add zem
+    # Fix zem
+    zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], hdf['quasars'].value)
+    gdz = zem > 0.
+    meta['zem'][gdz] = zem[gdz]
+    meta['flag_zem'] = zsource
+    meta['flag_zem'][~gdz] = 'SDSS-DR7'
+
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
@@ -174,19 +199,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     maxpix = 0
     for jj,row in enumerate(meta):
         full_file = get_specfil(row)
+        if not os.path.isfile(full_file):
+            full_file = get_specfil(row, dr7=True)
         # Extract
         print("SDSS: Reading {:s}".format(full_file))
         # Parse name
         fname = full_file.split('/')[-1]
-        if debug:
-            if jj > 500:
-                speclist.append(str(fname))
-                if not os.path.isfile(full_file):
-                    raise IOError("SDSS file {:s} does not exist".format(full_file))
-                wvminlist.append(np.min(data['wave'][0][:npix]))
-                wvmaxlist.append(np.max(data['wave'][0][:npix]))
-                npixlist.append(npix)
-                continue
         # Generate full file
         spec = lsio.readspec(full_file)
         # npix
@@ -221,7 +239,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
-    if iiu.chk_meta(meta):
+    if chk_meta(meta):
         if chk_meta_only:
             pdb.set_trace()
         hdf[sname]['meta'] = meta

@@ -1,6 +1,6 @@
-""" Module to ingest HD-LLS Survey data
+""" Module to ingest COS-Dwarfs
 
-Prochaska et al. 2015
+Bordoloi et al. 201X
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -9,46 +9,73 @@ import numpy as np
 import pdb
 import warnings
 import os, json, glob, imp
-import datetime
 
-from astropy.table import Table, Column
+from astropy.table import Table, Column, vstack
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 from astropy import units as u
-from astropy.io import fits
+from astropy.time import Time
 
 from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
+from pyigm.cgm.cos_halos import COSDwarfs
+
 from specdb.build.utils import chk_meta
+
 
 #igms_path = imp.find_module('igmspec')[1]
 
 
 def grab_meta():
-    """ Grab KODIAQ meta Table
+    """ Grab COS-Dwarfs meta table
     Returns
     -------
 
     """
-    hstz2_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HST_z2/hst_z2.ascii', format='ascii')
+    from time import strptime
+    cosdwarfs = COSDwarfs()
+    cosdwarfs.load_sys(tfile=cosdwarfs.cdir+'/cos-dwarfs_systems.v1.1.tar.gz', chk_lowz=False)
+    visit_file = os.getenv('RAW_IGMSPEC')+'/COS-Dwarfs/HST_Observing_Dates.dat'
+    cd_visits = Table.read(visit_file,format='ascii')
+
+    # Coord
+    lst = [getattr(cgm_abs.igm_sys, 'coord') for cgm_abs in cosdwarfs.cgm_abs]
+    ra = [coord.ra.value for coord in lst]
+    dec = [coord.dec.value for coord in lst]
+
+    # Short names
+    shrt_names = [name.split('_')[0] for name in cosdwarfs.name]
+
+    cdwarfs_meta = Table()
+    cdwarfs_meta['RA'] = ra
+    cdwarfs_meta['DEC'] = dec
     # RA/DEC, DATE
-    ra = []
-    dec = []
-    for row in hstz2_meta:
-        # Fix DEC
-        # Get RA/DEC
-        coord = ltu.radec_to_coord((row['ra'],row['dec']))
-        ra.append(coord.ra.value)
-        dec.append(coord.dec.value)
-    hstz2_meta.add_column(Column(ra, name='RA'))
-    hstz2_meta.add_column(Column(dec, name='DEC'))
-    # RENAME
-    hstz2_meta.rename_column('obsdate','DATE-OBS')
-    hstz2_meta.rename_column('tel','TELESCOPE')
-    hstz2_meta.rename_column('inst','INSTR')
-    hstz2_meta.rename_column('grating','GRATING')
-    hstz2_meta.rename_column('resolution','R')
-    return hstz2_meta
+    datet = []
+    for kk,row in enumerate(cdwarfs_meta):
+        #
+        name = shrt_names[kk]
+        mtv = np.where(cd_visits['QSO'] == name)[0]
+        if len(mtv) != 1:
+            pdb.set_trace()
+        else:
+            chv = cd_visits['Start_UT'][mtv].data[0]
+        icmma = chv.find(',')
+        datet.append('{:s}-{:02d}-{:02d}'.format(
+                chv[icmma+1:icmma+5], strptime(chv[:3],'%b').tm_mon,
+                int(chv[3:icmma])))
+    cdwarfs_meta.add_column(Column(datet, name='DATE-OBS'))
+    # Others
+    cdwarfs_meta.add_column(Column(['G130M/G160M']*len(cdwarfs_meta), name='GRATING'))
+    cdwarfs_meta.add_column(Column([20000.]*len(cdwarfs_meta), name='R'))
+    cdwarfs_meta.add_column(Column([2000.]*len(cdwarfs_meta), name='EPOCH'))
+    cdwarfs_meta['INSTR'] = 'COS' # Deals with padding
+    cdwarfs_meta['TELESCOPE'] = 'HST'
+    cdwarfs_meta['zem'] = cosdwarfs.zem
+    cdwarfs_meta['sig_zem'] = 0.  # Need to add
+    cdwarfs_meta['flag_zem'] = 'SDSS'
+    # Done
+    return cdwarfs_meta
+
 
 def meta_for_build():
     """ Generates the meta data needed for the IGMSpec build
@@ -56,27 +83,19 @@ def meta_for_build():
     -------
     meta : Table
     """
-    # Cut down to unique QSOs
-    hstz2_meta = grab_meta()
-    names = np.array([name[0:26] for name in hstz2_meta['qso']])
-    uni, uni_idx = np.unique(names, return_index=True)
-    hstz2_meta = hstz2_meta[uni_idx]
-    nqso = len(hstz2_meta)
+    cdwarfs_meta = grab_meta()
     #
     meta = Table()
-    meta['RA'] = hstz2_meta['RA']
-    meta['DEC'] = hstz2_meta['DEC']
-    meta['zem'] = hstz2_meta['zem']
-    meta['sig_zem'] = [0.]*nqso
-    meta['flag_zem'] = [str('SDSS_PIPE')]*nqso
-    meta['STYPE'] = [str('QSO')]*nqso
+    for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
+        meta[key] = cdwarfs_meta[key]
+    meta['STYPE'] = str('QSO')
     # Return
     return meta
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
                  mk_test_file=False):
-    """ Append HST_z2 data to the h5 file
+    """ Append COS-Dwarfs data to the h5 file
 
     Parameters
     ----------
@@ -96,12 +115,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     """
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
-    hstz2_grp = hdf.create_group(sname)
+    cdwarfs_grp = hdf.create_group(sname)
     # Load up
     meta = grab_meta()
     bmeta = meta_for_build()
     # Checks
-    if sname != 'HST_z2':
+    if sname != 'COS-Dwarfs':
         raise IOError("Not expecting this survey..")
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")
@@ -115,7 +134,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     # Find new sources
     idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
     if np.sum(d2d > 0.1*u.arcsec):
-        raise ValueError("Bad matches in HST_z2")
+        raise ValueError("Bad matches in COS-Dwarfs")
     meta_IDs = IDs[idx]
 
     # Loop me to bid the full survey catalog
@@ -123,7 +142,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 300  # Just needs to be large enough
+    max_npix = 20000  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -134,31 +153,27 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
-    Rlist = []
     wvminlist = []
     wvmaxlist = []
-    gratinglist = []
     npixlist = []
     speclist = []
     # Loop
-    #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
-    path = os.getenv('RAW_IGMSPEC')+'/HST_z2/'
+    path = os.getenv('RAW_IGMSPEC')+'/COS-Dwarfs/'
     maxpix = 0
     for jj,row in enumerate(meta):
         # Generate full file
-        if row['INSTR'] == 'ACS':
-            full_file = path+row['qso']+'.fits.gz'
-        elif row['INSTR'] == 'WFC3':
-            coord = ltu.radec_to_coord((row['RA'],row['DEC']))
-            full_file = path+'/J{:s}{:s}_wfc3.fits.gz'.format(coord.ra.to_string(unit=u.hour,sep='',precision=2,pad=True),
-                                               coord.dec.to_string(sep='',pad=True,alwayssign=True,precision=1))
-        # Extract
-        print("HST_z2: Reading {:s}".format(full_file))
-        hduf = fits.open(full_file)
-        head = hduf[0].header
-        spec = lsio.readspec(full_file)
+        coord = ltu.radec_to_coord((row['RA'],row['DEC']))
+        full_file = path+'/J{:s}{:s}_nbin3_coadd.fits.gz'.format(coord.ra.to_string(unit=u.hour,sep='',pad=True)[0:4],
+                                           coord.dec.to_string(sep='',pad=True,alwayssign=True)[0:5])
+        if 'J1051-0051' in full_file:
+            full_file = path+'/PG1049-005_nbin3_coadd.fits.gz'
+        if 'J1204+2754' in full_file:
+            full_file = path+'/PG1202+281_nbin3_coadd.fits.gz'
         # Parse name
         fname = full_file.split('/')[-1]
+        # Extract
+        print("COS-Dwarfs: Reading {:s}".format(full_file))
+        spec = lsio.readspec(full_file)
         # npix
         npix = spec.npix
         if npix > max_npix:
@@ -184,12 +199,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     #
     print("Max pix = {:d}".format(maxpix))
     # Add columns
-    meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     meta.add_column(Column(speclist, name='SPEC_FILE'))
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(np.arange(nspec,dtype=int), name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
     if chk_meta(meta):
@@ -199,8 +213,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     else:
         raise ValueError("meta file failed")
     # References
-    refs = [dict(url='http://adsabs.harvard.edu/abs/2011ApJS..195...16O',
-                 bib='omeara11')
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2014ApJ...796..136B',
+                 bib='bordoloi+14'),
             ]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)

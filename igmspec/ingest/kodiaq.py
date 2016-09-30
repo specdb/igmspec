@@ -20,7 +20,8 @@ from astropy.io import fits
 from linetools import utils as ltu
 from linetools.spectra import io as lsio
 
-from igmspec.ingest import utils as iiu
+from specdb.build.utils import chk_meta
+from specdb.build.utils import set_resolution
 
 igms_path = imp.find_module('igmspec')[1]
 
@@ -185,7 +186,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
             gratinglist.append('RED')
         npixlist.append(npix)
         try:
-            Rlist.append(iiu.set_resolution(head))
+            Rlist.append(set_resolution(head))
         except ValueError:
             pdb.set_trace()
         # Only way to set the dataset correctly
@@ -206,7 +207,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
-    if iiu.chk_meta(meta):
+    if chk_meta(meta):
         if chk_meta_only:
             pdb.set_trace()
         hdf[sname]['meta'] = meta
