@@ -107,7 +107,9 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     #tbfil.write('\\tablecomments{This table is available as a YAML file at ')
     #tbfil.write('http://blah')
     #tbfil.write('} \n')
-    tbfil.write('\\multicolumn{6}{l}{{$^a$}{Number of positive detections constraining the model.}}')
+    tbfil.write('\\multicolumn{6}{l}{{$^a$}{Number of unique sources in the dataset.}}')
+    tbfil.write('\\multicolumn{6}{l}{{$^b$}{Number of unique spectra in the dataset.}}')
+    tbfil.write('\\multicolumn{6}{l}{{$^c$}{Characteristic FWHM resolution of the spectra.}}')
     #tbfil.write('\\tablenotetext{a}{Number of positive detections constraining the model.}')
     # End
     tbfil.write('\\end{tabular} \n')
