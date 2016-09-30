@@ -31,7 +31,7 @@ def main(args, unit_test=False, **kwargs):
     from astropy.table import vstack
     from astropy.coordinates import SkyCoord
     from astropy import units as u
-    from igmspec.igmspec import IgmSpec
+    from specdb.specdb import IgmSpec
 
     # init
     igmsp = IgmSpec(**kwargs)
