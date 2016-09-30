@@ -254,7 +254,6 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         test = True
         maindb = dmaindb
 
-    """
     ''' HSTQSO '''
     if not mk_test_file:
         sname = 'HSTQSO'
@@ -274,7 +273,6 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         maindb = vstack([maindb, hstqso_cut], join_type='exact')
         # Update hf5 file
         hst_qso.hdf5_adddata(hdf, hstqso_ids, sname)#, mk_test_file=mk_test_file)
-    """
 
     ''' COS-Dwarfs '''
     if not mk_test_file:
