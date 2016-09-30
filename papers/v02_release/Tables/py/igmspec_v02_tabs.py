@@ -49,9 +49,9 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     tbfil.write('\\caption{{\\it igmspec} DATASETS \\label{tab:datasets}}\n')
     #tbfil.write('\\tabletypesize{\\tiny}\n')
     tbfil.write('\\begin{tabular}{lccccc}\n')
-    tbfil.write('Survey & $N_{\\rm source}^a$} \n')
+    tbfil.write('Survey & $N_{\\rm source}^a$ \n')
     tbfil.write('& $N_{\\rm spec}^b$ & $\\lambda_{\\rm min}$\n')
-    tbfil.write('& $\\lambda_{\\rm max}$ & $R^c$ \\ \n')
+    tbfil.write('& $\\lambda_{\\rm max}$ & $R^c$ \\\\ \n')
     #tbfil.write('& References & Website \n')
     #tbfil.write('} \n')
 
@@ -74,8 +74,8 @@ def mktab_datasets(outfil='tab_datasets.tex'):
         meta = Table(igmsp.idb.hdf[survey]['meta'].value)
 
         # Survey
-        survey.replace('_','\\_')
-        tbfil.write(survey)
+        msurvey = survey.replace('_','\\_')
+        tbfil.write(msurvey)
 
         # N sources
         uniq = np.unique(meta['IGM_ID'])
