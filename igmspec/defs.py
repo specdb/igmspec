@@ -45,7 +45,7 @@ def z_priority():
 
 def get_cat_dict():
     """ Definitions for the catalog
-    
+
     Returns
     -------
 
