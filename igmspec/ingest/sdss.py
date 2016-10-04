@@ -140,7 +140,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     -------
 
     """
-    from igmspec.cat_utils import zem_from_radec
+    from specdb.zem.utils import zem_from_radec
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     if sdss_hdf is not None:

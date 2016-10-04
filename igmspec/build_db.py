@@ -130,7 +130,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     hdlls_cut, new, hdlls_ids = sdbbu.set_new_ids(maindb, hdlls_meta)
     nnew = np.sum(new)
     # Survey flag
-    flag_s = defs.survey_flag(sname)
+    flag_s = survey_dict[sname]
     hdlls_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
     midx = np.array(maindb['IGM_ID'][hdlls_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
