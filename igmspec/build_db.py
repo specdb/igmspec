@@ -234,7 +234,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
         if clobber:
             warnings.warn("Overwriting previous DB file {:s}".format(outfil))
         else:
-            warnings.warn("Not overwiting previous DB file.  Use clobber=True to do so")
+            warnings.warn("Not overwiting previous DB file.  Set clobber=True to do so")
             return
     # Begin
     hdf = h5py.File(outfil,'w')

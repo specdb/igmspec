@@ -130,7 +130,7 @@ def meta_for_build():
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
                  mk_test_file=False):
-    """ Append HST_z2 data to the h5 file
+    """ Append HSTQSO data to the h5 file
 
     Parameters
     ----------
@@ -201,7 +201,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         # Generate full file
         full_file = path+row['SPEC_FILE']+'.gz'
         # Extract
-        print("HST_z2: Reading {:s}".format(full_file))
+        print("HSTQSO: Reading {:s}".format(full_file))
         hduf = fits.open(full_file)
         head0 = hduf[0].header
         spec = lsio.readspec(full_file)
