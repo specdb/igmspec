@@ -97,10 +97,13 @@ def grab_meta():
     tdf_meta.add_column(Column(['UKST']*nspec, name='TELESCOPE'))
     # Rename
     rad = (tdf_meta['RAh00']*3600 + tdf_meta['RAm00']*60 + tdf_meta['RAs00'])*360./86400.
-    decd = tdf_meta['DECd00'] + tdf_meta['DECm00']/60 + tdf_meta['DECs00']/3600.
+    decd = np.abs(tdf_meta['DECd00']) + tdf_meta['DECm00']/60 + tdf_meta['DECs00']/3600.
+    neg = tdf_meta['DECd00'] < 0.
+    decd[neg] = -1.*decd[neg]
     tdf_meta['RA'] = rad
     tdf_meta['DEC'] = decd
     tdf_meta['sig_zem'] = [0.]*nspec
+    pdb.set_trace()
     # Sort
     tdf_meta.sort('RA')
     # Return

@@ -22,6 +22,7 @@ from igmspec.ingest import hst_qso
 from igmspec.ingest import cos_dwarfs
 
 from astropy.table import Table, vstack, Column
+from astropy import units as u
 
 from linetools import utils as ltu
 
@@ -401,7 +402,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
         # Read
         xq100_meta = xq100.meta_for_build()
         # IDs
-        xq100_cut, new, xq100_ids = sdbbu.set_new_ids(maindb, xq100_meta)
+        xq100_cut, new, xq100_ids = sdbbu.set_new_ids(maindb, xq100_meta, mtch_toler=10*u.arcsec)  # BAD COORD!!
         nnew = np.sum(new)
         # Survey flag
         flag_s = survey_dict[sname]
