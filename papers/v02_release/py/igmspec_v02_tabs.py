@@ -63,6 +63,8 @@ def mktab_datasets(outfil='tab_datasets.tex'):
         if survey == 'quasars':
             continue
         # Restrict
+        if survey != 'HD-LLS_DR1':
+            continue
         if restrict:
             if survey == 'BOSS_DR12':
                 pdb.set_trace()
@@ -88,6 +90,7 @@ def mktab_datasets(outfil='tab_datasets.tex'):
         sig = igmsp.idb.hdf[survey]['spec']['sig']
         gds = sig > 0.
         gdwv = igmsp.idb.hdf[survey]['spec']['wave'][gds]
+        pdb.set_trace()
         tbfil.write('& {:0.1f}'.format(np.min(gdwv)))
         # Wave max
         tbfil.write('& {:0.1f}'.format(np.max(gdwv)))
@@ -107,9 +110,9 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     #tbfil.write('\\tablecomments{This table is available as a YAML file at ')
     #tbfil.write('http://blah')
     #tbfil.write('} \n')
-    tbfil.write('\\multicolumn{6}{l}{{$^a$}{Number of unique sources in the dataset. \\\\ \n}}')
-    tbfil.write('\\multicolumn{6}{l}{{$^b$}{Number of unique spectra in the dataset. \\\\ \n}}')
-    tbfil.write('\\multicolumn{6}{l}{{$^c$}{Characteristic FWHM resolution of the spectra. \\\\ \n}}')
+    tbfil.write('\\multicolumn{6}{l}{{$^a$}{Number of unique sources in the dataset. }} \\\\ \n')
+    tbfil.write('\\multicolumn{6}{l}{{$^b$}{Number of unique spectra in the dataset. }} \\\\ \n')
+    tbfil.write('\\multicolumn{6}{l}{{$^c$}{Characteristic FWHM resolution of the spectra. }} \\\\ \n')
     #tbfil.write('\\tablenotetext{a}{Number of positive detections constraining the model.}')
     # End
     tbfil.write('\\end{tabular} \n')
