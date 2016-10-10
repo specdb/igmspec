@@ -181,10 +181,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     telelist = []
     # Loop
     members = glob.glob(os.getenv('RAW_IGMSPEC')+'/{:s}/*fits'.format(sname))
+    kk = -1
     for jj,member in enumerate(members):
         if 'HD-LLS_DR1.fits' in member:
             continue
-        kk = jj
+        kk += 1
         # Extract
         f = member
         hdu = fits.open(f)
