@@ -124,11 +124,9 @@ def chk_v02(pair_sep=10*u.arcsec):
         # Skip table?
         if np.min(np.abs(igmsp.qcat.cat['RA'][pairs][0]-stbl['RA'])) < 1e-4:
             continue
-        # XQ-100?
+        # XQ-100? -- These have bad coords but have been matched
         if igmsp.qcat.cat['flag_survey'][pairs][1] == 64.:
-            print("Skipping XQ-100")
             pdb.set_trace()
-            continue
         # Print
         print('qq = {:d}'.format(qq))
         print(igmsp.qcat.cat[['RA','DEC','IGM_ID','zem','flag_survey']][pairs])
