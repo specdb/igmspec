@@ -89,6 +89,7 @@ def chk_for_pairs(maindb, pair_sep=10*u.arcsec):
 
 def chk_v02(pair_sep=10*u.arcsec):
     """ Check v02 for pairs
+    
     Returns
     -------
 
