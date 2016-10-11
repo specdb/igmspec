@@ -208,6 +208,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         # Some fiddling about
         for key in ['wave','flux','sig']:
             data[key] = 0.  # Important to init (for compression too)
+        # Double check
+        if kk == 0:
+            assert hdu[1].name == 'ERROR'
+            assert hdu[2].name == 'WAVELENGTH'
+        # Write
         data['flux'][0][:npix] = hdu[0].data
         data['sig'][0][:npix] = hdu[1].data
         data['wave'][0][:npix] = hdu[2].data
