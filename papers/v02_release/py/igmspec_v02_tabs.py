@@ -50,8 +50,8 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     #tbfil.write('\\tabletypesize{\\tiny}\n')
     tbfil.write('\\begin{tabular}{lccccc}\n')
     tbfil.write('Survey & $N_{\\rm source}^a$ \n')
-    tbfil.write('& $N_{\\rm spec}^b$ & $\\lambda_{\\rm min}$\n')
-    tbfil.write('& $\\lambda_{\\rm max}$ & $R^c$ \\\\ \n')
+    tbfil.write('& $N_{\\rm spec}^b$ & $\\lambda_{\\rm min}$ (\\AA) \n')
+    tbfil.write('& $\\lambda_{\\rm max}$ (\\AA) & $R^c$ \\\\ \n')
     #tbfil.write('& References & Website \n')
     #tbfil.write('} \n')
 
@@ -90,9 +90,9 @@ def mktab_datasets(outfil='tab_datasets.tex'):
         sig = igmsp.idb.hdf[survey]['spec']['sig']
         gds = sig > 0.
         gdwv = igmsp.idb.hdf[survey]['spec']['wave'][gds]
-        tbfil.write('& {:0.1f}'.format(np.min(gdwv)))
+        tbfil.write('& {:d}'.format(int(np.round(np.min(gdwv)))))
         # Wave max
-        tbfil.write('& {:0.1f}'.format(np.max(gdwv)))
+        tbfil.write('& {:d}'.format(int(np.round(np.max(gdwv)))))
 
         # R
         tbfil.write('& {:d}'.format(int(np.round(np.median(meta['R'])))))
