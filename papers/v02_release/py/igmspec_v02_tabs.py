@@ -63,8 +63,8 @@ def mktab_datasets(outfil='tab_datasets.tex'):
         if survey == 'quasars':
             continue
         # Restrict
-        if survey != 'HD-LLS_DR1':
-            continue
+        #if survey != 'HD-LLS_DR1':
+        #    continue
         if restrict:
             if survey == 'BOSS_DR12':
                 pdb.set_trace()
