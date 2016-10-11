@@ -90,7 +90,6 @@ def mktab_datasets(outfil='tab_datasets.tex'):
         sig = igmsp.idb.hdf[survey]['spec']['sig']
         gds = sig > 0.
         gdwv = igmsp.idb.hdf[survey]['spec']['wave'][gds]
-        pdb.set_trace()
         tbfil.write('& {:0.1f}'.format(np.min(gdwv)))
         # Wave max
         tbfil.write('& {:0.1f}'.format(np.max(gdwv)))
