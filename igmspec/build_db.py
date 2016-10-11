@@ -67,7 +67,8 @@ def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
     myers.add_to_hdf(hdf)
 
     # Main DB Table
-    maindb, tkeys = sdbbu.start_maindb()
+    maindb, tkeys = sdbbu.start_maindb(extras=dict(IGM_ID=0))
+    pdb.set_trace()
 
     ''' BOSS_DR12 '''
     # Read
