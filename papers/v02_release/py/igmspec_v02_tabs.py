@@ -9,12 +9,10 @@ import json, yaml
 import pdb
 
 from astropy.table import Table
-from astropy import units as u
-from astropy.coordinates import SkyCoord, match_coordinates_sky
+#from astropy import units as u
 
-from linetools.abund import ions as lai
 
-from igmspec.igmspec import IgmSpec
+from specdb.specdb import IgmSpec
 
 
 # Local
@@ -47,33 +45,39 @@ def mktab_datasets(outfil='tab_datasets.tex'):
 
     # Header
     tbfil.write('\\clearpage\n')
-    tbfil.write('\\begin{deluxetable}{lccccccc}\n')
-    tbfil.write('\\rotate\n')
-    tbfil.write('\\tablewidth{0pc}\n')
-    tbfil.write('\\tablecaption{{\\it igmspec} DATASETS \\label{tab:datasets}}\n')
+    tbfil.write('\\begin{table}[ht]\n')
+    tbfil.write('\\caption{{\\it igmspec} DATASETS \\label{tab:datasets}}\n')
     #tbfil.write('\\tabletypesize{\\tiny}\n')
-    tbfil.write('\\tablehead{\\colhead{Survey} & \\colhead{$N_{\\rm source}^a$} \n')
-    tbfil.write('& \\colhead{$N_{\\rm spec}^b$} & \\colhead{$\\lambda_{\\rm min}$}\n')
-    tbfil.write('& \\colhead{$\\lambda_{\\rm max}$} & \\colhead{$R^c$} \n')
-    tbfil.write('& \\colhead{References} & \\colhead{Website} \n')
-    tbfil.write('} \n')
+    tbfil.write('\\begin{tabular}{lccccc}\n')
+    tbfil.write('Survey & $N_{\\rm source}^a$ \n')
+    tbfil.write('& $N_{\\rm spec}^b$ & $\\lambda_{\\rm min}$\n')
+    tbfil.write('& $\\lambda_{\\rm max}$ & $R^c$ \\\\ \n')
+    #tbfil.write('& References & Website \n')
+    #tbfil.write('} \n')
 
-    tbfil.write('\\startdata \n')
+    tbfil.write('\\hline \n')
 
     # Looping on systems
+    restrict = False
     for survey in surveys:
-        # Restrict
-        if survey == 'BOSS_DR12':
-            pdb.set_trace()
-        elif survey == 'SDSS_DR7':
-            print("SKIPPING SDSS FOR NOW")
+        if survey == 'quasars':
             continue
+        # Restrict
+        #if survey != 'HD-LLS_DR1':
+        #    continue
+        if restrict:
+            if survey == 'BOSS_DR12':
+                pdb.set_trace()
+            elif survey == 'SDSS_DR7':
+                print("SKIPPING SDSS FOR NOW")
+                continue
+        print("Working on survey={:s}".format(survey))
         # Setup
-        meta = igmsp.idb.hdf[survey]['meta']
+        meta = Table(igmsp.idb.hdf[survey]['meta'].value)
 
         # Survey
-        survey.replace('_','\\_')
-        tbfil.write(survey)
+        msurvey = survey.replace('_','\\_')
+        tbfil.write(msurvey)
 
         # N sources
         uniq = np.unique(meta['IGM_ID'])
@@ -101,13 +105,17 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     tbfil.write('\\hline \n')
 
 
-    tbfil.write('\\enddata \n')
+    #tbfil.write('\\enddata \n')
     #tbfil.write('\\tablecomments{This table is available as a YAML file at ')
     #tbfil.write('http://blah')
     #tbfil.write('} \n')
-    tbfil.write('\\tablenotetext{a}{Number of positive detections constraining the model.}')
+    tbfil.write('\\multicolumn{6}{l}{{$^a$}{Number of unique sources in the dataset. }} \\\\ \n')
+    tbfil.write('\\multicolumn{6}{l}{{$^b$}{Number of unique spectra in the dataset. }} \\\\ \n')
+    tbfil.write('\\multicolumn{6}{l}{{$^c$}{Characteristic FWHM resolution of the spectra. }} \\\\ \n')
+    #tbfil.write('\\tablenotetext{a}{Number of positive detections constraining the model.}')
     # End
-    tbfil.write('\\end{deluxetable} \n')
+    tbfil.write('\\end{tabular} \n')
+    tbfil.write('\\end{table} \n')
 
     tbfil.close()
 
