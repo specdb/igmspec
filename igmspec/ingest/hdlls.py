@@ -17,7 +17,7 @@ from astropy.io import fits
 
 from linetools import utils as ltu
 
-from specdb.build.utils import chk_meta
+from specdb.build.utils import chk_meta, set_resolution
 
 igms_path = imp.find_module('igmspec')[1]
 
@@ -60,7 +60,7 @@ def meta_for_build():
     meta : Table
     """
     # Cut down to unique QSOs
-    hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1/HD-LLS_DR1.fits.gz')
+    hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1/HD-LLS_DR1.fits')
     names = np.array([name[0:26] for name in hdlls_meta['Name']])
     uni, uni_idx = np.unique(names, return_index=True)
     hdlls_meta = hdlls_meta[uni_idx]
@@ -115,7 +115,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     if len(cut_meta) != len(IDs):
         raise ValueError("Wrong sized table..")
     # DR1 Table by LLS, not spectrum
-    hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1/HD-LLS_DR1.fits.gz')
+    hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1/HD-LLS_DR1.fits')
     nlls = len(hdlls_meta)
 
     # Generate ID array from RA/DEC
@@ -181,8 +181,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     telelist = []
     # Loop
     members = glob.glob(os.getenv('RAW_IGMSPEC')+'/{:s}/*fits'.format(sname))
+    kk = -1
     for jj,member in enumerate(members):
-        kk = jj
+        if 'HD-LLS_DR1.fits' in member:
+            continue
+        kk += 1
         # Extract
         f = member
         hdu = fits.open(f)
@@ -205,6 +208,11 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         # Some fiddling about
         for key in ['wave','flux','sig']:
             data[key] = 0.  # Important to init (for compression too)
+        # Double check
+        if kk == 0:
+            assert hdu[1].name == 'ERROR'
+            assert hdu[2].name == 'WAVELENGTH'
+        # Write
         data['flux'][0][:npix] = hdu[0].data
         data['sig'][0][:npix] = hdu[1].data
         data['wave'][0][:npix] = hdu[2].data
@@ -217,7 +225,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
             telelist.append('Keck-I')
             gratinglist.append('BOTH')
             try:
-                Rlist.append(iiu.set_resolution(head))
+                Rlist.append(set_resolution(head))
             except ValueError:
                 # A few by hand (pulled from Table 1)
                 if 'J073149' in fname:
@@ -251,7 +259,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
             telelist.append('Keck-II')
             gratinglist.append('ECH')
             try:
-                Rlist.append(iiu.set_resolution(head))
+                Rlist.append(set_resolution(head))
             except ValueError:
                 print("Using R=6,000 for ESI")
                 Rlist.append(6000.)
@@ -290,7 +298,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
             else:
                 telelist.append('Magellan/Baade')
             gratinglist.append('N/A')
-            Rlist.append(iiu.set_resolution(head))
+            Rlist.append(set_resolution(head))
             dateobslist.append(head['DATE-OBS'])
         else:  # MagE
             raise ValueError("UH OH")

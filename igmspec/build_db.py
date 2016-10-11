@@ -3,15 +3,17 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import igmspec
+import os, warnings
 
 import h5py
 import json
+import datetime
 import pdb
 
 from specdb import defs
 from specdb.build import utils as sdbbu
 
+import igmspec
 from igmspec.ingest import boss, hdlls, kodiaq, ggg, sdss, hst_z2, myers, twodf, xq100
 from igmspec.ingest import hdla100
 from igmspec.ingest import esidla
@@ -20,13 +22,15 @@ from igmspec.ingest import hst_qso
 from igmspec.ingest import cos_dwarfs
 
 from astropy.table import Table, vstack, Column
+from astropy import units as u
 
 from linetools import utils as ltu
 
 from igmspec.defs import get_survey_dict
 survey_dict = get_survey_dict()
 
-def ver01(test=False, mk_test_file=False, **kwargs):
+
+def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
     """ Build version 1.0
 
     Parameters
@@ -49,13 +53,22 @@ def ver01(test=False, mk_test_file=False, **kwargs):
         test = True
     else:
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    # Chk clobber
+    if os.path.isfile(outfil):
+        if clobber:
+            warnings.warn("Overwriting previous DB file {:s}".format(outfil))
+        else:
+            warnings.warn("Not overwiting previous DB file.  Use clobber=True to do so")
+            return
+    # Begin
     hdf = h5py.File(outfil,'w')
 
     ''' Myers QSOs '''
     myers.add_to_hdf(hdf)
 
     # Main DB Table
-    maindb, tkeys = sdbbu.start_maindb()
+    maindb, tkeys = sdbbu.start_maindb(extras=dict(IGM_ID=0))
+    pdb.set_trace()
 
     ''' BOSS_DR12 '''
     # Read
@@ -129,7 +142,7 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     hdlls_cut, new, hdlls_ids = sdbbu.set_new_ids(maindb, hdlls_meta)
     nnew = np.sum(new)
     # Survey flag
-    flag_s = defs.survey_flag(sname)
+    flag_s = survey_dict[sname]
     hdlls_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
     midx = np.array(maindb['IGM_ID'][hdlls_ids[~new]])
     maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
@@ -168,10 +181,11 @@ def ver01(test=False, mk_test_file=False, **kwargs):
 
     # Finish
     hdf['catalog'] = maindb
+    hdf['catalog'].attrs['NAME'] = 'igmspec'
     hdf['catalog'].attrs['EPOCH'] = 2000.
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
     hdf['catalog'].attrs['VERSION'] = version
-    #hdf['catalog'].attrs['CAT_DICT'] = cdict
+    hdf['catalog'].attrs['CREATION_DATE'] = str(datetime.date.today().strftime('%Y-%b-%d'))
     hdfkeys = hdf.keys()
     for dkey in survey_dict.keys():
         if dkey not in hdfkeys:
@@ -179,9 +193,10 @@ def ver01(test=False, mk_test_file=False, **kwargs):
     hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict))
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
+    print("Update DB info in specdb.defs.dbase_info !!")
 
 
-def ver02(test=False, mk_test_file=False, skip_copy=False):
+def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -216,6 +231,14 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         test = True
     else:
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    # Chk clobber
+    if os.path.isfile(outfil):
+        if clobber:
+            warnings.warn("Overwriting previous DB file {:s}".format(outfil))
+        else:
+            warnings.warn("Not overwiting previous DB file.  Set clobber=True to do so")
+            return
+    # Begin
     hdf = h5py.File(outfil,'w')
 
     # Copy over the old stuff
@@ -380,7 +403,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
         # Read
         xq100_meta = xq100.meta_for_build()
         # IDs
-        xq100_cut, new, xq100_ids = sdbbu.set_new_ids(maindb, xq100_meta)
+        xq100_cut, new, xq100_ids = sdbbu.set_new_ids(maindb, xq100_meta, mtch_toler=10*u.arcsec)  # BAD COORD!!
         nnew = np.sum(new)
         # Survey flag
         flag_s = survey_dict[sname]
@@ -414,15 +437,17 @@ def ver02(test=False, mk_test_file=False, skip_copy=False):
 
     # Finish
     hdf['catalog'] = maindb
+    hdf['catalog'].attrs['NAME'] = 'igmspec'
     hdf['catalog'].attrs['EPOCH'] = 2000.
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
     hdf['catalog'].attrs['Z_PRIORITY'] = zpri
     hdf['catalog'].attrs['VERSION'] = version
+    hdf['catalog'].attrs['CREATION_DATE'] = str(datetime.date.today().strftime('%Y-%b-%d'))
     hdfkeys = hdf.keys()
     for dkey in survey_dict.keys():
         if dkey not in hdfkeys:
             survey_dict.pop(dkey, None)
     hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict))
-    #hdf['catalog'].attrs['CAT_DICT'] = cdict
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
+    print("Update DB info in specdb.defs.dbase_info !!")
