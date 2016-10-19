@@ -20,6 +20,7 @@ from igmspec.ingest import esidla
 from igmspec.ingest import cos_halos
 from igmspec.ingest import hst_qso
 from igmspec.ingest import cos_dwarfs
+from igmspec.ingest import musodla
 
 from astropy.table import Table, vstack, Column
 from astropy import units as u
@@ -275,6 +276,27 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
         # Finish
         test = True
         maindb = dmaindb
+
+    ''' MUSoDLA '''
+    if not mk_test_file:
+        sname = 'MUSoDLA'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        musodla_meta = musodla.meta_for_build()
+        # IDs
+        musodla_cut, new, musodla_ids = sdbbu.set_new_ids(maindb, musodla_meta)
+        nnew = np.sum(new)
+        assert nnew == 0   # These all should be in SDSS (although not necessarily the Schneider catalog)
+        # Survey flag
+        flag_s = survey_dict[sname]
+        musodla_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][musodla_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert sdbbu.chk_maindb_join(maindb, musodla_cut)
+        maindb = vstack([maindb, musodla_cut], join_type='exact')
+        # Update hf5 file
+        musodla.hdf5_adddata(hdf, musodla_ids, sname)#, mk_test_file=mk_test_file)
 
     ''' HSTQSO '''
     if not mk_test_file:

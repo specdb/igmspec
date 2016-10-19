@@ -68,7 +68,7 @@ def meta_for_build():
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
                  mk_test_file=False):
-    """ Append HD-LLS data to the h5 file
+    """ Append HDLA100 data to the h5 file
 
     Parameters
     ----------
