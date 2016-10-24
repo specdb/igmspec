@@ -1,39 +1,31 @@
 .. highlight:: rest
 
-**************
-HD-LLS Dataset
-**************
+***************
+MUSoDLA Dataset
+***************
 
-This document describes the HD-LLS dataset.
+This document describes the MUSoDLA dataset.
 
 Sources
 =======
 
-The high dispersion Lyman Limit System (HD-LLS) sample is a set of
+The Magellan uniform survey of damped Lya systems (MUSoDLA) sample is a set of
 echelle and echellette spectra acquired by
-`Prochaska et al. (2015) <http://adsabs.harvard.edu/abs/2015ApJS..221....2P>`_
-for the analysis of z~3 LLS.
-The quasars are a heterogenous set of sources useful
-for such analysis (ie. bright).
+`Jorgenson et al. (2013) <http://adsabs.harvard.edu/abs/2013MNRAS.435..482J>`_
+for the analysis of z=2-4 DLAs.
+The quasars are an otherwise random set of sources useful
+for such analysis (ie. relatively bright).
 
 
 Meta Data
 =========
 
-The meta data provided with HD-LLS includes information on the
-LLS analyzed:
-
-============  ======== =========================================
-Key           Type     Description
-============  ======== =========================================
-Z_LLS         float    Absorption redshift of the LLS
-log_NHI       float    log10 of the HI column density
-sig(log_NHI)  float(2) log10 of the HI column density uncertainty (lower/upper)
-============  ======== =========================================
+The additional meta data provided better describe the
+observation date of the spectra.
 
 
 Spectra
 =======
 
-These are the DR1 data release of HD-LLS.
-See also: `HD-LLS DR1 <http://www.ucolick.org/~xavier/HD-LLS/DR1/>`_
+The data are normalized.
+

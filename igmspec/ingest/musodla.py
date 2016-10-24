@@ -63,6 +63,19 @@ def grab_meta():
             dinfos.append(str(dinfo[jj]))
             dsplit = dinfo[jj].split(',')
             dates.append(dsplit[-1])
+            # Special case
+            if 'J1201+0116' in row['QSOname']:
+                sfiles[-1] = 'J1201+0116_HIRES_1.3kms.ascii'
+                sfiles.append('J1201+0116_HIRES_2.6kms.ascii')
+                instrs.append(instr)
+                Rs.append(3e5/mRdict[instr])
+                gratings.append(gdict[instr])
+                telescopes.append(tdict[instr])
+                names.append(row['QSOname'])
+                dinfos.append(str(dinfo[jj]))
+                dates.append(dsplit[-1])
+                coords.append(coord)
+                zems.append(row['z_em'])
     # Generate
     meta = Table()
     meta['RA'] = [coord.ra.deg for coord in coords]
@@ -125,8 +138,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     -------
 
     """
-    from specdb import defs
-    from specdb.build.utils import set_resolution, chk_meta
+    from specdb.build.utils import chk_meta
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     hdlls_grp = hdf.create_group(sname)
@@ -155,7 +167,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
 
 
     # Build spectra (and parse for meta)
-    max_npix = 140000  # Just needs to be large enough
+    max_npix = 160000  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
@@ -189,7 +201,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         for key in ['wave','flux','sig']:
             data[key] = 0.  # Important to init (for compression too)
         data['flux'][0][:npix] = spec.flux.value
-        data['sig'][0][:npix] = spec.sig.value
+        if 'MagE' in f:
+            data['sig'][0][:npix] = 1./np.sqrt(spec.sig.value)  # IVAR
+        else:
+            data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
         # Meta
         wvminlist.append(np.min(data['wave'][0][:npix]))
