@@ -6,7 +6,6 @@ import h5py
 
 from astropy.table import Column
 
-from specdb import defs
 from specdb.build import utils as sdbbu
 
 from igmspec.ingest import hst_z2
