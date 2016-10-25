@@ -21,16 +21,24 @@ from linetools import utils as ltu
 
 from specdb.build.utils import chk_meta
 
-#igms_path = imp.find_module('igmspec')[1]
+igms_path = imp.find_module('igmspec')[1]
 
 
-def grab_meta():
+def grab_meta(unit_test=False):
     """ Grab KODIAQ meta Table
+    Parameters
+    ----------
+    unit_test : bool, optional
+      Unit test?
+
     Returns
     -------
 
     """
-    hstz2_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HST_z2/hst_z2.ascii', format='ascii')
+    if unit_test:
+        hstz2_meta = Table.read(igms_path+'/data/HST_z2/hst_z2.ascii', format='ascii')
+    else:
+        hstz2_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HST_z2/hst_z2.ascii', format='ascii')
     # RA/DEC, DATE
     ra = []
     dec = []
@@ -50,14 +58,15 @@ def grab_meta():
     hstz2_meta.rename_column('resolution','R')
     return hstz2_meta
 
-def meta_for_build():
+
+def meta_for_build(unit_test=False):
     """ Generates the meta data needed for the IGMSpec build
     Returns
     -------
     meta : Table
     """
     # Cut down to unique QSOs
-    hstz2_meta = grab_meta()
+    hstz2_meta = grab_meta(unit_test=unit_test)
     names = np.array([name[0:26] for name in hstz2_meta['qso']])
     uni, uni_idx = np.unique(names, return_index=True)
     hstz2_meta = hstz2_meta[uni_idx]
@@ -75,7 +84,7 @@ def meta_for_build():
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
-                 mk_test_file=False):
+                 mk_test_file=False, unit_test=False):
     """ Append HST_z2 data to the h5 file
 
     Parameters
@@ -89,6 +98,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
       Only check meta file;  will not write
     mk_test_file : bool, optional
       Generate the debug test file for Travis??
+    unit_test : bool, optional
+      Unit test?
 
     Returns
     -------
@@ -98,8 +109,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     print("Adding {:s} survey to DB".format(sname))
     hstz2_grp = hdf.create_group(sname)
     # Load up
-    meta = grab_meta()
-    bmeta = meta_for_build()
+    meta = grab_meta(unit_test=unit_test)
+    bmeta = meta_for_build(unit_test=unit_test)
     # Checks
     if sname != 'HST_z2':
         raise IOError("Not expecting this survey..")
