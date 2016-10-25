@@ -28,10 +28,10 @@ def grab_meta():
     """
     # Cut down to unique QSOs
     musodla_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/MUSoDLA/datatab_v2.dat', format='ascii')
-    mdict = {1:'MagE', 2:'XShooter', 3:'UVES', 4:'HIRES'}
-    mRdict = {'MagE':71., 'XShooter':59., 'UVES':7., 'HIRES':7.}
-    gdict = {'MagE':'N/A', 'XShooter':'ALL', 'UVES':'BOTH', 'HIRES':'RED'}
-    tdict = {'MagE':'Magellan', 'XShooter':'VLT', 'UVES':'VLT', 'HIRES':'Keck-I'}
+    mdict = {1:'MagE', 2:'XSHOOTER', 3:'UVES', 4:'HIRES'}
+    mRdict = {'MagE':71., 'XSHOOTER':59., 'UVES':7., 'HIRES':7.}
+    gdict = {'MagE':'N/A', 'XSHOOTER':'ALL', 'UVES':'BOTH', 'HIRES':'RED'}
+    tdict = {'MagE':'Magellan', 'XSHOOTER':'VLT', 'UVES':'VLT', 'HIRES':'Keck-I'}
     coords = []
     zems = []
     instrs = []
