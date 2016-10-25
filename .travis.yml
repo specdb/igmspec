@@ -122,6 +122,7 @@ install:
     - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION psutil; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL git+https://github.com/linetools/linetools.git; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL git+https://github.com/pyigm/pyigm.git; fi
+    - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL git+https://github.com/specdb/specdb.git; fi
     #- if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pyyaml; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION matplotlib; fi
 
