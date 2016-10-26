@@ -41,7 +41,7 @@ def meta_for_build():
     dec = []
     coords = hdla100.coord
     cnt = 0
-    for coord in coords[0]:
+    for coord in coords:
         # Load
         names.append('J{:s}{:s}'.format(coord.ra.to_string(unit=u.hour, sep='', pad=True, precision=2),
                                        coord.dec.to_string(sep='', pad=True, precision=1)))
@@ -68,7 +68,7 @@ def meta_for_build():
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
                  mk_test_file=False):
-    """ Append HD-LLS data to the h5 file
+    """ Append HDLA100 data to the h5 file
 
     Parameters
     ----------

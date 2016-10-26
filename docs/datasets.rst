@@ -22,6 +22,9 @@ Below is the list of surveys included in igmspec v02
 * :doc:`xq100`   [XQ-100]
 * :doc:`cos_halos`   [COS-Halos]
 * :doc:`cos_dwarfs`   [COS-Dwarfs]
+* :doc:`musodla`   [MUSoDLA]
+* :doc:`hst_qso`   [HSTQSO]
+* :doc:`hdla100`   [HDLA100]
 
 Overview
 ========

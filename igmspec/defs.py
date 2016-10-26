@@ -74,6 +74,7 @@ def get_survey_dict():
     survey_dict['COS-Halos'] = 2**10 # Tumlinson et al. 2013
     survey_dict['COS-Dwarfs'] = 2**11 # Bordoloi et al. 2014
     survey_dict['HSTQSO'] = 2**12 # Ribaudo et al. 2011; Neeleman et al. 2016
+    survey_dict['MUSoDLA'] = 2**13 # Jorgensen et al. 2013
     #
     return survey_dict
 
