@@ -34,6 +34,8 @@ t_G160M       float    Exposure time (sec) for the G160M grating
 Visit         str      Visit ID(s)
 ============  ======== =========================================
 
+Use `pyigm <http://https://github.com/pyigm/pyigm>`_
+to access the measurements from the COS-Halos survey.
 
 Spectra
 =======
