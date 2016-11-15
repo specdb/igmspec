@@ -141,7 +141,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
                               (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
+                              (str('co'),   'float32', (max_npix)),
                              ])
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
@@ -156,7 +156,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     badf = []
     badstis = []
     # Loop
-    #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
     path = os.getenv('RAW_IGMSPEC')+'/HST_Cooksey/'
     maxpix = 0
     for jj,row in enumerate(meta):
@@ -234,10 +233,17 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         elif row['INSTR'] == 'STIS':
             try:
                 datet = spec.header['DATE']
-            except KeyError:
-                badstis.append(full_file)
-                datet = '8999-9-9'
-                gratinglist.append('G230M')
+            except KeyError:  # handful of kludged coadds
+                for ihist in spec.header['HISTORY']:
+                    if 'TDATEOBS' in ihist:
+                        idash = ihist.find('-')
+                        datet = ihist[idash-4:idash+6]
+                # Grating from name
+                i0 = full_file.rfind('_')
+                i1 = full_file.rfind('.fits')
+                gratinglist.append(full_file[i0+1:i1])
+                if datet is None:
+                    pdb.set_trace()
             else:
                 gratinglist.append(spec.header['OPT_ELEM'])
         if datet is None:
@@ -263,6 +269,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         spec_set[jj] = data
 
     #
+    if (len(badstis)) > 0:
+        raise ValueError("Somehow have a bad STIS header..")
     if (len(badstis)+len(badf)) > 0:
         print("We still have bad headers")
         pdb.set_trace()
