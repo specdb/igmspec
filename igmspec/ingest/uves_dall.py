@@ -53,16 +53,16 @@ def grab_meta():
     zem, zsource = zem_from_radec(ras, decs, ztbl)
     badz = np.where(zem < 0.1)[0]
     for ibadz in badz:
-        if uvesdall_meta['NAME'] == 'HE2243-6031':
+        if uvesdall_meta['NAME'][ibadz] == 'HE2243-6031':
             zem[ibadz] = 3.005
             zsource[ibadz] = 'FOP13'  # Fumagalli+13
-        elif uvesdall_meta['NAME'] == 'HE1341-1020':
+        elif uvesdall_meta['NAME'][ibadz] == 'HE1341-1020':
             zem[ibadz] = 2.137
             zsource[ibadz] = 'Dall08'  # Dall'Aglio+08
-        elif uvesdall_meta['NAME'] == 'Q0002-422':
+        elif uvesdall_meta['NAME'][ibadz] == 'Q0002-422':
             zem[ibadz] = 2.769
             zsource[ibadz] = 'Dall08'  # Dall'Aglio+08
-        elif uvesdall_meta['NAME'] == 'PKS2000-330':
+        elif uvesdall_meta['NAME'][ibadz] == 'PKS2000-330':
             zem[ibadz] = 3.786
             zsource[ibadz] = 'Dall08'  # Dall'Aglio+08
         else:
