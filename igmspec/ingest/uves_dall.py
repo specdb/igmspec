@@ -51,9 +51,26 @@ def grab_meta():
     igmsp = IgmSpec()
     ztbl = Table(igmsp.idb.hdf['quasars'].value)
     zem, zsource = zem_from_radec(ras, decs, ztbl)
-    pdb.set_trace()
+    badz = np.where(zem < 0.1)[0]
+    for ibadz in badz:
+        if uvesdall_meta['NAME'] == 'HE2243-6031':
+            zem[ibadz] = 3.005
+            zsource[ibadz] = 'FOP13'  # Fumagalli+13
+        elif uvesdall_meta['NAME'] == 'HE1341-1020':
+            zem[ibadz] = 2.137
+            zsource[ibadz] = 'Dall08'  # Dall'Aglio+08
+        elif uvesdall_meta['NAME'] == 'Q0002-422':
+            zem[ibadz] = 2.769
+            zsource[ibadz] = 'Dall08'  # Dall'Aglio+08
+        elif uvesdall_meta['NAME'] == 'PKS2000-330':
+            zem[ibadz] = 3.786
+            zsource[ibadz] = 'Dall08'  # Dall'Aglio+08
+        else:
+            raise ValueError("Should not be here")
+
     uvesdall_meta['sig_zem'] = [0.]*nspec
-    uvesdall_meta['flag_zem'] = [str('SDSS')]*nspec
+    uvesdall_meta['flag_zem'] = zsource
+    pdb.set_trace()
     #
     uvesdall_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     uvesdall_meta.add_column(Column(['VLT']*nspec, name='TELESCOPE'))
