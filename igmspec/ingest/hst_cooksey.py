@@ -271,8 +271,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     #
     if (len(badstis)) > 0:
         raise ValueError("Somehow have a bad STIS header..")
-    if (len(badstis)+len(badf)) > 0:
-        print("We still have bad headers")
+    if len(badf) > 0:
+        print("We still have bad FUSE headers")
         pdb.set_trace()
     print("Max pix = {:d}".format(maxpix))
     # Add columns
