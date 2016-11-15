@@ -20,8 +20,9 @@ zem ~ 0.3 to 1. and bright in the FUV.
 Meta Data
 =========
 
-There is little additional meta data.  Use pyigm
-to get the COS-Dwarfs CGM data.
+There is little additional meta data.
+Use `pyigm <http://https://github.com/pyigm/pyigm>`_
+to access the measurements from the COS-Dwarfs survey.
 
 
 Spectra

@@ -8,7 +8,11 @@ Welcome to the igmspec documentation!
 
 
 igmspec is package for accessing spectra of sources useful
-for probing the intergalactic medium (IGM).
+for probing the intergalactic medium (IGM).  This repository
+enables the construction of the database.
+
+If you simply wish to download and use igmspec, you only need the software
+in the `specdb <http://github.com/specdb/specdb>`_ repository.
 
 
 Contents
@@ -19,7 +23,6 @@ Contents
 
    installing
    datasets
-   scripts
 
 
 Indices and tables

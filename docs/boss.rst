@@ -45,7 +45,8 @@ Spectra
 =======
 
 v1.0 now includes all of the DR12 spectra.  Note that some of these were
-downloaded by JXP (those at z>4.8 and those past v_5_7_0).
+downloaded by JXP (those at z>4.8 and those past v_5_7_0), while
+the rest were kindly provided by G. Zhu.
 
 Continua
 ========
@@ -55,6 +56,8 @@ we use the continua kindly provided by G. Zhu using the methodology
 described in this paper:
 `Zhu et al. 2014 <http://adsabs.harvard.edu/abs/2014MNRAS.439.3139Z>`.
 These are primarily useful for analysis *outside* of the Lya forest.
+Note that these were only generated for sources with z<4.8 and
+for data processed in v_5_7_0.
 
 When available, we have used mean flux regulated continua kindly
 provided by K.G. Lee, as described in these papers:

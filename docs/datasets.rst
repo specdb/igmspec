@@ -22,6 +22,9 @@ Below is the list of surveys included in igmspec v02
 * :doc:`xq100`   [XQ-100]
 * :doc:`cos_halos`   [COS-Halos]
 * :doc:`cos_dwarfs`   [COS-Dwarfs]
+* :doc:`musodla`   [MUSoDLA]
+* :doc:`hst_qso`   [HSTQSO]
+* :doc:`hdla100`   [HDLA100]
 
 Overview
 ========
@@ -62,51 +65,19 @@ TELESCOPE   str      Telescope name (see `Telescopes`_ below for definitions)
 Instruments and Gratings
 ------------------------
 
-The instruments used in igmspec are provided in igmspec.defs.instruments.
-The following Table summarizes and defines the instruments
-used in igmspec v1.0:
+The complete list of instruments that may be
+used in igmspec are provided in the
+`specdb <http://specdb.readthedocs.io/en/latest/>`_
+documentation.
 
-==========  ======== ============================================
-Instrument  Gratings Description
-==========  ======== ============================================
-BOSS        BLUE     Blue channel spectrograph
- ..         RED      Red channel spectrograph
- ..         BOTH     Spectrum includes data from both spectrographs
-ESI         ECH      Echelette mode on Keck/ESI instrument
-GMOS-N      R400     Gemini North GMOS spectrometer
- ..         B600     ..
-GMOS-S      R400     Gemini South GMOS spectrometer
- ..         B600     ..
-HIRES       BLUE     Blue cross-disperser on HIRES (aka HIRESb)
- ..         RED      Red cross-dispereser on HIRES (aka HIRESr)
- ..         BOTH     Spectrum includes data from both cross-dispersers
-MagE        N/A      MagE spectrometer
-MIKEb       BLUE     Blue camera of MIKE spectrometer
-MIKEr       RED      Red camera of MIKE spectrometer
-MIKE        BOTH     Spectrum is a splice of MIKEb and MIKEr data
-SDSS        BLUE     Blue channel spectrograph
- ..         RED      Red channel spectrograph
- ..         BOTH     Spectrum includes data from both spectrographs
-2dF         300B     Blue channel spectrograph
-==========  ======== ============================================
 
 Telescopes
 ----------
 
-Here are the telescopes currently incorporated in igmspec v1.0:
-
-==============  ====================================================
-Telescope       Website
-==============  ====================================================
-Gemini-N        http://www.gemini.edu
-Gemini-S        http://www.gemini.edu
-Keck I          http://www.keckobservatory.org/
-Keck II         http://www.keckobservatory.org/
-Magellan/Clay   http://obs.carnegiescience.edu/Magellan
-Magellan/Baade  http://obs.carnegiescience.edu/Magellan
-SDSS 2.5-M      https://www.sdss3.org/instruments/telescope.php
-UKST            https://www.aao.gov.au/about-us/uk-schmidt-telescope
-==============  ====================================================
+Similarly, the list of telescopes that may be used
+in igmspec are provided in the
+`specdb <http://specdb.readthedocs.io/en/latest/>`_
+documentation.
 
 
 Spectral Data
@@ -124,6 +95,6 @@ sig            float32 Error array; same units as flux
 co (optional)  float32 Continuum array; same units as flux
 =============  ======= =============================================
 
-The software included with igmspec read these data into
+The software included with specdb read these data into
 a XSpectrum1D object from
 `linetools <http://linetools.readthedocs.io/en/latest/>`_.
