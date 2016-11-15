@@ -68,6 +68,7 @@ def grab_meta():
         else:
             raise ValueError("Should not be here")
 
+    uvesdall_meta['zem'] = zem
     uvesdall_meta['sig_zem'] = [0.]*nspec
     uvesdall_meta['flag_zem'] = zsource
     pdb.set_trace()
