@@ -38,6 +38,7 @@ def z_priority():
         str('MCGREER'),
         str('VCV'),
         str('ALLBOSS'),
+        str('Dall08'),     # Dall'Aglio et al. 2008
         str('UNKN'),       # Unknown
     ]
     return zpri
@@ -75,6 +76,7 @@ def get_survey_dict():
     survey_dict['COS-Dwarfs'] = 2**11 # Bordoloi et al. 2014
     survey_dict['HSTQSO'] = 2**12 # Ribaudo et al. 2011; Neeleman et al. 2016
     survey_dict['MUSoDLA'] = 2**13 # Jorgensen et al. 2013
+    survey_dict['UVES_Dall'] = 2**14 # Dall'Aglio et al. 2008
     survey_dict['LowzMetals'] = 2**15 # Cooksey et al. 2010, 2011
     #
     return survey_dict

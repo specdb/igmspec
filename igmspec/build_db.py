@@ -22,6 +22,7 @@ from igmspec.ingest import hst_qso
 from igmspec.ingest import hst_cooksey as hst_c
 from igmspec.ingest import cos_dwarfs
 from igmspec.ingest import musodla
+from igmspec.ingest import uves_dall
 
 from astropy.table import Table, vstack, Column
 from astropy import units as u
@@ -277,6 +278,26 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
         # Finish
         test = True
         maindb = dmaindb
+
+    ''' UVES_Dall '''
+    if not mk_test_file:
+        sname = 'UVES_Dall'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        uvesdall_meta = uves_dall.meta_for_build()
+        # IDs
+        uvesdall_cut, new, uvesdall_ids = sdbbu.set_new_ids(maindb, uvesdall_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = survey_dict[sname]
+        uvesdall_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][uvesdall_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert sdbbu.chk_maindb_join(maindb, uvesdall_cut)
+        maindb = vstack([maindb, uvesdall_cut], join_type='exact')
+        # Update hf5 file
+        uves_dall.hdf5_adddata(hdf, uvesdall_ids, sname)#, mk_test_file=mk_test_file)
 
     ''' HDLA100 '''
     if not mk_test_file:
