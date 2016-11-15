@@ -160,7 +160,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
-    Rlist = []
     wvminlist = []
     wvmaxlist = []
     npixlist = []
