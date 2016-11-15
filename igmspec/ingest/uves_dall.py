@@ -32,7 +32,7 @@ def grab_meta():
 
     """
     #
-    uvesdall_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/UVES_Dall/uves_dall_summ.list', format='ascii')
+    uvesdall_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/UVES_Dall/uves_dall_summ.dat', format='ascii')
     nspec = len(uvesdall_meta)
     # DATE
     #datearr = [day.split('/') for day in list(uvesdall_meta['ObsDate'])]
