@@ -19,7 +19,9 @@ from astropy import units as u
 from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
+from specdb.specdb import IgmSpec
 from specdb.build.utils import chk_meta
+from specdb.zem.utils import zem_from_radec
 
 igms_path = imp.find_module('igmspec')[1]
 
@@ -39,9 +41,17 @@ def grab_meta():
     #ndate = ['20'+str(day[2])+'-'+str(day[0])+'-'+str(day[1]) for day in datearr]
     t = Time(uvesdall_meta['OBS-DATE'], out_subfmt='date')  # Fixes to YYYY-MM-DD
     uvesdall_meta.add_column(Column(t.iso, name='DATE-OBS'))
-    pdb.set_trace()
     # RA/DEC
+    coord = SkyCoord(ra=uvesdall_meta['RA'], dec=uvesdall_meta['DEC'], unit=(u.hour,u.deg))
+    ras = [icoord.ra.value for icoord in coord]
+    decs = [icoord.dec.value for icoord in coord]
+    uvesdall_meta['RA'] = ras
+    uvesdall_meta['DEC'] = decs
     # Add zem
+    igmsp = IgmSpec()
+    ztbl = Table(igmsp.idb.hdf['quasars'].value)
+    zem, zsource = zem_from_radec(ras, decs, ztbl)
+    pdb.set_trace()
     uvesdall_meta['sig_zem'] = [0.]*nspec
     uvesdall_meta['flag_zem'] = [str('SDSS')]*nspec
     #
