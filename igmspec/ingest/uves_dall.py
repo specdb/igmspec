@@ -45,6 +45,8 @@ def grab_meta():
     coord = SkyCoord(ra=uvesdall_meta['RA'], dec=uvesdall_meta['DEC'], unit=(u.hour,u.deg))
     ras = [icoord.ra.value for icoord in coord]
     decs = [icoord.dec.value for icoord in coord]
+    uvesdall_meta.rename_column('RA', 'RA_STR')
+    uvesdall_meta.rename_column('DEC', 'DEC_STR')
     uvesdall_meta['RA'] = ras
     uvesdall_meta['DEC'] = decs
     # Add zem
@@ -71,7 +73,6 @@ def grab_meta():
     uvesdall_meta['zem'] = zem
     uvesdall_meta['sig_zem'] = [0.]*nspec
     uvesdall_meta['flag_zem'] = zsource
-    pdb.set_trace()
     #
     uvesdall_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     uvesdall_meta.add_column(Column(['VLT']*nspec, name='TELESCOPE'))
@@ -82,26 +83,26 @@ def grab_meta():
     uvesdall_meta.sort('RA')
     return uvesdall_meta
 
-def meta_for_build(esidla_meta=None):
+def meta_for_build(uvesdall_meta=None):
     """ Generates the meta data needed for the IGMSpec build
     Returns
     -------
     meta : Table
     """
-    if esidla_meta is None:
-        esidla_meta = grab_meta()
-    nqso = len(esidla_meta)
+    if uvesdall_meta is None:
+        uvesdall_meta = grab_meta()
+    nqso = len(uvesdall_meta)
     #
     meta = Table()
     for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
-        meta[key] = esidla_meta[key]
+        meta[key] = uvesdall_meta[key]
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
-    """ Append ESI data to the h5 file
+    """ Append UVES_Dall data to the h5 file
 
     Parameters
     ----------
@@ -120,7 +121,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     from specdb import defs
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
-    esidla_grp = hdf.create_group(sname)
+    uvesdall_grp = hdf.create_group(sname)
     # Load up
     Rdicts = defs.get_res_dicts()
     meta = grab_meta()
@@ -128,8 +129,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     if len(meta) != len(bmeta):
         raise ValueError("Should be the same size")
     # Checks
-    if sname != 'ESI_DLA':
-        raise IOError("Expecting ESI_DLA!!")
+    if sname != 'UVES_Dall':
+        raise IOError("Expecting UVES_Dall!!")
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")
     # Open Meta tables
@@ -142,18 +143,18 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     # Find new sources
     idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
     if np.sum(d2d > 0.1*u.arcsec):
-        raise ValueError("Bad matches in ESI_DLA")
+        raise ValueError("Bad matches in UVES_Dall")
     meta_IDs = IDs[idx]
     meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 50000  # Just needs to be large enough
+    max_npix = 150000  # Just needs to be large enough
     data = np.ma.empty((1,),
                        dtype=[(str('wave'), 'float64', (max_npix)),
                               (str('flux'), 'float32', (max_npix)),
                               (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
+                              (str('co'),   'float32', (max_npix)),
                              ])
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
@@ -167,42 +168,31 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     # Loop
     maxpix = 0
     for jj,row in enumerate(meta):
-        #
-        specfile = os.getenv('RAW_IGMSPEC')+'/HighzESIDLA/{:s}a_xF.fits'.format(
-            row['Name'])
-        print("ESI_DLA: Reading {:s}".format(specfile))
-        spec = lsio.readspec(specfile)
+        # Read
+        specfile = os.getenv('RAW_IGMSPEC')+'/UVES_Dall/{:s}_flux.dat'.format(row['NAME'])
+        print("UVES_Dall: Reading {:s}".format(specfile))
+        spec = Table.read(specfile,format='ascii.fast_no_header',guess=False)#, data_start=1)
         # Parse name
         fname = specfile.split('/')[-1]
         # npix
-        npix = spec.npix
+        npix = len(spec['col1'])
         if npix > max_npix:
             raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
         else:
             maxpix = max(npix,maxpix)
         # Continuum
         # Some fiddling about
-        for key in ['wave','flux','sig']:
+        for key in ['wave','flux','sig','co']:
             data[key] = 0.  # Important to init (for compression too)
-        data['flux'][0][:npix] = spec.flux.value
-        data['sig'][0][:npix] = spec.sig.value
-        data['wave'][0][:npix] = spec.wavelength.to('AA').value
-        #data['co'][0][:npix] = spec.co.value
+        data['flux'][0][:npix] = spec['col2']
+        data['sig'][0][:npix] = spec['col3']
+        data['wave'][0][:npix] = spec['col1']
+        data['co'][0][:npix] = spec['col4']
         # Meta
-        head = spec.header
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
-        try:
-            Rlist.append(Rdicts['ESI'][head['SLMSKNAM']])
-        except KeyError:
-            if row['Slit'] == 0.75:
-                Rlist.append(Rdicts['ESI']['0.75_arcsec'])
-            elif row['Slit'] == 0.5:
-                Rlist.append(Rdicts['ESI']['0.50_arcsec'])
-            else:
-                pdb.set_trace()
         # Only way to set the dataset correctly
         if chk_meta_only:
             continue
@@ -215,7 +205,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    meta.add_column(Column(Rlist, name='R'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
 
     # Add HDLLS meta to hdf5
@@ -227,10 +216,8 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         raise ValueError("meta file failed")
 
     # References
-    refs = [dict(url='http://adsabs.harvard.edu/abs/2012ApJ...755...89R',
-                 bib='rafelski+12'),
-            dict(url='http://adsabs.harvard.edu/abs/2014ApJ...782L..29R',
-                         bib='rafelski+14'),
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2008A%26A...491..465D',
+                 bib='dallaglio+08'),
             ]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
