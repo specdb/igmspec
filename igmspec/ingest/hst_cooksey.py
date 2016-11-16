@@ -50,8 +50,8 @@ def grab_meta():
             gdm[jj] = False
         if '_E.fits' in row['SPEC_FILE']:
             gdm[jj] = False
-        if row['INSTR'] == 'GHRS':
-            gdm[jj] = False
+        #if row['INSTR'] == 'GHRS':
+        #    gdm[jj] = False
     hstc_meta = hstc_meta[gdm]
     gdf = hstc_meta['INSTR'] == 'FUSE'
     #hstc_meta = hstc_meta[gdf]
@@ -155,6 +155,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     datelist = []
     badf = []
     badstis = []
+    badghrs = []
     # Loop
     path = os.getenv('RAW_IGMSPEC')+'/HST_Cooksey/'
     maxpix = 0
@@ -180,7 +181,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
             # Continuum
             cfile = full_file.replace('.fits', '_c.fits')
             if os.path.isfile(cfile):
-                spec.data['co'][spec.select] = fits.open(cfile)[0].data
+                # Watch that mask!
+                gdp = ~spec.data['flux'][spec.select].mask
+                spec.data['co'][spec.select][gdp] = (fits.open(cfile)[0].data)[gdp]
         # npix
         npix = spec.npix
         if npix > max_npix:
@@ -188,11 +191,16 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         else:
             maxpix = max(npix,maxpix)
         # Some fiddling about
-        for key in ['wave','flux','sig']:
+        for key in ['wave','flux','sig', 'co']:
             data[key] = 0.  # Important to init (for compression too)
         data['flux'][0][:npix] = spec.flux.value
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
+        if spec.co_is_set:
+            try:
+                data['wave'][0][:npix] = spec.co.value
+            except ValueError:
+                pdb.set_trace()
         # Meta
         datet = None
         if row['INSTR'] == 'FUSE':
@@ -200,12 +208,29 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
                 ncards = len(spec.header['HISTORY'])
                 flg_H = True
             else:
+                flg_H = False
                 hdu = fits.open(full_file)
                 head0 = hdu[0].header
-                spec.meta['headers'][spec.select] = head0
                 ncards = len(head0)
-                flg_H = False
-            #
+                # Is this a good one?
+                if 'APER_ACT' in head0:
+                    pass
+                else:  # Need to fight harder for the header
+                    # Look for untrim
+                    untrim = full_file+'.untrim'
+                    if not os.path.isfile(untrim):
+                        pdb.set_trace()
+                    # Read
+                    hduu = fits.open(untrim)
+                    if 'PKS2005' in untrim:  # One extra kludge..
+                        head0 = hduu[1].header
+                        flg_H = True
+                        ncards = len(head0['HISTORY'])
+                    else:
+                        head0 = hduu[0].header
+                        ncards = len(head0)
+                spec.meta['headers'][spec.select] = head0
+            # Read from history
             for ss in range(ncards):
                 if flg_H:
                     try:
@@ -246,6 +271,26 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
                     pdb.set_trace()
             else:
                 gratinglist.append(spec.header['OPT_ELEM'])
+        elif row['INSTR'] == 'GHRS':
+            # Date
+            try:
+                tmp = spec.header['DATE-OBS']
+            except KeyError:
+                badghrs.append(full_file)
+                datet = '9999-9-9'
+                gratinglist.append('G140L')
+            else:
+                # Reformt
+                prs = tmp.split('/')
+                if prs[2][0] == '9':
+                    yr = '19'+prs[2]
+                else:
+                    yr = '20'+prs[2]
+                datet = yr+'-'+prs[1]+'-{:02d}'.format(int(prs[0]))
+                # Grating
+                gratinglist.append(spec.header['GRATING'])
+        else:
+            pdb.set_trace()
         if datet is None:
             try:
                 datet = spec.header['DATE-OBS']
@@ -274,6 +319,9 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     if len(badf) > 0:
         print("We still have bad FUSE headers")
         pdb.set_trace()
+    if len(badghrs) > 0:
+        print("We still have bad GHRS headers")
+        pdb.set_trace()
     print("Max pix = {:d}".format(maxpix))
     # Add columns
     meta.add_column(Column(npixlist, name='NPIX'))
@@ -290,6 +338,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
             pdb.set_trace()
         hdf[sname]['meta'] = meta
     else:
+        pdb.set_trace()
         raise ValueError("meta file failed")
     # References
     refs = [dict(url='http://adsabs.harvard.edu/abs/2010ApJ...708..868C',
