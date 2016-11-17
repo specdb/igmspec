@@ -276,19 +276,32 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
             try:
                 tmp = spec.header['DATE-OBS']
             except KeyError:
-                badghrs.append(full_file)
-                datet = '9999-9-9'
-                gratinglist.append('G140L')
+                # Pull header from parallel file
+                iM = full_file.find('M_1')
+                if iM <= 0:
+                    iM = full_file.find('L_1')
+                ofile = full_file[:iM+1]+'_F.fits'
+                if not os.path.isfile(ofile):
+                    if 'NGC4151' in ofile:  # Kludge
+                        ofile = ofile.replace('G160M', 'G160Mmd')
+                    elif 'PKS2155-304_GHRS_G140L' in ofile:  # Kludge
+                        ofile = ofile.replace('G140L', 'G140Llo')
+                    elif 'PKS2155-304_GHRS_G160M' in ofile:  # Kludge
+                        ofile = ofile.replace('G160M', 'G160Mmd')
+                    else:
+                        pdb.set_trace()
+                hdu = fits.open(ofile)
+                head0 = hdu[0].header
+                spec.meta['headers'][spec.select] = head0
+            # Reformat
+            prs = tmp.split('/')
+            if prs[2][0] == '9':
+                yr = '19'+prs[2]
             else:
-                # Reformt
-                prs = tmp.split('/')
-                if prs[2][0] == '9':
-                    yr = '19'+prs[2]
-                else:
-                    yr = '20'+prs[2]
-                datet = yr+'-'+prs[1]+'-{:02d}'.format(int(prs[0]))
-                # Grating
-                gratinglist.append(spec.header['GRATING'])
+                yr = '20'+prs[2]
+            datet = yr+'-'+prs[1]+'-{:02d}'.format(int(prs[0]))
+            # Grating
+            gratinglist.append(spec.header['GRATING'])
         else:
             pdb.set_trace()
         if datet is None:

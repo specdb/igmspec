@@ -10,32 +10,25 @@ Sources
 =======
 
 
-\cite{ribaudo11} and \cite{neeleman+16}
-`Ribaudo et al. (2011) <http://adsabs.harvard.edu/abs/2011ApJ...736...42R>`_
-and
-`Neelman et al. (2016) <http://adsabs.harvard.edu/abs/2016ApJ...818..113N>`_
-compiled nearly the entire set of UV spectra of
-quasars and AGN available in the HST archive
-to survey for Lyman limit and damped Lya systems.
-This includes the Faint Object Spectrometer dataset compiled by
-`Bechtold et al. (2002) <http://adsabs.harvard.edu/abs/2002ApJS..140..143B>`_
-and data from STIS
-and COS (Lehner et al., in prep.).
+`Cooksey et al. (2010) <http://adsabs.harvard.edu/abs/2010ApJ...708..868C>'_
+complied the overwhelming majority of STIS and GHRS spectra on AGN obtained
+prior to the SM4 mission (i.e. the installation of COS).  This yielded 69
+sources.  They then processed any FUSE data associated with this sample.
 
+All of these data are provided in igmspec.
 
 
 Meta Data
 =========
 
-The meta data include alternate QSO names.
-For the COS spectra, we include a combined G130M and G160M
-where applicable and report the DATE-OBS of the G130M data.
-
+The meta data includes the reference for each spectrum
+in "Ref".
 
 
 Spectra
 =======
 
 All data were reduced with the standard HST pipelines.
-The COS spectra were coadded with custom algorithms
-(see Lehner et al., in prep).
+Custom reductions of the FUSE spectra were performed.
+
+The majority of spectra include a continuum.
