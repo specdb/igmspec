@@ -10,7 +10,7 @@ Sources
 =======
 
 
-`Cooksey et al. (2010) <http://adsabs.harvard.edu/abs/2010ApJ...708..868C>'_
+`Cooksey et al. (2010) <http://adsabs.harvard.edu/abs/2010ApJ...708..868C>`_
 complied the overwhelming majority of STIS and GHRS spectra on AGN obtained
 prior to the SM4 mission (i.e. the installation of COS).  This yielded 69
 sources.  They then processed any FUSE data associated with this sample.
