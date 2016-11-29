@@ -25,6 +25,8 @@ Below is the list of surveys included in igmspec v02
 * :doc:`musodla`   [MUSoDLA]
 * :doc:`hst_qso`   [HSTQSO]
 * :doc:`hdla100`   [HDLA100]
+* :doc:`uvpsm4`   [UVpSM4]
+* :doc:`uves_dall`   [UVES_Dall]
 
 Overview
 ========

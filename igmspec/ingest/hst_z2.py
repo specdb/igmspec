@@ -8,8 +8,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import pdb
 import warnings
-import os, json, glob, imp
-import datetime
+import os, json
 
 from astropy.table import Table, Column
 from astropy.coordinates import SkyCoord, match_coordinates_sky

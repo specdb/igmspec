@@ -19,6 +19,7 @@ from igmspec.ingest import hdla100
 from igmspec.ingest import esidla
 from igmspec.ingest import cos_halos
 from igmspec.ingest import hst_qso
+from igmspec.ingest import hst_cooksey as hst_c
 from igmspec.ingest import cos_dwarfs
 from igmspec.ingest import musodla
 from igmspec.ingest import uves_dall
@@ -277,6 +278,27 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
         # Finish
         test = True
         maindb = dmaindb
+
+    ''' UVpSM4 '''
+    if not mk_test_file:
+        sname = 'UVpSM4'
+        print('===============\n Doing {:s} \n==============\n'.format(sname))
+        # Read
+        hstc_meta = hst_c.meta_for_build()
+        # IDs
+        hstc_cut, new, hstc_ids = sdbbu.set_new_ids(maindb, hstc_meta)
+        nnew = np.sum(new)
+        # Survey flag
+        flag_s = survey_dict[sname]
+        hstc_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+        midx = np.array(maindb['IGM_ID'][hstc_ids[~new]])
+        maindb['flag_survey'][midx] += flag_s
+        # Append
+        assert sdbbu.chk_maindb_join(maindb, hstc_cut)
+        maindb = vstack([maindb, hstc_cut], join_type='exact')
+        # Update hf5 file
+        #if (not test):# or mk_test_file:
+        hst_c.hdf5_adddata(hdf, hstc_ids, sname, mk_test_file=mk_test_file)
 
     ''' UVES_Dall '''
     if not mk_test_file:

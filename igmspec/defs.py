@@ -77,6 +77,7 @@ def get_survey_dict():
     survey_dict['HSTQSO'] = 2**12 # Ribaudo et al. 2011; Neeleman et al. 2016
     survey_dict['MUSoDLA'] = 2**13 # Jorgensen et al. 2013
     survey_dict['UVES_Dall'] = 2**14 # Dall'Aglio et al. 2008
+    survey_dict['UVpSM4'] = 2**15    # Cooksey et al. 2010, 2011
     #
     return survey_dict
 
