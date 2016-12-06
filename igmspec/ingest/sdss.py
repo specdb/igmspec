@@ -70,15 +70,23 @@ def grab_meta(old=False):
         sdss_meta.rename_column('DECOBJ', 'DEC')
         sdss_meta.rename_column('Z_ERR', 'sig_zem')
     else:
-        sdss_meta.rename_column('z', 'zem')
+        sdss_meta.rename_column('z', 'zem_GROUP')
         sdss_meta['sig_zem'] = 0.
         sdss_meta['flag_zem'] = '          '
     # Sort
     sdss_meta.sort('RA')
+    # Rename
+    sdss_meta.rename_column('RA', 'RA_GROUP')
+    sdss_meta.rename_column('DEC', 'DEC_GROUP')
+    # Add
+    sdss_meta['STYPE'] = [str('QSO')]*nspec
+    # Check
+    assert chk_meta(sdss_meta, chk_cat_only=True)
     # Return
     return sdss_meta
 
 
+'''
 def meta_for_build(old=False):
     """ Load the meta info
 
@@ -121,9 +129,10 @@ def meta_for_build(old=False):
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=None, **kwargs):
+def hdf5_adddata(hdf, sname, debug=False, chk_meta_only=False, sdss_hdf=None, **kwargs):
     """ Add SDSS data to the DB
 
     Parameters

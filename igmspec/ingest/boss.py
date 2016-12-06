@@ -54,18 +54,25 @@ def grab_meta():
     boss_meta.add_column(Column([2100.]*nboss, name='R'))  # RESOLUTION
     boss_meta.add_column(Column(['SDSS 2.5-M']*nboss, name='TELESCOPE'))
     # Redshift logic
-    boss_meta['zem'] = boss_meta['Z_PCA']
+    boss_meta['zem_GROUP'] = boss_meta['Z_PCA']
     boss_meta['sig_zem'] = boss_meta['ERR_ZPCA']
     boss_meta['flag_zem'] = [str('BOSS_PCA ')]*nboss
     # Fix bad redshifts
     bad_pca = boss_meta['Z_PCA'] < 0.
-    boss_meta['zem'][bad_pca] = boss_meta['Z_PIPE'][bad_pca]
+    boss_meta['zem_GROUP'][bad_pca] = boss_meta['Z_PIPE'][bad_pca]
     boss_meta['sig_zem'][bad_pca] = boss_meta['ERR_ZPIPE'][bad_pca]
     boss_meta['flag_zem'][bad_pca] = str('BOSS_PIPE')
-    #
+    # Rename RA/DEC
+    boss_meta.rename_column('RA', 'RA_GROUP')
+    boss_meta.rename_column('DEC', 'DEC_GROUP')
+    # STYPE
+    boss_meta['STYPE'] = [str('QSO')]*len(boss_meta)
+    # Check
+    assert chk_meta(boss_meta, chk_cat_only=True)
+    # Return
     return boss_meta
 
-
+'''
 def meta_for_build():
     """ Load the meta info
     DR12 quasars : https://data.sdss.org/datamodel/files/BOSS_QSO/DR12Q/DR12Q.html
@@ -76,7 +83,7 @@ def meta_for_build():
     """
     boss_meta = grab_meta()
     # Cut down to unique
-    c_main = SkyCoord(ra=boss_meta['RA'], dec=boss_meta['DEC'], unit='deg')
+    c_main = SkyCoord(ra=boss_meta['RA_SPEC'], dec=boss_meta['DEC_SPEC'], unit='deg')
     idx, d2d, d3d = match_coordinates_sky(c_main, c_main, nthneighbor=2)
     dups = np.where(d2d < 2*u.arcsec)[0]
     flgs = np.array([True]*len(boss_meta))
@@ -94,6 +101,7 @@ def meta_for_build():
     meta['STYPE'] = [str('QSO')]*len(meta)
     # Return
     return meta
+'''
 
 
 def get_specfil(row, KG=False, hiz=False):
@@ -129,7 +137,7 @@ def get_specfil(row, KG=False, hiz=False):
     return specfil
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=None, **kwargs):
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, boss_hdf=None, **kwargs):
     """ Add BOSS data to the DB
 
     Parameters
@@ -155,17 +163,13 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
         boss_hdf.copy(sname, hdf)
         return
     boss_grp = hdf.create_group(sname)
+
+    '''
     # Load up
-    meta = grab_meta()
     bmeta = meta_for_build()
     # Checks
     if sname != 'BOSS_DR12':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
 
     # Generate ID array from RA/DEC
     c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
@@ -174,10 +178,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
     idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
     if np.sum(d2d > 1.2*u.arcsec):  # There is one system offset by 1.1"
         raise ValueError("Bad matches in BOSS")
-    meta_IDs = IDs[idx]
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
-
-    # Sort
+    '''
 
     # Build spectra (and parse for meta)
     nspec = len(meta)

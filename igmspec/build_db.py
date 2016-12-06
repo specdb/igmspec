@@ -53,7 +53,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
     if mk_test_file:
         outfil = igmspec.__path__[0]+'/tests/files/IGMspec_DB_{:s}_debug.hdf5'.format(version)
         print("Building debug file: {:s}".format(outfil))
-        test = True
+        tess = True
     else:
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     # Chk clobber
@@ -61,61 +61,62 @@ def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
         if clobber:
             warnings.warn("Overwriting previous DB file {:s}".format(outfil))
         else:
-            warnings.warn("Not overwiting previous DB file.  Use clobber=True to do so")
+            warnings.warn("Not overwiting previous DB file.  Set clobber=True if you wish")
             return
     # Begin
     hdf = h5py.File(outfil,'w')
 
     ''' Myers QSOs '''
-    myers.add_to_hdf(hdf)
+    warnings.warn("TURN MYERS BACK ON!!")
+    #myers.add_to_hdf(hdf)
 
     # Main DB Table
-    maindb, tkeys = sdbbu.start_maindb(extras=dict(IGM_ID=0))
-    pdb.set_trace()
+    idkey = 'IGM_ID'
+    maindb, tkeys = sdbbu.start_maindb(idkey)
+
+    # Group dict
+    group_dict = {}
+
 
     ''' BOSS_DR12 '''
     # Read
-    sname = 'BOSS_DR12'
-    boss_meta = boss.meta_for_build()
-    nboss = len(boss_meta)
-    # IDs
-    boss_ids = np.arange(nboss,dtype=int)
-    boss_meta.add_column(Column(boss_ids, name='IGM_ID'))
+    gname = 'BOSS_DR12'
+    # Meta
+    boss_meta = boss.grab_meta()
     # Survey flag
-    flag_s = survey_dict[sname]
-    boss_meta.add_column(Column([flag_s]*nboss, name='flag_survey'))
-    # Check
-    assert sdbbu.chk_maindb_join(maindb, boss_meta)
-    # Append
-    maindb = vstack([maindb,boss_meta], join_type='exact')
+    flag_g = sdbbu.add_to_group_dict(gname, group_dict)
+    # IDs -- BOSS DR12 has one pair with separation 1.2"
+    maindb = sdbbu.add_ids(maindb, boss_meta, flag_g, tkeys, idkey, first=(flag_g==1))#, match_toler=1.1*u.arcsec)
+    #
     if mk_test_file:
-        maindb = maindb[1:100]  # Eliminate dummy line
-    else:
-        maindb = maindb[1:]  # Eliminate dummy line
-    tmp=sdbbu.chk_for_duplicates(maindb)
+        maindb = maindb[:100]
+    tmp=sdbbu.chk_for_duplicates(maindb) # Just do this for BOSS
+    pdb.set_trace()
     if not test:
-        boss.hdf5_adddata(hdf, boss_ids, sname, **kwargs)
+        boss.hdf5_adddata(hdf, gname, boss_meta, **kwargs)
 
     ''' SDSS DR7'''
-    sname = 'SDSS_DR7'
+    gname = 'SDSS_DR7'
     print('===============\n Doing {:s} \n===============\n'.format(sname))
-    sdss_meta = sdss.meta_for_build()
-    # IDs
-    sdss_cut, new, sdss_ids = sdbbu.set_new_ids(maindb, sdss_meta)
-    nnew = np.sum(new)
+    sdss_meta = sdss.grab_meta()
     # Survey flag
-    flag_s = survey_dict[sname]
-    sdss_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    midx = np.array(maindb['IGM_ID'][sdss_ids[~new]])
-    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
+    flag_g = sdbbu.add_to_group_dict(gname, group_dict)
+    #flag_s = survey_dict[sname]
+    #sdss_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
+    #midx = np.array(maindb['IGM_ID'][sdss_ids[~new]])
+    #maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
+    # IDs
+    maindb = sdbbu.add_ids(maindb, sdss_meta, flag_g, tkeys, idkey, first=(flag_g==1))
+    #sdss_cut, new, sdss_ids = sdbbu.set_new_ids(maindb, sdss_meta)
+    #nnew = np.sum(new)
     # Append
-    assert sdbbu.chk_maindb_join(maindb, sdss_cut)
-    if mk_test_file:
-        sdss_cut = sdss_cut[0:100]
-    maindb = vstack([maindb, sdss_cut], join_type='exact')
+    #assert sdbbu.chk_maindb_join(maindb, sdss_cut)
+    #if mk_test_file:
+    #    sdss_cut = sdss_cut[0:100]
+    #maindb = vstack([maindb, sdss_cut], join_type='exact')
     # Update hf5 file
     #if not test:
-    sdss.hdf5_adddata(hdf, sdss_ids, sname, **kwargs)
+    sdss.hdf5_adddata(hdf, gname, **kwargs)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'
