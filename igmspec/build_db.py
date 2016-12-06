@@ -29,11 +29,13 @@ from astropy import units as u
 
 from linetools import utils as ltu
 
+from specdb.specdb import IgmSpec
+
 from igmspec.defs import get_survey_dict
 survey_dict = get_survey_dict()
 
 
-def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
+def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
     """ Build version 1.0
 
     Parameters
@@ -53,7 +55,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
     if mk_test_file:
         outfil = igmspec.__path__[0]+'/tests/files/IGMspec_DB_{:s}_debug.hdf5'.format(version)
         print("Building debug file: {:s}".format(outfil))
-        tess = True
+        test = True
     else:
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     # Chk clobber
@@ -67,8 +69,11 @@ def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
     hdf = h5py.File(outfil,'w')
 
     ''' Myers QSOs '''
-    warnings.warn("TURN MYERS BACK ON!!")
-    #myers.add_to_hdf(hdf)
+    if True:
+        igmsp = IgmSpec()
+        igmsp.hdf.copy('quasars', hdf)
+    else:
+        myers.add_to_hdf(hdf)
 
     # Main DB Table
     idkey = 'IGM_ID'
@@ -91,32 +96,25 @@ def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
     if mk_test_file:
         maindb = maindb[:100]
     tmp=sdbbu.chk_for_duplicates(maindb) # Just do this for BOSS
-    pdb.set_trace()
-    if not test:
+    #if not test:
+    if True:
+        warnings.warn("INGEST BOSS SPECTRA!!")
+    else:
         boss.hdf5_adddata(hdf, gname, boss_meta, **kwargs)
 
     ''' SDSS DR7'''
     gname = 'SDSS_DR7'
-    print('===============\n Doing {:s} \n===============\n'.format(sname))
-    sdss_meta = sdss.grab_meta()
+    print('===============\n Doing {:s} \n===============\n'.format(gname))
+    sdss_meta = sdss.grab_meta(hdf)  # Need Myers
     # Survey flag
     flag_g = sdbbu.add_to_group_dict(gname, group_dict)
-    #flag_s = survey_dict[sname]
-    #sdss_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    #midx = np.array(maindb['IGM_ID'][sdss_ids[~new]])
-    #maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
     # IDs
-    maindb = sdbbu.add_ids(maindb, sdss_meta, flag_g, tkeys, idkey, first=(flag_g==1))
-    #sdss_cut, new, sdss_ids = sdbbu.set_new_ids(maindb, sdss_meta)
-    #nnew = np.sum(new)
-    # Append
-    #assert sdbbu.chk_maindb_join(maindb, sdss_cut)
-    #if mk_test_file:
-    #    sdss_cut = sdss_cut[0:100]
-    #maindb = vstack([maindb, sdss_cut], join_type='exact')
-    # Update hf5 file
-    #if not test:
-    sdss.hdf5_adddata(hdf, gname, **kwargs)
+    maindb = sdbbu.add_ids(maindb, sdss_meta, flag_g, tkeys, idkey, first=(flag_g==1), close_pairs=True) # One at 1.7"
+    # Spectra
+    if False:
+        warnings.warn("INGEST SDSS SPECTRA!!")
+    else:
+        sdss.hdf5_adddata(hdf, gname, sdss_meta, **kwargs)
 
     ''' KODIAQ DR1 '''
     sname = 'KODIAQ_DR1'

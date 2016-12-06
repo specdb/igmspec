@@ -18,6 +18,7 @@ from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
 from specdb.build.utils import chk_meta
+from specdb.build.utils import init_data
 
 
 def get_specfil(row, dr7=False):
@@ -43,13 +44,14 @@ def get_specfil(row, dr7=False):
     return specfil
 
 
-def grab_meta(old=False):
+def grab_meta(hdf, old=False):
     """ Grab SDSS meta Table
 
     Returns
     -------
     meta
     """
+    from specdb.zem.utils import zem_from_radec
     #sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/SDSS_DR7_qso.fits.gz')
     sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/dr7qso.fit.gz')
     nspec = len(sdss_meta)
@@ -69,10 +71,18 @@ def grab_meta(old=False):
         sdss_meta.rename_column('RAOBJ', 'RA')
         sdss_meta.rename_column('DECOBJ', 'DEC')
         sdss_meta.rename_column('Z_ERR', 'sig_zem')
+        pdb.set_trace()
     else:
         sdss_meta.rename_column('z', 'zem_GROUP')
         sdss_meta['sig_zem'] = 0.
         sdss_meta['flag_zem'] = '          '
+    # Fix zem
+    zem, zsource = zem_from_radec(sdss_meta['RA'], sdss_meta['DEC'], hdf['quasars'].value, toler=1.0*u.arcsec)
+    gdz = zem > 0.
+    sdss_meta['zem_GROUP'][gdz] = zem[gdz]
+    sdss_meta['flag_zem'] = zsource
+    sdss_meta['flag_zem'][~gdz] = 'SDSS-DR7'
+
     # Sort
     sdss_meta.sort('RA')
     # Rename
@@ -132,7 +142,7 @@ def meta_for_build(old=False):
 '''
 
 
-def hdf5_adddata(hdf, sname, debug=False, chk_meta_only=False, sdss_hdf=None, **kwargs):
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, sdss_hdf=None, **kwargs):
     """ Add SDSS data to the DB
 
     Parameters
@@ -149,7 +159,6 @@ def hdf5_adddata(hdf, sname, debug=False, chk_meta_only=False, sdss_hdf=None, **
     -------
 
     """
-    from specdb.zem.utils import zem_from_radec
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     if sdss_hdf is not None:
@@ -158,44 +167,14 @@ def hdf5_adddata(hdf, sname, debug=False, chk_meta_only=False, sdss_hdf=None, **
         return
     sdss_grp = hdf.create_group(sname)
     # Load up
-    meta = grab_meta()
-    bmeta = meta_for_build()
     # Checks
     if sname != 'SDSS_DR7':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
-
-    # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 1.2*u.arcsec):  # There is one system offset by 1.1"
-        raise ValueError("Bad matches in SDSS")
-    meta_IDs = IDs[idx]
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
-
-    # Fix zem
-    zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], hdf['quasars'].value)
-    gdz = zem > 0.
-    meta['zem'][gdz] = zem[gdz]
-    meta['flag_zem'] = zsource
-    meta['flag_zem'][~gdz] = 'SDSS-DR7'
-
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
     max_npix = 4000  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
-                             ])
+    data = init_data(max_npix, include_co=False)
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
@@ -245,7 +224,7 @@ def hdf5_adddata(hdf, sname, debug=False, chk_meta_only=False, sdss_hdf=None, **
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(np.arange(nspec,dtype=int),name='GROUP_ID'))
 
     # Add HDLLS meta to hdf5
     if chk_meta(meta):
