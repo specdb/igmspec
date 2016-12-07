@@ -82,7 +82,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
     # Group dict
     group_dict = {}
 
-
+    skip_boss_sdss = False
     ''' BOSS_DR12 '''
     # Read
     gname = 'BOSS_DR12'
@@ -97,7 +97,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
         maindb = maindb[:100]
     tmp=sdbbu.chk_for_duplicates(maindb) # Just do this for BOSS
     #if not test:
-    if True:
+    if skip_boss_sdss:
         warnings.warn("INGEST BOSS SPECTRA!!")
     else:
         boss.hdf5_adddata(hdf, gname, boss_meta, **kwargs)
@@ -105,83 +105,65 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
     ''' SDSS DR7'''
     gname = 'SDSS_DR7'
     print('===============\n Doing {:s} \n===============\n'.format(gname))
+    # Meta
     sdss_meta = sdss.grab_meta(hdf)  # Need Myers
     # Survey flag
     flag_g = sdbbu.add_to_group_dict(gname, group_dict)
     # IDs
     maindb = sdbbu.add_ids(maindb, sdss_meta, flag_g, tkeys, idkey, first=(flag_g==1), close_pairs=True) # One at 1.7"
     # Spectra
-    if False:
+    if skip_boss_sdss:
         warnings.warn("INGEST SDSS SPECTRA!!")
     else:
         sdss.hdf5_adddata(hdf, gname, sdss_meta, **kwargs)
 
     ''' KODIAQ DR1 '''
-    sname = 'KODIAQ_DR1'
-    print('==================\n Doing {:s} \n==================\n'.format(sname))
-    kodiaq_meta = kodiaq.meta_for_build()
-    # IDs
-    kodiaq_cut, new, kodiaq_ids = sdbbu.set_new_ids(maindb, kodiaq_meta)
-    nnew = np.sum(new)
+    gname = 'KODIAQ_DR1'
+    print('==================\n Doing {:s} \n==================\n'.format(gname))
+    # Meta
+    kodiaq_meta = kodiaq.grab_meta()
     # Survey flag
-    flag_s = survey_dict[sname]
-    kodiaq_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    midx = np.array(maindb['IGM_ID'][kodiaq_ids[~new]])
-    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
-    # Append
-    assert sdbbu.chk_maindb_join(maindb, kodiaq_cut)
-    maindb = vstack([maindb,kodiaq_cut], join_type='exact')
+    flag_g = sdbbu.add_to_group_dict(gname, group_dict)
+    # IDs
+    maindb = sdbbu.add_ids(maindb, kodiaq_meta, flag_g, tkeys, idkey, first=(flag_g==1))#, close_pairs=True) # One at 1.7"
     # Update hf5 file
-    if not test:
-        kodiaq.hdf5_adddata(hdf, kodiaq_ids, sname)
+    kodiaq.hdf5_adddata(hdf, gname, kodiaq_meta)
 
     ''' HD-LLS '''
-    sname = 'HD-LLS_DR1'
-    print('===============\n Doing {:s} \n==============\n'.format(sname))
-    # Read
-    hdlls_meta = hdlls.meta_for_build()
-    # IDs
-    hdlls_cut, new, hdlls_ids = sdbbu.set_new_ids(maindb, hdlls_meta)
-    nnew = np.sum(new)
+    gname = 'HD-LLS_DR1'
+    print('===============\n Doing {:s} \n==============\n'.format(gname))
+    # Meta
+    hdlls_meta = hdlls.grab_meta()
     # Survey flag
-    flag_s = survey_dict[sname]
-    hdlls_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    midx = np.array(maindb['IGM_ID'][hdlls_ids[~new]])
-    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
-    # Append
-    assert sdbbu.chk_maindb_join(maindb, hdlls_cut)
-    maindb = vstack([maindb,hdlls_cut], join_type='exact')
+    flag_g = sdbbu.add_to_group_dict(gname, group_dict)
+    # IDs
+    maindb = sdbbu.add_ids(maindb, hdlls_meta, flag_g, tkeys, idkey, first=(flag_g==1))#, close_pairs=True) # One at 1.7"
     # Update hf5 file
-    if (not test) or mk_test_file:
-        hdlls.hdf5_adddata(hdf, hdlls_ids, sname, mk_test_file=mk_test_file)
+    hdlls.hdf5_adddata(hdf, gname, hdlls_meta)
 
     ''' GGG '''
-    sname = 'GGG'
-    print('===============\n Doing {:s} \n==============\n'.format(sname))
-    ggg_meta = ggg.meta_for_build()
-    # IDs
-    ggg_cut, new, ggg_ids = sdbbu.set_new_ids(maindb, ggg_meta)
-    nnew = np.sum(new)
+    gname = 'GGG'
+    print('===============\n Doing {:s} \n==============\n'.format(gname))
+    # Meta
+    ggg_meta = ggg.grab_meta()
     # Survey flag
-    flag_s = survey_dict[sname]
-    ggg_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-    midx = np.array(maindb['IGM_ID'][ggg_ids[~new]])
-    maindb['flag_survey'][midx] += flag_s   # ASSUMES NOT SET ALREADY
-    # Append
-    assert sdbbu.chk_maindb_join(maindb, ggg_cut)
-    maindb = vstack([maindb,ggg_cut], join_type='exact')
+    flag_g = sdbbu.add_to_group_dict(gname, group_dict)
+    # IDs
+    maindb = sdbbu.add_ids(maindb, ggg_meta, flag_g, tkeys, idkey, first=(flag_g==1))#, close_pairs=True) # One at 1.7"
     # Update hf5 file
-    if not mk_test_file:
-        ggg.hdf5_adddata(hdf, ggg_ids, sname)
+    ggg.hdf5_adddata(hdf, gname, ggg_meta)
 
-    # Check for duplicates
-    if not sdbbu.chk_for_duplicates(maindb):
+
+    # Check for duplicates -- There is 1 pair in SDSS (i.e. 2 duplicates)
+    if not sdbbu.chk_for_duplicates(maindb, dup_lim=2):
         raise ValueError("Failed duplicates")
 
     # Check for junk
     zpri = defs.z_priority()
 
     # Finish
+    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri, group_dict, version)
+    '''
     hdf['catalog'] = maindb
     hdf['catalog'].attrs['NAME'] = 'igmspec'
     hdf['catalog'].attrs['EPOCH'] = 2000.
@@ -194,6 +176,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
             survey_dict.pop(dkey, None)
     hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict))
     hdf.close()
+    '''
     print("Wrote {:s} DB file".format(outfil))
     print("Update DB info in specdb.defs.dbase_info !!")
 
@@ -499,6 +482,10 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
         maindb['flag_survey'][midx] += flag_s
         # Update hf5 file
         hst_z2.hdf5_adddata(hdf, hstz2_ids, sname, mk_test_file=mk_test_file)
+
+    # Check for duplicates -- There is 1 pair in SDSS
+    if not sdbbu.chk_for_duplicates(maindb):
+        raise ValueError("Failed duplicates")
 
     # Finish
     hdf['catalog'] = maindb
