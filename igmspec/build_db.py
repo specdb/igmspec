@@ -147,7 +147,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=True, clobber=False):
     v01file = os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5'
     v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     print("Loading v01")
-    igmsp_v01 = IgmSpec(dbfile=v01file)
+    igmsp_v01 = IgmSpec(db_file=v01file)
     v01hdf = igmsp_v01.hdf
     maindb = igmsp_v01.cat.copy()
 
