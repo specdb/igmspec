@@ -59,13 +59,9 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
         test = True
     else:
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
-    # Chk clobber
-    if os.path.isfile(outfil):
-        if clobber:
-            warnings.warn("Overwriting previous DB file {:s}".format(outfil))
-        else:
-            warnings.warn("Not overwiting previous DB file.  Set clobber=True if you wish")
-            return
+    # Clobber?
+    if not chk_clobber(outfil, clobber=clobber):
+        return
     # Begin
     hdf = h5py.File(outfil,'w')
 
@@ -126,7 +122,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
     print("Update DB info in specdb.defs.dbase_info !!")
 
 
-def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
+def ver02(test=False, mk_test_file=False, skip_copy=True, clobber=False):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -163,13 +159,9 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
         test = True
     else:
         outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
-    # Chk clobber
-    if os.path.isfile(outfil):
-        if clobber:
-            warnings.warn("Overwriting previous DB file {:s}".format(outfil))
-        else:
-            warnings.warn("Not overwiting previous DB file.  Set clobber=True to do so")
-            return
+    # Clobber?
+    if not chk_clobber(outfil, clobber=clobber):
+        return
     # Begin
     hdf = h5py.File(outfil,'w')
 
@@ -486,3 +478,20 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
         test = True
         maindb = dmaindb
     '''
+
+
+def chk_clobber(outfil, clobber=False):
+    """ Simple clobber check
+    outfil : str
+    clobber : bool, optional
+    """
+    # Chk clobber
+    if os.path.isfile(outfil):
+        if clobber:
+            warnings.warn("Overwriting previous DB file {:s}".format(outfil))
+            return True
+        else:
+            warnings.warn("Not overwiting previous DB file.  Set clobber=True to do so")
+            return False
+    else:
+        return True
