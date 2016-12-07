@@ -19,6 +19,7 @@ from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
 from specdb.build.utils import chk_meta
+from specdb.build.utils import init_data
 
 #igms_path = imp.find_module('igmspec')[1]
 
@@ -30,6 +31,7 @@ def grab_meta():
 
     """
     hstz2_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HST_z2/hst_z2.ascii', format='ascii')
+    nspec = len(hstz2_meta)
     # RA/DEC, DATE
     ra = []
     dec = []
@@ -39,9 +41,14 @@ def grab_meta():
         coord = ltu.radec_to_coord((row['ra'],row['dec']))
         ra.append(coord.ra.value)
         dec.append(coord.dec.value)
-    hstz2_meta.add_column(Column(ra, name='RA'))
-    hstz2_meta.add_column(Column(dec, name='DEC'))
-    # RENAME
+    hstz2_meta.add_column(Column(ra, name='RA_GROUP'))
+    hstz2_meta.add_column(Column(dec, name='DEC_GROUP'))
+    # z
+    hstz2_meta.rename_column('zem', 'zem_GROUP')
+    hstz2_meta['sig_zem'] = [0.]*nspec
+    hstz2_meta['flag_zem'] = [str('SDSS_PIPE')]*nspec
+    hstz2_meta['STYPE'] = [str('QSO')]*nspec
+    #
     hstz2_meta.rename_column('obsdate','DATE-OBS')
     hstz2_meta.rename_column('tel','TELESCOPE')
     hstz2_meta.rename_column('inst','INSTR')
@@ -49,6 +56,7 @@ def grab_meta():
     hstz2_meta.rename_column('resolution','R')
     return hstz2_meta
 
+'''
 def meta_for_build():
     """ Generates the meta data needed for the IGMSpec build
     Returns
@@ -71,9 +79,10 @@ def meta_for_build():
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
                  mk_test_file=False):
     """ Append HST_z2 data to the h5 file
 
@@ -96,47 +105,20 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     hstz2_grp = hdf.create_group(sname)
-    # Load up
-    meta = grab_meta()
-    bmeta = meta_for_build()
     # Checks
     if sname != 'HST_z2':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
-
-    # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 0.1*u.arcsec):
-        raise ValueError("Bad matches in HST_z2")
-    meta_IDs = IDs[idx]
-
-    # Loop me to bid the full survey catalog
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
     max_npix = 300  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
-                             ])
+    data =init_data(max_npix)
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
-    Rlist = []
     wvminlist = []
     wvmaxlist = []
-    gratinglist = []
     npixlist = []
     speclist = []
     # Loop
@@ -154,7 +136,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         # Extract
         print("HST_z2: Reading {:s}".format(full_file))
         hduf = fits.open(full_file)
-        head = hduf[0].header
+        #head = hduf[0].header
         spec = lsio.readspec(full_file)
         # Parse name
         fname = full_file.split('/')[-1]
@@ -188,7 +170,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(np.arange(nspec,dtype=int),name='GROUP_ID'))
 
     # Add HDLLS meta to hdf5
     if chk_meta(meta):

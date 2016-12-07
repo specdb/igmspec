@@ -194,6 +194,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=True, clobber=False):
 
     # Loop over the groups
     for gname in new_groups:
+        print("Working on group: {:s}".format(gname))
         # Meta
         meta = new_groups[gname].grab_meta()
         # Survey flag
