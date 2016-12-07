@@ -55,6 +55,7 @@ def get_cat_dict():
     return cdict
 
 
+'''
 def get_survey_dict():
     """ Return the survey dict
     Returns
@@ -80,4 +81,4 @@ def get_survey_dict():
     survey_dict['UVpSM4'] = 2**15    # Cooksey et al. 2010, 2011
     #
     return survey_dict
-
+'''

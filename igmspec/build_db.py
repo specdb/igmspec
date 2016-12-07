@@ -9,6 +9,7 @@ import h5py
 import json
 import datetime
 import pdb
+from collections import OrderedDict
 
 from specdb import defs
 from specdb.build import utils as sdbbu
@@ -31,8 +32,8 @@ from linetools import utils as ltu
 
 from specdb.specdb import IgmSpec
 
-from igmspec.defs import get_survey_dict
-survey_dict = get_survey_dict()
+#from igmspec.defs import get_survey_dict
+#survey_dict = get_survey_dict()
 
 
 def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
@@ -82,77 +83,35 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
     # Group dict
     group_dict = {}
 
-    skip_boss_sdss = False
-    ''' BOSS_DR12 '''
-    # Read
-    gname = 'BOSS_DR12'
-    # Meta
-    boss_meta = boss.grab_meta()
-    # Survey flag
-    flag_g = sdbbu.add_to_group_dict(gname, group_dict)
-    # IDs -- BOSS DR12 has one pair with separation 1.2"
-    maindb = sdbbu.add_ids(maindb, boss_meta, flag_g, tkeys, idkey, first=(flag_g==1))#, match_toler=1.1*u.arcsec)
-    #
-    if mk_test_file:
-        maindb = maindb[:100]
-    tmp=sdbbu.chk_for_duplicates(maindb) # Just do this for BOSS
-    #if not test:
-    if skip_boss_sdss:
-        warnings.warn("INGEST BOSS SPECTRA!!")
-    else:
-        boss.hdf5_adddata(hdf, gname, boss_meta, **kwargs)
+    meta_only = True
 
-    ''' SDSS DR7'''
-    gname = 'SDSS_DR7'
-    print('===============\n Doing {:s} \n===============\n'.format(gname))
-    # Meta
-    sdss_meta = sdss.grab_meta(hdf)  # Need Myers
-    # Survey flag
-    flag_g = sdbbu.add_to_group_dict(gname, group_dict)
-    # IDs
-    maindb = sdbbu.add_ids(maindb, sdss_meta, flag_g, tkeys, idkey, first=(flag_g==1), close_pairs=True) # One at 1.7"
-    # Spectra
-    if skip_boss_sdss:
-        warnings.warn("INGEST SDSS SPECTRA!!")
-    else:
-        sdss.hdf5_adddata(hdf, gname, sdss_meta, **kwargs)
+    # Organize for main loop
+    groups = OrderedDict()
+    groups['BOSS_DR12'] = boss
+    groups['SDSS_DR7'] = sdss
+    groups['KODIAQ_DR1'] = kodiaq
+    groups['HD-LLS'] = hdlls
+    groups['GGG'] = ggg
 
-    ''' KODIAQ DR1 '''
-    gname = 'KODIAQ_DR1'
-    print('==================\n Doing {:s} \n==================\n'.format(gname))
-    # Meta
-    kodiaq_meta = kodiaq.grab_meta()
-    # Survey flag
-    flag_g = sdbbu.add_to_group_dict(gname, group_dict)
-    # IDs
-    maindb = sdbbu.add_ids(maindb, kodiaq_meta, flag_g, tkeys, idkey, first=(flag_g==1))#, close_pairs=True) # One at 1.7"
-    # Update hf5 file
-    kodiaq.hdf5_adddata(hdf, gname, kodiaq_meta)
+    pair_groups = ['SDSS_DR7']
 
-    ''' HD-LLS '''
-    gname = 'HD-LLS_DR1'
-    print('===============\n Doing {:s} \n==============\n'.format(gname))
-    # Meta
-    hdlls_meta = hdlls.grab_meta()
-    # Survey flag
-    flag_g = sdbbu.add_to_group_dict(gname, group_dict)
-    # IDs
-    maindb = sdbbu.add_ids(maindb, hdlls_meta, flag_g, tkeys, idkey, first=(flag_g==1))#, close_pairs=True) # One at 1.7"
-    # Update hf5 file
-    hdlls.hdf5_adddata(hdf, gname, hdlls_meta)
+    # Loop over the groups
+    for gname in groups:
+        # Meta
+        if gname == 'SDSS_DR7':
+            meta = groups[gname].grab_meta(hdf)
+        else:
+            meta = groups[gname].grab_meta()
+        # Survey flag
+        flag_g = sdbbu.add_to_group_dict(gname, group_dict)
+        # IDs
+        maindb = sdbbu.add_ids(maindb, meta, flag_g, tkeys, idkey,
+                               first=(flag_g==1), close_pairs=(gname in pair_groups))
+        # Spectra
+        if not meta_only:
+            groups[gname].hdf5_adddata(hdf, gname, meta)
 
-    ''' GGG '''
-    gname = 'GGG'
-    print('===============\n Doing {:s} \n==============\n'.format(gname))
-    # Meta
-    ggg_meta = ggg.grab_meta()
-    # Survey flag
-    flag_g = sdbbu.add_to_group_dict(gname, group_dict)
-    # IDs
-    maindb = sdbbu.add_ids(maindb, ggg_meta, flag_g, tkeys, idkey, first=(flag_g==1))#, close_pairs=True) # One at 1.7"
-    # Update hf5 file
-    ggg.hdf5_adddata(hdf, gname, ggg_meta)
-
+    pdb.set_trace()
 
     # Check for duplicates -- There is 1 pair in SDSS (i.e. 2 duplicates)
     if not sdbbu.chk_for_duplicates(maindb, dup_lim=2):
@@ -163,20 +122,6 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
 
     # Finish
     sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri, group_dict, version)
-    '''
-    hdf['catalog'] = maindb
-    hdf['catalog'].attrs['NAME'] = 'igmspec'
-    hdf['catalog'].attrs['EPOCH'] = 2000.
-    hdf['catalog'].attrs['Z_PRIORITY'] = zpri
-    hdf['catalog'].attrs['VERSION'] = version
-    hdf['catalog'].attrs['CREATION_DATE'] = str(datetime.date.today().strftime('%Y-%b-%d'))
-    hdfkeys = hdf.keys()
-    for dkey in survey_dict.keys():
-        if dkey not in hdfkeys:
-            survey_dict.pop(dkey, None)
-    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict))
-    hdf.close()
-    '''
     print("Wrote {:s} DB file".format(outfil))
     print("Update DB info in specdb.defs.dbase_info !!")
 
@@ -200,13 +145,15 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     -------
     """
     import os
+    from specdb.specdb import IgmSpec
     # Read v1.X
     #v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'
     v01file = os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5'
     v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     print("Loading v01")
-    v01hdf = h5py.File(v01file,'r')
-    maindb = Table(v01hdf['catalog'].value)
+    igmsp_v01 = IgmSpec(dbfile=v01file)
+    v01hdf = igmsp_v01.hdf
+    maindb = igmsp_v01.cat.copy()
 
     # Start new file
     version = 'v02'
@@ -233,33 +180,39 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
                 continue
             else:
                 v01hdf.copy(key, hdf)
-    if mk_test_file:
-        v01hdf_debug = h5py.File(v01file_debug,'r')
-        # Copy original
-        for key in v01hdf_debug.keys():
-            if key == 'catalog':
-                dmaindb = v01hdf_debug[key].value
-            else:
-                v01hdf_debug.copy(key, hdf)
-        # Add subset of quasars
-        idx = np.array([False]*v01hdf['quasars'].size)
-        idx[0:100] = True
-        idx[161121] = True
-        idx[161130] = True
-        hdf['quasars'] = v01hdf['quasars'].value[idx]
-        # Add some SDSS for script test
-        bsdssi = np.where(maindb['flag_survey'] == 3)[0][0:10]
-        sdss_meta = v01hdf['SDSS_DR7']['meta']
-        sdssi = np.in1d(maindb['IGM_ID'][bsdssi], sdss_meta['IGM_ID'])
-        hdf.create_group('SDSS_DR7')
-        ibool = np.array([False]*len(sdss_meta))
-        ibool[sdssi] = True
-        # Generate
-        hdf['SDSS_DR7']['meta'] = sdss_meta[ibool]
-        hdf['SDSS_DR7']['spec'] = v01hdf['SDSS_DR7']['spec'][ibool]
-        # Finish
-        test = True
-        maindb = dmaindb
+    # Setup
+    new_groups = OrderedDict()
+    new_groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
+    new_groups['XQ-100'] = xq100        # Lopez et al. 2016
+    new_groups['HDLA100'] = hdla100     # Neeleman et al. 2013
+    new_groups['2QZ'] = twodf           # Croom et al.
+    new_groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
+    new_groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
+    new_groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
+    new_groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
+    new_groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
+    new_groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
+    new_groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
+
+    pair_groups = []
+    group_dict = igmsp_v01.qcat.group_dict
+    tkeys = maindb.keys()
+    idkey = 'IGM_ID'
+    meta_only = True
+
+    # Loop over the groups
+    for gname in new_groups:
+        # Meta
+        meta = new_groups[gname].grab_meta()
+        # Survey flag
+        flag_g = sdbbu.add_to_group_dict(gname, group_dict)
+        # IDs
+        maindb = sdbbu.add_ids(maindb, meta, flag_g, tkeys, idkey,
+                               first=(flag_g==1), close_pairs=(gname in pair_groups))
+        # Spectra
+        if not meta_only:
+            new_groups[gname].hdf5_adddata(hdf, gname, meta)
+    pdb.set_trace()
 
     ''' UVpSM4 '''
     if not mk_test_file:
@@ -503,3 +456,33 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     hdf.close()
     print("Wrote {:s} DB file".format(outfil))
     print("Update DB info in specdb.defs.dbase_info !!")
+
+    '''
+    if mk_test_file:
+        v01hdf_debug = h5py.File(v01file_debug,'r')
+        # Copy original
+        for key in v01hdf_debug.keys():
+            if key == 'catalog':
+                dmaindb = v01hdf_debug[key].value
+            else:
+                v01hdf_debug.copy(key, hdf)
+        # Add subset of quasars
+        idx = np.array([False]*v01hdf['quasars'].size)
+        idx[0:100] = True
+        idx[161121] = True
+        idx[161130] = True
+        hdf['quasars'] = v01hdf['quasars'].value[idx]
+        # Add some SDSS for script test
+        bsdssi = np.where(maindb['flag_survey'] == 3)[0][0:10]
+        sdss_meta = v01hdf['SDSS_DR7']['meta']
+        sdssi = np.in1d(maindb['IGM_ID'][bsdssi], sdss_meta['IGM_ID'])
+        hdf.create_group('SDSS_DR7')
+        ibool = np.array([False]*len(sdss_meta))
+        ibool[sdssi] = True
+        # Generate
+        hdf['SDSS_DR7']['meta'] = sdss_meta[ibool]
+        hdf['SDSS_DR7']['spec'] = v01hdf['SDSS_DR7']['spec'][ibool]
+        # Finish
+        test = True
+        maindb = dmaindb
+    '''
