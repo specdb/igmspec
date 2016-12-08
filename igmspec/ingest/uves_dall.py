@@ -79,12 +79,14 @@ def grab_meta():
     uvesdall_meta.add_column(Column(['UVES']*nspec, name='INSTR'))
     uvesdall_meta.add_column(Column(['BOTH']*nspec, name='GRATING'))
     uvesdall_meta.add_column(Column([45000.]*nspec, name='R'))
+    uvesdall_meta['STYPE'] = str('QSO')
     # Sort
-    uvesdall_meta.sort('RA')
+    uvesdall_meta.sort('RA_GROUP')
     # Check
     assert chk_meta(uvesdall_meta, chk_cat_only=True)
     return uvesdall_meta
 
+'''
 def meta_for_build(uvesdall_meta=None):
     """ Generates the meta data needed for the IGMSpec build
     Returns
@@ -101,6 +103,7 @@ def meta_for_build(uvesdall_meta=None):
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
