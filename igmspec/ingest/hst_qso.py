@@ -94,13 +94,14 @@ def grab_meta():
             hstqso_meta['RA'][isep] = hstqso_meta['RA'][isep[icos[0]]]
             hstqso_meta['DEC'][isep] = hstqso_meta['DEC'][isep[icos[0]]]
             flag_dup[isep] = True
-            pdb.set_trace()
         else: # STIS
             istis = np.where(hstqso_meta['INST'][isep] == 'STIS')[0]
             if len(istis) > 0:
                 hstqso_meta['RA'][isep] = hstqso_meta['RA'][isep[istis[0]]]
                 hstqso_meta['DEC'][isep] = hstqso_meta['DEC'][isep[istis[0]]]
                 flag_dup[isep] = True
+                print("IN STIS")
+                pdb.set_trace()
             else:
                 pdb.set_trace()
     # REPLACE
