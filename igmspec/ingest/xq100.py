@@ -90,9 +90,12 @@ def grab_meta():
     xq100_meta['SPEC_FILE'] = sv_spec_files
     xq100_meta['ORIG_FILE'] = sv_orig_files
     # Add zem
-    xq100_meta['zem'] = xq100_meta['Z_QSO']
+    xq100_meta['zem_GROUP'] = xq100_meta['Z_QSO']
     xq100_meta['sig_zem'] = xq100_meta['ERR_ZQSO']
     xq100_meta['flag_zem'] = [str('XQ-100')]*nspec
+    # Rename
+    xq100_meta.rename_column('RA','RA_GROUP')
+    xq100_meta.rename_column('DEC','DEC_GROUP')
     # DATE-OBS
     meanmjd = []
     for row in xq100_meta:
@@ -102,11 +105,16 @@ def grab_meta():
     xq100_meta.add_column(Column(t.iso, name='DATE-OBS'))
     #
     xq100_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
+    xq100_meta['STYPE'] = str('QSO')
     # Sort
-    xq100_meta.sort('RA')
+    xq100_meta.sort('RA_GROUP')
+    # Check
+    assert chk_meta(xq100_meta, chk_cat_only=True)
+    #
     return xq100_meta
 
 
+'''
 def meta_for_build(xq100_meta=None):
     """ Generates the meta data needed for the IGMSpec build
     Returns
@@ -127,6 +135,7 @@ def meta_for_build(xq100_meta=None):
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):

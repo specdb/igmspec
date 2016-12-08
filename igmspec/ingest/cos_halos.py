@@ -71,7 +71,7 @@ def grab_meta():
     chalos_meta['INSTR'] = 'COS' # Deals with padding
     chalos_meta['TELESCOPE'] = 'HST'
     # Myers for zem
-    zem, zsource = zem_from_radec(chalos_meta['RA'], chalos_meta['DEC'], Table(igmsp.idb.hdf['quasars'].value))
+    zem, zsource = zem_from_radec(chalos_meta['RA'], chalos_meta['DEC'], Table(igmsp.hdf['quasars'].value))
     badz = zem <= 0.
     if np.sum(badz) > 0:
         raise ValueError("Bad zem in COS-Halos")
@@ -97,6 +97,13 @@ def grab_meta():
         hires_tab[-1]['R'] = Rdicts['HIRES']['C1']
     # Combine
     chalos_meta = vstack([chalos_meta, hires_tab])
+    chalos_meta['STYPE'] = str('QSO')
+    # Rename
+    chalos_meta.rename_column('RA', 'RA_GROUP')
+    chalos_meta.rename_column('DEC', 'DEC_GROUP')
+    chalos_meta.rename_column('zem', 'zem_GROUP')
+    # Check
+    assert chk_meta(chalos_meta, chk_cat_only=True)
     # Done
     return chalos_meta
 
@@ -116,7 +123,6 @@ def meta_for_build():
     meta = Table()
     for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
         meta[key] = chalos_meta[key]
-    meta['STYPE'] = str('QSO')
     # Return
     return meta
 

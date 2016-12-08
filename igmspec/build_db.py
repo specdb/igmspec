@@ -66,7 +66,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
     hdf = h5py.File(outfil,'w')
 
     ''' Myers QSOs '''
-    if True:
+    if False:
         igmsp = IgmSpec()
         igmsp.hdf.copy('quasars', hdf)
     else:
@@ -79,8 +79,6 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
     # Group dict
     group_dict = {}
 
-    meta_only = True
-
     # Organize for main loop
     groups = OrderedDict()
     groups['BOSS_DR12'] = boss
@@ -91,6 +89,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
 
     pair_groups = ['SDSS_DR7']
 
+    meta_only = False
     # Loop over the groups
     for gname in groups:
         # Meta
@@ -107,8 +106,6 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
         if not meta_only:
             groups[gname].hdf5_adddata(hdf, gname, meta)
 
-    pdb.set_trace()
-
     # Check for duplicates -- There is 1 pair in SDSS (i.e. 2 duplicates)
     if not sdbbu.chk_for_duplicates(maindb, dup_lim=2):
         raise ValueError("Failed duplicates")
@@ -122,7 +119,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
     print("Update DB info in specdb.defs.dbase_info !!")
 
 
-def ver02(test=False, mk_test_file=False, skip_copy=True, clobber=False):
+def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -166,6 +163,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=True, clobber=False):
     hdf = h5py.File(outfil,'w')
 
     # Copy over the old stuff
+    skip_copy = True
     if (not test) and (not skip_copy):
         for key in v01hdf.keys():
             if key == 'catalog':
@@ -175,12 +173,12 @@ def ver02(test=False, mk_test_file=False, skip_copy=True, clobber=False):
     # Setup
     new_groups = OrderedDict()
     new_groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
-    new_groups['XQ-100'] = xq100        # Lopez et al. 2016
+    #new_groups['XQ-100'] = xq100        # Lopez et al. 2016
     new_groups['HDLA100'] = hdla100     # Neeleman et al. 2013
-    new_groups['2QZ'] = twodf           # Croom et al.
-    new_groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
-    new_groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
-    new_groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
+    #new_groups['2QZ'] = twodf           # Croom et al.
+    #new_groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
+    #new_groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
+    #new_groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
     new_groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
     new_groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
     new_groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
@@ -190,8 +188,8 @@ def ver02(test=False, mk_test_file=False, skip_copy=True, clobber=False):
     group_dict = igmsp_v01.qcat.group_dict
     tkeys = maindb.keys()
     idkey = 'IGM_ID'
-    meta_only = True
 
+    meta_only = True
     # Loop over the groups
     for gname in new_groups:
         print("Working on group: {:s}".format(gname))

@@ -48,11 +48,19 @@ def grab_meta():
     esidla_meta.add_column(Column(['KeckII']*nspec, name='TELESCOPE'))
     esidla_meta.add_column(Column(['ESI']*nspec, name='INSTR'))
     esidla_meta.add_column(Column(['ECH']*nspec, name='GRATING'))
+    # Rename
+    esidla_meta.rename_column('RA', 'RA_GROUP')
+    esidla_meta.rename_column('DEC', 'DEC_GROUP')
+    esidla_meta.rename_column('zem', 'zem_GROUP')
+    esidla_meta['STYPE'] = str('QSO')
     # Sort
-    esidla_meta.sort('RA')
+    esidla_meta.sort('RA_GROUP')
+    # Check
+    assert chk_meta(esidla_meta, chk_cat_only=True)
+    #
     return esidla_meta
 
-
+'''
 def meta_for_build(esidla_meta=None):
     """ Generates the meta data needed for the IGMSpec build
     Returns
@@ -69,6 +77,7 @@ def meta_for_build(esidla_meta=None):
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):

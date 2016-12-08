@@ -70,13 +70,20 @@ def grab_meta():
     cdwarfs_meta.add_column(Column([2000.]*len(cdwarfs_meta), name='EPOCH'))
     cdwarfs_meta['INSTR'] = 'COS' # Deals with padding
     cdwarfs_meta['TELESCOPE'] = 'HST'
-    cdwarfs_meta['zem'] = cosdwarfs.zem
+    cdwarfs_meta['zem_GROUP'] = cosdwarfs.zem
     cdwarfs_meta['sig_zem'] = 0.  # Need to add
     cdwarfs_meta['flag_zem'] = 'SDSS'
+    cdwarfs_meta['STYPE'] = str('QSO')
+    # Rename
+    cdwarfs_meta.rename_column('RA', 'RA_GROUP')
+    cdwarfs_meta.rename_column('DEC', 'DEC_GROUP')
+    # Check
+    assert chk_meta(cdwarfs_meta, chk_cat_only=True)
     # Done
     return cdwarfs_meta
 
 
+'''
 def meta_for_build():
     """ Generates the meta data needed for the IGMSpec build
     Returns
@@ -91,6 +98,7 @@ def meta_for_build():
     meta['STYPE'] = str('QSO')
     # Return
     return meta
+'''
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,

@@ -88,13 +88,21 @@ def grab_meta():
     hstqso_meta['SPEC_FILE'] = spec_files
     # RENAME
     hstqso_meta.rename_column('GRATE', 'GRATING')
-    hstqso_meta.rename_column('QSO_ZEM', 'zem')
+    hstqso_meta.rename_column('QSO_ZEM', 'zem_GROUP')
     hstqso_meta.rename_column('INST', 'INSTR')
+    hstqso_meta['STYPE'] = str('QSO')
+    hstqso_meta.rename_column('RA', 'RA_GROUP')
+    hstqso_meta.rename_column('DEC', 'DEC_GROUP')
     # ADD
     hstqso_meta.add_column(Column(['HST']*nspec, name='TELESCOPE'))
+    hstqso_meta['sig_zem'] = 0.
+    hstqso_meta['flag_zem'] = str('UNKWN')
+    # Check
+    assert chk_meta(hstqso_meta, chk_cat_only=True)
+    # Return
     return hstqso_meta
 
-
+'''
 def meta_for_build():
     """ Generates the meta data needed for the IGMSpec build
     Returns
@@ -126,6 +134,7 @@ def meta_for_build():
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,

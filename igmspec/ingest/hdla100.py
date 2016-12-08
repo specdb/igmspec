@@ -23,7 +23,7 @@ from specdb.build.utils import set_resolution
 igms_path = imp.find_module('igmspec')[1]
 
 
-def meta_for_build():
+def grab_meta():
     """ Generates the meta data needed for the IGMSpec build
     Returns
     -------
@@ -56,17 +56,19 @@ def meta_for_build():
     nqso = len(uni_idx)
     #
     meta = Table()
-    meta['RA'] = np.array(ra)[uni_idx]
-    meta['DEC'] = np.array(dec)[uni_idx]
-    meta['zem'] = hdla100.zem[uni_idx]
+    meta['RA_GROUP'] = np.array(ra)[uni_idx]
+    meta['DEC_GROUP'] = np.array(dec)[uni_idx]
+    meta['zem_GROUP'] = hdla100.zem[uni_idx]
     meta['sig_zem'] = [0.]*nqso
     meta['flag_zem'] = [str('UNKN')]*nqso
     meta['STYPE'] = [str('QSO')]*nqso
-    # Return
-    return meta, np.array(spec_files)[uni_idx]
+    meta['SPEC_FILE'] = np.array(spec_files)[uni_idx]
+    # Check
+    assert chk_meta(meta, chk_cat_only=True)
+    return meta
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
                  mk_test_file=False):
     """ Append HDLA100 data to the h5 file
 
@@ -103,7 +105,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         raise ValueError("Wrong sized table..")
     # DR1 Table by LLS, not spectrum
     nspec = len(hdla100_meta)
-    hdla100_meta['SPEC_FILE'] = spec_files
     hdla100_meta['IGM_ID'] = IDs
 
     # Build spectra (and parse for meta)

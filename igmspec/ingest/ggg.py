@@ -47,7 +47,7 @@ def grab_meta():
     meta['STYPE'] = [str('QSO')]*nqso
     # Double up for the two gratings
     ggg_meta = vstack([meta,meta])
-    #
+    # Check
     assert chk_meta(ggg_meta, chk_cat_only=True)
     # Return
     return ggg_meta

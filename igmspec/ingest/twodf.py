@@ -76,7 +76,7 @@ def grab_meta():
             zspec.append(-1.)
             datespec.append('')
     tdf_meta['ispec'] = ispec
-    tdf_meta['zem'] = zspec
+    tdf_meta['zem_GROUP'] = zspec
     tdf_meta['DATE'] = datespec
     cut = tdf_meta['ispec'] > 0
     tdf_meta = tdf_meta[cut]
@@ -107,15 +107,20 @@ def grab_meta():
             print('jj={:d}'.format(jj))
     neg = np.array(neg)
     decd[neg] = -1.*decd[neg]
-    tdf_meta['RA'] = rad
-    tdf_meta['DEC'] = decd
+    tdf_meta['RA_GROUP'] = rad
+    tdf_meta['DEC_GROUP'] = decd
     tdf_meta['sig_zem'] = [0.]*nspec
+    tdf_meta['flag_zem'] = str('2QZ')
+    tdf_meta['STYPE'] = str('QSO')
     # Sort
-    tdf_meta.sort('RA')
+    tdf_meta.sort('RA_GROUP')
+    # Check
+    assert chk_meta(tdf_meta, chk_cat_only=True)
     # Return
     return tdf_meta
 
 
+'''
 def meta_for_build():
     """ Load the meta info
     JXP made DR7 -- Should add some aspect of the official list..
@@ -136,6 +141,7 @@ def meta_for_build():
     meta['STYPE'] = [str('QSO')]*nqso  # QPQ too
     # Return
     return meta
+'''
 
 
 def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
