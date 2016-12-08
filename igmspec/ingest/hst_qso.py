@@ -102,8 +102,9 @@ def grab_meta():
                 flag_dup[isep] = True
                 print("IN STIS")
                 pdb.set_trace()
-            else:
-                pdb.set_trace()
+            else: # FOS only -- taking first value
+                hstqso_meta['RA'][isep] = hstqso_meta['RA'][isep[0]]
+                hstqso_meta['DEC'][isep] = hstqso_meta['DEC'][isep[0]]
     # REPLACE
     hstqso_meta.rename_column('SPEC_FILE', 'ORIG_SPEC_FILE')
     hstqso_meta['SPEC_FILE'] = spec_files
