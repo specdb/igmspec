@@ -173,12 +173,12 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     # Setup
     new_groups = OrderedDict()
     new_groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
-    #new_groups['XQ-100'] = xq100        # Lopez et al. 2016
+    new_groups['XQ-100'] = xq100        # Lopez et al. 2016
     new_groups['HDLA100'] = hdla100     # Neeleman et al. 2013
-    #new_groups['2QZ'] = twodf           # Croom et al.
-    #new_groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
-    #new_groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
-    #new_groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
+    new_groups['2QZ'] = twodf           # Croom et al.
+    new_groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
+    new_groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
+    new_groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
     new_groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
     new_groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
     new_groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
