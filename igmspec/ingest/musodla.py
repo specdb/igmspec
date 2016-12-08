@@ -78,10 +78,10 @@ def grab_meta():
                 zems.append(row['z_em'])
     # Generate
     meta = Table()
-    meta['RA'] = [coord.ra.deg for coord in coords]
-    meta['DEC'] = [coord.dec.deg for coord in coords]
+    meta['RA_GROUP'] = [coord.ra.deg for coord in coords]
+    meta['DEC_GROUP'] = [coord.dec.deg for coord in coords]
     meta['NAME'] = names
-    meta['zem'] = zems
+    meta['zem_GROUP'] = zems
     meta['INSTR'] = instrs
     meta['GRATING'] = gratings
     meta['DATE-INFO'] = dinfos
@@ -90,10 +90,16 @@ def grab_meta():
     meta['R'] = Rs
     t = Time(dates, out_subfmt='date')  # Fixes to YYYY-MM-DD
     meta.add_column(Column(t.iso, name='DATE-OBS'))
+    #
+    meta['sig_zem'] = 0.
+    meta['flag_zem'] = str('SDSS')
+    meta['STYPE'] = str('QSO')
+    # Check
+    assert chk_meta(meta, chk_cat_only=True)
     # Return
     return meta
 
-
+'''
 def meta_for_build():
     """ Generates the meta data needed for the IGMSpec build
     Returns
@@ -115,6 +121,7 @@ def meta_for_build():
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
 
 
