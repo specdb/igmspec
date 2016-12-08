@@ -88,10 +88,21 @@ def grab_meta():
         dcoord = SkyCoord(ra=hstqso_meta['RA'][idup], dec=hstqso_meta['DEC'][idup], unit='deg')
         sep = dcoord.separation(coord)
         isep = np.where(sep < 2.0*u.arcsec)[0]
-        # Search for COS
-        pdb.set_trace()
-        flag_dup[isep] = True
-        keep[np.min(isep)] = True  # Only keep 1
+        # Search for COS first
+        icos = np.where(hstqso_meta['INST'][isep] == 'COS')[0]
+        if len(icos) > 0:
+            hstqso_meta['RA'][isep] = hstqso_meta['RA'][isep[icos[0]]]
+            hstqso_meta['DEC'][isep] = hstqso_meta['DEC'][isep[icos[0]]]
+            flag_dup[isep] = True
+            pdb.set_trace()
+        else: # STIS
+            istis = np.where(hstqso_meta['INST'][isep] == 'STIS')[0]
+            if len(istis) > 0:
+                hstqso_meta['RA'][isep] = hstqso_meta['RA'][isep[istis[0]]]
+                hstqso_meta['DEC'][isep] = hstqso_meta['DEC'][isep[istis[0]]]
+                flag_dup[isep] = True
+            else:
+                pdb.set_trace()
     # REPLACE
     hstqso_meta.rename_column('SPEC_FILE', 'ORIG_SPEC_FILE')
     hstqso_meta['SPEC_FILE'] = spec_files
