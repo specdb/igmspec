@@ -43,16 +43,16 @@ def grab_meta():
     uvesdall_meta.add_column(Column(t.iso, name='DATE-OBS'))
     # RA/DEC
     coord = SkyCoord(ra=uvesdall_meta['RA'], dec=uvesdall_meta['DEC'], unit=(u.hour,u.deg))
-    ras = [icoord.ra.value for icoord in coord]
-    decs = [icoord.dec.value for icoord in coord]
+    rad = [icoord.ra.value for icoord in coord]
+    decd = [icoord.dec.value for icoord in coord]
     uvesdall_meta.rename_column('RA', 'RA_STR')
     uvesdall_meta.rename_column('DEC', 'DEC_STR')
-    uvesdall_meta['RA'] = ras
-    uvesdall_meta['DEC'] = decs
+    uvesdall_meta['RA_GROUP'] = rad
+    uvesdall_meta['DEC_GROUP'] = decd
     # Add zem
     igmsp = IgmSpec()
-    ztbl = Table(igmsp.idb.hdf['quasars'].value)
-    zem, zsource = zem_from_radec(ras, decs, ztbl)
+    ztbl = Table(igmsp.hdf['quasars'].value)
+    zem, zsource = zem_from_radec(rad, decd, ztbl)
     badz = np.where(zem < 0.1)[0]
     for ibadz in badz:
         if uvesdall_meta['NAME'][ibadz] == 'HE2243-6031':
@@ -70,7 +70,7 @@ def grab_meta():
         else:
             raise ValueError("Should not be here")
 
-    uvesdall_meta['zem'] = zem
+    uvesdall_meta['zem_GROUP'] = zem
     uvesdall_meta['sig_zem'] = [0.]*nspec
     uvesdall_meta['flag_zem'] = zsource
     #
@@ -81,6 +81,8 @@ def grab_meta():
     uvesdall_meta.add_column(Column([45000.]*nspec, name='R'))
     # Sort
     uvesdall_meta.sort('RA')
+    # Check
+    assert chk_meta(uvesdall_meta, chk_cat_only=True)
     return uvesdall_meta
 
 def meta_for_build(uvesdall_meta=None):
