@@ -59,6 +59,15 @@ def grab_meta():
     hstc_meta[~gdf]['TELESCOPE'] = 'HST'
     #
     hstc_meta.add_column(Column([2000.]*len(hstc_meta), name='EPOCH'))
+    hstc_meta['sig_zem'] = 0.
+    hstc_meta['flag_zem'] = str('UNKWN')
+    hstc_meta['STYPE'] = str('QSO')
+    # RENAME
+    hstc_meta.rename_column('RA', 'RA_GROUP')
+    hstc_meta.rename_column('DEC', 'DEC_GROUP')
+    hstc_meta.rename_column('zem', 'zem_GROUP')
+    # Check
+    assert chk_meta(hstc_meta, chk_cat_only=True)
     return hstc_meta
 
 
