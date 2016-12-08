@@ -81,15 +81,16 @@ def grab_meta():
     coord = SkyCoord(ra=hstqso_meta['RA'], dec=hstqso_meta['DEC'], unit='deg')
     idx, d2d, d3d = match_coordinates_sky(coord, coord, nthneighbor=2)
     dups = np.where(d2d < 2.0*u.arcsec)[0]  # Closest lens is ~2"
-    keep = np.array([True]*len(hstqso_meta))
-    pdb.set_trace()
+    flag_dup = np.array([False]*len(hstqso_meta))
     for idup in dups:
+        if flag_dup[idup]:
+            continue
         dcoord = SkyCoord(ra=hstqso_meta['RA'][idup], dec=hstqso_meta['DEC'][idup], unit='deg')
         sep = dcoord.separation(coord)
         isep = np.where(sep < 2.0*u.arcsec)[0]
-        pdb.set_trace()
         # Search for COS
-        keep[isep] = False
+        pdb.set_trace()
+        flag_dup[isep] = True
         keep[np.min(isep)] = True  # Only keep 1
     # REPLACE
     hstqso_meta.rename_column('SPEC_FILE', 'ORIG_SPEC_FILE')
