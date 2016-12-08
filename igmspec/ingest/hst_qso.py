@@ -77,12 +77,20 @@ def grab_meta():
             mt = mt[0]
         hstqso_meta[jj]['RA'] = radec['RA'][mt]
         hstqso_meta[jj]['DEC'] = radec['DEC'][mt]
-    # TEST
-    from astropy.time import Time
-    try:
-        tval = Time(list(hstqso_meta['DATE-OBS'].data), format='iso')
-    except:
+    # Deal with Dups (mainly bad FOS coords)
+    coord = SkyCoord(ra=hstqso_meta['RA'], dec=hstqso_meta['DEC'], unit='deg')
+    idx, d2d, d3d = match_coordinates_sky(coord, coord, nthneighbor=2)
+    dups = np.where(d2d < 2.0*u.arcsec)[0]  # Closest lens is ~2"
+    keep = np.array([True]*len(hstqso_meta))
+    pdb.set_trace()
+    for idup in dups:
+        dcoord = SkyCoord(ra=hstqso_meta['RA'][idup], dec=hstqso_meta['DEC'][idup], unit='deg')
+        sep = dcoord.separation(coord)
+        isep = np.where(sep < 2.0*u.arcsec)[0]
         pdb.set_trace()
+        # Search for COS
+        keep[isep] = False
+        keep[np.min(isep)] = True  # Only keep 1
     # REPLACE
     hstqso_meta.rename_column('SPEC_FILE', 'ORIG_SPEC_FILE')
     hstqso_meta['SPEC_FILE'] = spec_files
