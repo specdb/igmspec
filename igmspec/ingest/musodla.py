@@ -17,6 +17,8 @@ from astropy import units as u
 from linetools import utils as ltu
 from linetools.spectra import io as lsio
 
+from specdb.build.utils import chk_meta
+
 igms_path = imp.find_module('igmspec')[1]
 
 
@@ -125,7 +127,7 @@ def meta_for_build():
 
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
                  mk_test_file=False):
     """ Append MUSoDLA data to the h5 file
 
@@ -156,22 +158,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     if np.sum(IDs < 0) > 0:
         raise ValueError("Bad ID values")
     # Open Meta tables
-    musodla_meta = grab_meta()
-    bmeta = meta_for_build()
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
     nspec = len(musodla_meta)
-
-    # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=musodla_meta['RA'], dec=musodla_meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 0.1*u.arcsec):
-        raise ValueError("Bad matches in ESI_DLA")
-    meta_IDs = IDs[idx]
-    musodla_meta.add_column(Column(meta_IDs, name='IGM_ID'))
-
 
     # Build spectra (and parse for meta)
     max_npix = 230000  # Just needs to be large enough
