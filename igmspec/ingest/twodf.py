@@ -16,6 +16,7 @@ from linetools.spectra.xspectrum1d import XSpectrum1D
 from linetools import utils as ltu
 
 from specdb.build.utils import chk_meta
+from specdb.build.utils import init_data
 
 def get_specfil(row):
     """Parse the 2QZ spectrum file
@@ -112,6 +113,15 @@ def grab_meta():
     tdf_meta['sig_zem'] = [0.]*nspec
     tdf_meta['flag_zem'] = str('2QZ')
     tdf_meta['STYPE'] = str('QSO')
+    # Require a spectrum exist
+    gdm = np.array([True]*len(tdf_meta))
+    for jj,row in enumerate(tdf_meta):
+        full_file = get_specfil(row)
+        if not os.path.isfile(full_file):
+            print("{:s} has no spectrum.  Not including".format(full_file))
+            gdm[jj] = False
+            continue
+    tdf_meta = tdf_meta[gdm]
     # Sort
     tdf_meta.sort('RA_GROUP')
     # Check
@@ -144,7 +154,7 @@ def meta_for_build():
 '''
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     """ Add 2QZ data to the DB
 
     Parameters
@@ -164,43 +174,17 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     tqz_grp = hdf.create_group(sname)
-    # Load up
-    meta = grab_meta()
-    bmeta = meta_for_build()
     # Checks
     if sname != '2QZ':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
 
-    # Generate ID array from RA/DEC
-    meta_IDs = IDs
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
-    gdm = np.array([True]*len(meta))
-
-    meta = meta[gdm]
-    for jj,row in enumerate(meta):
-        full_file = get_specfil(row)
-        if not os.path.isfile(full_file):
-            print("{:s} has no spectrum.  Not including".format(full_file))
-            gdm[jj] = False
-            continue
-    meta = meta[gdm]
 
     # Add zem
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
     max_npix = 4000  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
-                             ])
+    data = init_data(max_npix, include_co=False)
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
@@ -225,6 +209,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
         gd = var > 0.
         if np.sum(gd) == 0:
             print("{:s} has a bad var array.  Not including".format(fname))
+            pdb.set_trace()
             gdm[jj] = False
             continue
         sig[gd] = np.sqrt(var[gd])
@@ -259,7 +244,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(np.arange(nspec,dtype=int),name='GROUP_ID'))
 
     # Add HDLLS meta to hdf5
     if chk_meta(meta):

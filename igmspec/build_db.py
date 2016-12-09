@@ -139,8 +139,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     """
     import os
     from specdb.specdb import IgmSpec
-    # Read v1.X
-    #v01file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v01.hdf5'
+    # Read v01
     v01file = os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5'
     v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     print("Loading v01")
@@ -203,250 +202,20 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
         # Spectra
         if not meta_only:
             new_groups[gname].hdf5_adddata(hdf, gname, meta)
-    pdb.set_trace()
-
-    ''' UVpSM4 '''
-    if not mk_test_file:
-        sname = 'UVpSM4'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        hstc_meta = hst_c.meta_for_build()
-        # IDs
-        hstc_cut, new, hstc_ids = sdbbu.set_new_ids(maindb, hstc_meta)
-        nnew = np.sum(new)
-        # Survey flag
-        flag_s = survey_dict[sname]
-        hstc_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-        midx = np.array(maindb['IGM_ID'][hstc_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Append
-        assert sdbbu.chk_maindb_join(maindb, hstc_cut)
-        maindb = vstack([maindb, hstc_cut], join_type='exact')
-        # Update hf5 file
-        #if (not test):# or mk_test_file:
-        hst_c.hdf5_adddata(hdf, hstc_ids, sname, mk_test_file=mk_test_file)
-
-    ''' UVES_Dall '''
-    if not mk_test_file:
-        sname = 'UVES_Dall'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        uvesdall_meta = uves_dall.meta_for_build()
-        # IDs
-        uvesdall_cut, new, uvesdall_ids = sdbbu.set_new_ids(maindb, uvesdall_meta)
-        nnew = np.sum(new)
-        # Survey flag
-        flag_s = survey_dict[sname]
-        uvesdall_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-        midx = np.array(maindb['IGM_ID'][uvesdall_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Append
-        assert sdbbu.chk_maindb_join(maindb, uvesdall_cut)
-        maindb = vstack([maindb, uvesdall_cut], join_type='exact')
-        # Update hf5 file
-        uves_dall.hdf5_adddata(hdf, uvesdall_ids, sname)#, mk_test_file=mk_test_file)
-
-    ''' HDLA100 '''
-    if not mk_test_file:
-        sname = 'HDLA100'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        hdla100_meta, _ = hdla100.meta_for_build()
-        # IDs
-        hdla100_cut, new, hdla100_ids = sdbbu.set_new_ids(maindb, hdla100_meta)
-        nnew = np.sum(new)
-        # Survey flag
-        flag_s = survey_dict[sname]
-        hdla100_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-        midx = np.array(maindb['IGM_ID'][hdla100_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Append
-        assert sdbbu.chk_maindb_join(maindb, hdla100_cut)
-        maindb = vstack([maindb, hdla100_cut], join_type='exact')
-        # Update hf5 file
-        hdla100.hdf5_adddata(hdf, hdla100_ids, sname)#, mk_test_file=mk_test_file)
-
-    ''' MUSoDLA '''
-    if not mk_test_file:
-        sname = 'MUSoDLA'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        musodla_meta = musodla.meta_for_build()
-        # IDs
-        musodla_cut, new, musodla_ids = sdbbu.set_new_ids(maindb, musodla_meta)
-        nnew = np.sum(new)
-        assert nnew == 0   # These all should be in SDSS (although not necessarily the Schneider catalog)
-        # Survey flag
-        flag_s = survey_dict[sname]
-        musodla_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-        midx = np.array(maindb['IGM_ID'][musodla_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Append
-        assert sdbbu.chk_maindb_join(maindb, musodla_cut)
-        maindb = vstack([maindb, musodla_cut], join_type='exact')
-        # Update hf5 file
-        musodla.hdf5_adddata(hdf, musodla_ids, sname)#, mk_test_file=mk_test_file)
-
-    ''' HSTQSO '''
-    if not mk_test_file:
-        sname = 'HSTQSO'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        hstqso_meta = hst_qso.meta_for_build()
-        # IDs
-        hstqso_cut, new, hstqso_ids = sdbbu.set_new_ids(maindb, hstqso_meta)
-        nnew = np.sum(new)
-        # Survey flag
-        flag_s = survey_dict[sname]
-        hstqso_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-        midx = np.array(maindb['IGM_ID'][hstqso_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Append
-        assert sdbbu.chk_maindb_join(maindb, hstqso_cut)
-        maindb = vstack([maindb, hstqso_cut], join_type='exact')
-        # Update hf5 file
-        hst_qso.hdf5_adddata(hdf, hstqso_ids, sname)#, mk_test_file=mk_test_file)
-
-    ''' COS-Dwarfs '''
-    if not mk_test_file:
-        sname = 'COS-Dwarfs'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        cdwarfs_meta = cos_dwarfs.meta_for_build()
-        # IDs
-        cdwarfs_cut, new, cdwarfs_ids = sdbbu.set_new_ids(maindb, cdwarfs_meta)
-        nnew = np.sum(new)
-        # Survey flag
-        flag_s = survey_dict[sname]
-        cdwarfs_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-        midx = np.array(maindb['IGM_ID'][cdwarfs_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Append
-        assert sdbbu.chk_maindb_join(maindb, cdwarfs_cut)
-        maindb = vstack([maindb, cdwarfs_cut], join_type='exact')
-        # Update hf5 file
-        cos_dwarfs.hdf5_adddata(hdf, cdwarfs_ids, sname)#, mk_test_file=mk_test_file)
-
-    ''' 2QZ '''
-    if not mk_test_file:
-        sname = '2QZ'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        tdf_meta = twodf.meta_for_build()
-        # IDs
-        tdf_cut, new, tdf_ids = sdbbu.set_new_ids(maindb, tdf_meta)
-        nnew = np.sum(new)
-        # Survey flag
-        flag_s = survey_dict[sname]
-        tdf_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-        midx = np.array(maindb['IGM_ID'][tdf_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Append
-        assert sdbbu.chk_maindb_join(maindb, tdf_cut)
-        maindb = vstack([maindb,tdf_cut], join_type='exact')
-        # Update hf5 file
-        twodf.hdf5_adddata(hdf, tdf_ids, sname)
-
-    ''' COS-Halos '''
-    if not mk_test_file:
-        sname = 'COS-Halos'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        chalos_meta = cos_halos.meta_for_build()
-        # IDs
-        chalos_cut, new, chalos_ids = sdbbu.set_new_ids(maindb, chalos_meta)
-        nnew = np.sum(new)
-        # Survey flag
-        flag_s = survey_dict[sname]
-        chalos_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-        midx = np.array(maindb['IGM_ID'][chalos_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Append
-        assert sdbbu.chk_maindb_join(maindb, chalos_cut)
-        maindb = vstack([maindb, chalos_cut], join_type='exact')
-        # Update hf5 file
-        cos_halos.hdf5_adddata(hdf, chalos_ids, sname)#, mk_test_file=mk_test_file)
-
-
-    ''' ESI-DLA '''
-    if not mk_test_file:
-        sname = 'ESI_DLA'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        esidla_meta = esidla.meta_for_build()
-        # IDs
-        esidla_cut, new, esidla_ids = sdbbu.set_new_ids(maindb, esidla_meta)
-        nnew = np.sum(new)
-        # Survey flag
-        flag_s = survey_dict[sname]
-        esidla_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-        midx = np.array(maindb['IGM_ID'][esidla_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Append
-        assert sdbbu.chk_maindb_join(maindb, esidla_cut)
-        maindb = vstack([maindb, esidla_cut], join_type='exact')
-        # Update hf5 file
-        esidla.hdf5_adddata(hdf, esidla_ids, sname)#, mk_test_file=mk_test_file)
-
-    ''' XQ-100 '''
-    if not mk_test_file:
-        sname = 'XQ-100'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        xq100_meta = xq100.meta_for_build()
-        # IDs
-        xq100_cut, new, xq100_ids = sdbbu.set_new_ids(maindb, xq100_meta, mtch_toler=10*u.arcsec)  # BAD COORD!!
-        nnew = np.sum(new)
-        # Survey flag
-        flag_s = survey_dict[sname]
-        xq100_cut.add_column(Column([flag_s]*nnew, name='flag_survey'))
-        midx = np.array(maindb['IGM_ID'][xq100_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Append
-        assert sdbbu.chk_maindb_join(maindb, xq100_cut)
-        maindb = vstack([maindb, xq100_cut], join_type='exact')
-        # Update hf5 file
-        xq100.hdf5_adddata(hdf, xq100_ids, sname)#, mk_test_file=mk_test_file)
-
-
-    ''' HST_z2 '''
-    if not mk_test_file:
-        sname = 'HST_z2'
-        print('===============\n Doing {:s} \n==============\n'.format(sname))
-        # Read
-        hstz2_meta = hst_z2.meta_for_build()
-        # IDs
-        hstz2_cut, new, hstz2_ids = sdbbu.set_new_ids(maindb, hstz2_meta)
-        nnew = np.sum(new)
-        if nnew > 0:
-            raise ValueError("All of these should be in SDSS")
-        # Survey flag
-        flag_s = survey_dict[sname]
-        midx = np.array(maindb['IGM_ID'][hstz2_ids[~new]])
-        maindb['flag_survey'][midx] += flag_s
-        # Update hf5 file
-        hst_z2.hdf5_adddata(hdf, hstz2_ids, sname, mk_test_file=mk_test_file)
 
     # Check for duplicates -- There is 1 pair in SDSS
     if not sdbbu.chk_for_duplicates(maindb):
         raise ValueError("Failed duplicates")
 
     # Finish
-    hdf['catalog'] = maindb
-    hdf['catalog'].attrs['NAME'] = 'igmspec'
-    hdf['catalog'].attrs['EPOCH'] = 2000.
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
-    hdf['catalog'].attrs['Z_PRIORITY'] = zpri
-    hdf['catalog'].attrs['VERSION'] = version
-    hdf['catalog'].attrs['CREATION_DATE'] = str(datetime.date.today().strftime('%Y-%b-%d'))
-    hdfkeys = hdf.keys()
-    for dkey in survey_dict.keys():
-        if dkey not in hdfkeys:
-            survey_dict.pop(dkey, None)
-    hdf['catalog'].attrs['SURVEY_DICT'] = json.dumps(ltu.jsonify(survey_dict))
-    hdf.close()
+    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri, group_dict, version)
+
     print("Wrote {:s} DB file".format(outfil))
     print("Update DB info in specdb.defs.dbase_info !!")
+
+
+
 
     '''
     if mk_test_file:

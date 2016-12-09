@@ -18,6 +18,7 @@ from linetools import utils as ltu
 from linetools.spectra import io as lsio
 
 from specdb.build.utils import chk_meta
+from specdb.build.utils import init_data
 
 igms_path = imp.find_module('igmspec')[1]
 
@@ -127,7 +128,7 @@ def meta_for_build():
 
 
 
-def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
+def hdf5_adddata(hdf, sname, musodla_meta, debug=False, chk_meta_only=False,
                  mk_test_file=False):
     """ Append MUSoDLA data to the h5 file
 
@@ -151,26 +152,17 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     hdlls_grp = hdf.create_group(sname)
-    # Load up
     # Checks
     if sname != 'MUSoDLA':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    nspec = len(musodla_meta)
 
     # Build spectra (and parse for meta)
     max_npix = 230000  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
-                              ])
+    data = init_data(max_npix, include_co=False)
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
+    nspec = len(musodla_meta)
     spec_set.resize((nspec,))
     wvminlist = []
     wvmaxlist = []
@@ -215,8 +207,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
     musodla_meta.add_column(Column(npixlist, name='NPIX'))
     musodla_meta.add_column(Column(wvminlist, name='WV_MIN'))
     musodla_meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    musodla_meta.add_column(Column(np.arange(nmeta,dtype=int),name='SURVEY_ID'))
-    #musodla_meta.rename_column('Z_QSO', 'zem')
+    musodla_meta.add_column(Column(np.arange(nmeta,dtype=int),name='GROUP_ID'))
 
     # Add HDLLS meta to hdf5
     if chk_meta(musodla_meta):

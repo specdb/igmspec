@@ -21,6 +21,7 @@ from linetools import utils as ltu
 from pyigm.cgm.cos_halos import COSDwarfs
 
 from specdb.build.utils import chk_meta
+from specdb.build.utils import init_data
 
 
 #igms_path = imp.find_module('igmspec')[1]
@@ -101,7 +102,7 @@ def meta_for_build():
 '''
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
                  mk_test_file=False):
     """ Append COS-Dwarfs data to the h5 file
 
@@ -124,39 +125,14 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     cdwarfs_grp = hdf.create_group(sname)
-    # Load up
-    meta = grab_meta()
-    bmeta = meta_for_build()
     # Checks
     if sname != 'COS-Dwarfs':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
-
-    # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 0.1*u.arcsec):
-        raise ValueError("Bad matches in COS-Dwarfs")
-    meta_IDs = IDs[idx]
-
-    # Loop me to bid the full survey catalog
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
     max_npix = 20000  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
-                             ])
+    data = init_data(max_npix, include_co=False)
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
@@ -211,7 +187,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    meta.add_column(Column(np.arange(nspec,dtype=int), name='SURVEY_ID'))
+    meta.add_column(Column(np.arange(nspec,dtype=int), name='GROUP_ID'))
 
     # Add HDLLS meta to hdf5
     if chk_meta(meta):
