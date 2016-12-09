@@ -171,24 +171,24 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
                 v01hdf.copy(key, hdf)
     # Setup
     new_groups = OrderedDict()
-    new_groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
-    new_groups['XQ-100'] = xq100        # Lopez et al. 2016
-    new_groups['HDLA100'] = hdla100     # Neeleman et al. 2013
+    #new_groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
+    #new_groups['XQ-100'] = xq100        # Lopez et al. 2016
+    #new_groups['HDLA100'] = hdla100     # Neeleman et al. 2013
     new_groups['2QZ'] = twodf           # Croom et al.
-    new_groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
-    new_groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
-    new_groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
-    new_groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
-    new_groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
-    new_groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
-    new_groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
+    #new_groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
+    #new_groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
+    #new_groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
+    #new_groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
+    #new_groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
+    #new_groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
+    #new_groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
 
     pair_groups = []
     group_dict = igmsp_v01.qcat.group_dict
     tkeys = maindb.keys()
     idkey = 'IGM_ID'
 
-    meta_only = True
+    meta_only = False
     # Loop over the groups
     for gname in new_groups:
         print("Working on group: {:s}".format(gname))
@@ -203,8 +203,8 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
         if not meta_only:
             new_groups[gname].hdf5_adddata(hdf, gname, meta)
 
-    # Check for duplicates -- There is 1 pair in SDSS
-    if not sdbbu.chk_for_duplicates(maindb):
+    # Check for duplicates -- There is 1 pair in SDSS (i.e. 2 duplicates)
+    if not sdbbu.chk_for_duplicates(maindb, dup_lim=2):
         raise ValueError("Failed duplicates")
 
     # Finish
@@ -213,39 +213,6 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
 
     print("Wrote {:s} DB file".format(outfil))
     print("Update DB info in specdb.defs.dbase_info !!")
-
-
-
-
-    '''
-    if mk_test_file:
-        v01hdf_debug = h5py.File(v01file_debug,'r')
-        # Copy original
-        for key in v01hdf_debug.keys():
-            if key == 'catalog':
-                dmaindb = v01hdf_debug[key].value
-            else:
-                v01hdf_debug.copy(key, hdf)
-        # Add subset of quasars
-        idx = np.array([False]*v01hdf['quasars'].size)
-        idx[0:100] = True
-        idx[161121] = True
-        idx[161130] = True
-        hdf['quasars'] = v01hdf['quasars'].value[idx]
-        # Add some SDSS for script test
-        bsdssi = np.where(maindb['flag_survey'] == 3)[0][0:10]
-        sdss_meta = v01hdf['SDSS_DR7']['meta']
-        sdssi = np.in1d(maindb['IGM_ID'][bsdssi], sdss_meta['IGM_ID'])
-        hdf.create_group('SDSS_DR7')
-        ibool = np.array([False]*len(sdss_meta))
-        ibool[sdssi] = True
-        # Generate
-        hdf['SDSS_DR7']['meta'] = sdss_meta[ibool]
-        hdf['SDSS_DR7']['spec'] = v01hdf['SDSS_DR7']['spec'][ibool]
-        # Finish
-        test = True
-        maindb = dmaindb
-    '''
 
 
 def chk_clobber(outfil, clobber=False):

@@ -133,7 +133,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
         if row['INSTR'] == 'ACS':
             full_file = path+row['qso']+'.fits.gz'
         elif row['INSTR'] == 'WFC3':
-            coord = ltu.radec_to_coord((row['RA'],row['DEC']))
+            coord = ltu.radec_to_coord((row['RA_GROUP'],row['DEC_GROUP']))
             full_file = path+'/J{:s}{:s}_wfc3.fits.gz'.format(coord.ra.to_string(unit=u.hour,sep='',precision=2,pad=True),
                                                coord.dec.to_string(sep='',pad=True,alwayssign=True,precision=1))
         # Extract

@@ -1,15 +1,15 @@
 .. highlight:: rest
 
-*******************
-Datasets of igmspec
-*******************
+*****************
+Groups of igmspec
+*****************
 
-This document describes the datasets of igmspec.
+This document describes the data groups of igmspec.
 
 List of Surveys
 ===============
 
-Below is the list of surveys included in igmspec v02
+Below is the list of data groups included in igmspec v02
 
 * :doc:`boss`  [BOSS_DR12]
 * :doc:`hdlls` [HD-LLS_DR1]
@@ -30,7 +30,7 @@ Below is the list of surveys included in igmspec v02
 
 Overview
 ========
-Each dataset included in igmspec is composed of two
+Each group included in igmspec is composed of two
 components:
 
 1. A Table of meta data
@@ -39,7 +39,7 @@ components:
 Meta Data
 =========
 
-Each survey has its own unique set of meta data describing
+Each group has its own unique set of meta data describing
 the data products.  The following keys are required for
 inclusion in igmspec:
 
@@ -56,7 +56,7 @@ R           float    Instrument resolution, :math:`\lambda/\Delta\lambda` (FWHM)
 WV_MIN      float    Minimum wavelength of the spectrum
 WV_MAX      float    Maximum wavelength of the spectrum
 NPIX        int      Number of pixels in the spectrum; may include null values
-SURVEY_ID   int      Unique identifier for the survey [not well implemented yet]
+GROUP_ID    int      Unique identifier for the group [not well implemented yet]
 SPEC_FILE   str      Spectrum file name
 INSTR       str      Instrument file name (see `Instruments and Gratings`_ below for definitions)
 GRATING     str      Grating name (see `Instruments and Gratings`_ below for definitions)

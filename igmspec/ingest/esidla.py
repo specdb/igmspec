@@ -104,8 +104,6 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     esidla_grp = hdf.create_group(sname)
     # Load up
     Rdicts = defs.get_res_dicts()
-    if len(meta) != len(bmeta):
-        raise ValueError("Should be the same size")
     # Checks
     if sname != 'ESI_DLA':
         raise IOError("Expecting ESI_DLA!!")

@@ -175,7 +175,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
     maxpix = 0
     for jj,row in enumerate(meta):
         # Generate full file
-        coord = ltu.radec_to_coord((row['RA'],row['DEC']))
+        coord = ltu.radec_to_coord((row['RA_GROUP'],row['DEC_GROUP']))
         if row['INSTR'].strip() == 'COS':
             full_file = path+'/J{:s}{:s}_nbin3_coadd.fits.gz'.format(coord.ra.to_string(unit=u.hour,sep='',pad=True)[0:4],
                                                coord.dec.to_string(sep='',pad=True,alwayssign=True)[0:5])

@@ -209,8 +209,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
         gd = var > 0.
         if np.sum(gd) == 0:
             print("{:s} has a bad var array.  Not including".format(fname))
-            pdb.set_trace()
-            gdm[jj] = False
+            #gdm[jj] = False
             continue
         sig[gd] = np.sqrt(var[gd])
         # npix
@@ -238,6 +237,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
         spec_set[jj] = data
 
     #
+    pdb.set_trace()
     print("Max pix = {:d}".format(maxpix))
     # Add columns
     meta.add_column(Column(speclist, name='SPEC_FILE'))
