@@ -104,7 +104,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
                                first=(flag_g==1), close_pairs=(gname in pair_groups))
         # Spectra
         if not meta_only:
-            groups[gname].hdf5_adddata(hdf, gname, meta)
+            groups[gname].hdf5_adddata(hdf, gname, meta, idkey)
 
     # Check for duplicates -- There is 1 pair in SDSS (i.e. 2 duplicates)
     if not sdbbu.chk_for_duplicates(maindb, dup_lim=2):
@@ -162,7 +162,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     hdf = h5py.File(outfil,'w')
 
     # Copy over the old stuff
-    skip_copy = True
+    #skip_copy = True
     if (not test) and (not skip_copy):
         for key in v01hdf.keys():
             if key == 'catalog':
@@ -171,17 +171,17 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
                 v01hdf.copy(key, hdf)
     # Setup
     new_groups = OrderedDict()
-    #new_groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
-    #new_groups['XQ-100'] = xq100        # Lopez et al. 2016
-    #new_groups['HDLA100'] = hdla100     # Neeleman et al. 2013
+    new_groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
+    new_groups['XQ-100'] = xq100        # Lopez et al. 2016
+    new_groups['HDLA100'] = hdla100     # Neeleman et al. 2013
     new_groups['2QZ'] = twodf           # Croom et al.
-    #new_groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
-    #new_groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
-    #new_groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
-    #new_groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
-    #new_groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
-    #new_groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
-    #new_groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
+    new_groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
+    new_groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
+    new_groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
+    new_groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
+    new_groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
+    new_groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
+    new_groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
 
     pair_groups = []
     group_dict = igmsp_v01.qcat.group_dict

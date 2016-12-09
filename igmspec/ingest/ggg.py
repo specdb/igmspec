@@ -81,10 +81,9 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     Parameters
     ----------
     hdf : hdf5 pointer
-    IDs : ndarray
-      int array of IGM_ID values in mainDB
     sname : str
       Survey name
+    meta : Table
     chk_meta_only : bool, optional
       Only check meta file;  will not write
 
@@ -96,7 +95,6 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     print("Adding {:s} survey to DB".format(sname))
     ggg_grp = hdf.create_group(sname)
     # Load up
-    meta = grab_meta()
     if sname != 'GGG':
         raise IOError("Not expecting this survey..")
 
@@ -186,6 +184,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     else:
         raise ValueError("meta file failed")
 
+    pdb.set_trace()
     # References
     refs = [dict(url='http://adsabs.harvard.edu/abs/2014MNRAS.445.1745W',
                  bib='worseck+14')]
