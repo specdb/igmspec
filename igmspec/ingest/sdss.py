@@ -75,13 +75,13 @@ def grab_meta(hdf, old=False):
     else:
         sdss_meta.rename_column('z', 'zem_GROUP')
         sdss_meta['sig_zem'] = 0.
-        sdss_meta['flag_zem'] = '          '
+        sdss_meta['flag_zem'] = str('          ')
     # Fix zem
     zem, zsource = zem_from_radec(sdss_meta['RA'], sdss_meta['DEC'], hdf['quasars'].value, toler=1.0*u.arcsec)
     gdz = zem > 0.
     sdss_meta['zem_GROUP'][gdz] = zem[gdz]
     sdss_meta['flag_zem'] = zsource
-    sdss_meta['flag_zem'][~gdz] = 'SDSS-DR7'
+    sdss_meta['flag_zem'][~gdz] = str('SDSS-DR7')
 
     # Sort
     sdss_meta.sort('RA')
@@ -174,11 +174,17 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, sdss_hdf=No
     # Build spectra (and parse for meta)
     nspec = len(meta)
     max_npix = 4000  # Just needs to be large enough
-    data = init_data(max_npix, include_co=False)
+    data = init_data(max_npix, include_co=True)
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
+    # Read Zhu continua, wave file
+    cfile = os.getenv('RAW_IGMSPEC')+'/SDSS/ALLQSO_SPEC_106_continuum_nointerp.fits'
+    zhu_conti = Table.read(cfile)
+    wvfile = cfile.replace('continuum','wave')
+    zhu_wave = Table.read(wvfile)
+    #
     wvminlist = []
     wvmaxlist = []
     npixlist = []
@@ -190,7 +196,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, sdss_hdf=No
         if not os.path.isfile(full_file):
             full_file = get_specfil(row, dr7=True)
         # Extract
-        print("SDSS: Reading {:s}".format(full_file))
+        #print("SDSS: Reading {:s}".format(full_file))
         # Parse name
         fname = full_file.split('/')[-1]
         # Generate full file
@@ -202,11 +208,27 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, sdss_hdf=No
         else:
             maxpix = max(npix,maxpix)
         # Some fiddling about
-        for key in ['wave','flux','sig']:
+        for key in ['wave','flux','sig','co']:
             data[key] = 0.  # Important to init (for compression too)
         data['flux'][0][:npix] = spec.flux.value
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
+        # Continuum
+        mtc = (zhu_conti['PLATE'] == row['PLATE']) & (zhu_conti['FIBER']==row['FIBER'])
+        mtw = (zhu_wave['PLATE'] == row['PLATE']) & (zhu_wave['FIBER']==row['FIBER'])
+        if np.sum(mtc) == 1:
+            imin = np.argmin(np.abs(zhu_wave['WAVE'][0][:,np.where(mtw)[1]]-spec.wavelength[0].value))
+            data['co'][0][:npix] = zhu_conti['CONTINUUM'][0][imin:npix+imin,np.where(mtc)[1]].flatten()
+        elif np.sum(mtc) > 1:
+            print("Multiple continua for plate={:d}, row={:d}.  Taking the first".format(row['PLATE'], row['FIBER']))
+            imin = np.argmin(np.abs(zhu_wave['WAVE'][0][:,np.where(mtw)[1][0]]-spec.wavelength[0].value))
+            data['co'][0][:npix] = zhu_conti['CONTINUUM'][0][imin:npix+imin,np.where(mtc)[1][0]].flatten()
+        elif np.sum(mtc) == 0:
+            print("No SDSS continuum for plate={:d}, row={:d}".format(row['PLATE'], row['FIBER']))
+        #from xastropy.xutils import xdebug as xdb
+        #xdb.set_trace()
+        #xdb.xplot(data['wave'][0], data['flux'][0], data['co'][0])
+
         # Meta
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))

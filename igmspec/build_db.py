@@ -84,7 +84,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
     groups['BOSS_DR12'] = boss
     groups['SDSS_DR7'] = sdss
     groups['KODIAQ_DR1'] = kodiaq
-    groups['HD-LLS'] = hdlls
+    groups['HD-LLS_DR1'] = hdlls
     groups['GGG'] = ggg
 
     pair_groups = ['SDSS_DR7']
@@ -185,8 +185,12 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
 
     pair_groups = []
     group_dict = igmsp_v01.qcat.group_dict
-    tkeys = maindb.keys()
+    # Set/Check keys (and set idkey internally for other checks)
     idkey = 'IGM_ID'
+    _, tkeys = sdbbu.start_maindb(idkey)
+    mkeys = list(maindb.keys())
+    for key in tkeys:
+        assert key in mkeys
 
     meta_only = False
     # Loop over the groups

@@ -184,7 +184,6 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     else:
         raise ValueError("meta file failed")
 
-    pdb.set_trace()
     # References
     refs = [dict(url='http://adsabs.harvard.edu/abs/2014MNRAS.445.1745W',
                  bib='worseck+14')]
