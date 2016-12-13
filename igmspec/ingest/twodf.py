@@ -104,8 +104,8 @@ def grab_meta():
     for jj,row in enumerate(tdf_meta):
         if '-' in row['Name']:
             neg[jj] = True
-        if '-00' in row['Name']:
-            print('jj={:d}'.format(jj))
+        #if '-00' in row['Name']:
+        #    print('jj={:d}'.format(jj))
     neg = np.array(neg)
     decd[neg] = -1.*decd[neg]
     tdf_meta['RA_GROUP'] = rad
