@@ -128,7 +128,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     keep = ztrim & coordtrim
     sdss_myers_out = sdss_myers_out[keep]
     # Clean out unicode
-    for key in sdss_myers_out:
+    for key in sdss_myers_out.keys():
         if 'unicode' in sdss_myers_out[key].dtype.name:
             #warnings.warn("unicode in column {:s}.  Will convert to str for hdf5".format(key))
             tmp = Column(sdss_myers_out[key].data.astype(str), name=key)
