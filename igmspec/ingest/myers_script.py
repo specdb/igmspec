@@ -29,7 +29,7 @@ for key in sdss_boss1.keys():
 
 
 # Read in the Myers file, match it to Myers sweeps
-ADM_file = os.getenv('RAW_IGMSPEC') + '/Myers/GTR-ADM-QSO-master-wvcv.fits.gz'
+ADM_file = os.getenv('RAW_IGMSPEC') + '/Myers/GTR-ADM-QSO-master-wvcv.fits'
 ADM_qso = Table.read(ADM_file)
 
 ADM_sweep_file = os.getenv('RAW_IGMSPEC') + '/Myers/GTR-ADM-QSO-master-sweeps-Feb5-2016.fits'
