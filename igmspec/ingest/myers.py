@@ -8,6 +8,7 @@ import os
 from xastropy.xutils import xdebug as xdb
 from astropy.table import Table
 from astropy.io import fits
+from astropy import units as u
 
 # What should this matching tolerance be?? Set to 2.0" for now
 def add_to_hdf(hdr, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
