@@ -117,3 +117,70 @@ def zbest_myers(ADM_qso):
     ADM_qso['ZEM'] = zem
     ADM_qso['ZEM_SOURCE'] = zem_source
 
+def spectro_myers(ADM_qso):
+    """ Returns indices of objects in the Myers catalog which are real spectroscopic QSOs.
+
+     Parameters
+     ----------
+     ADM_qso : Table
+       Myers catalog without ZEM, ZEM_SOURCE columns
+
+     Returns
+     -------
+     Aligned array of booleans with True indicating a spectroscopic QSO.
+
+      0 SDSS (Schneider et al. with Hewett and Wild redshifts)
+      1 2QZ
+      2 2SLAQ
+      3 AUS
+      4 AGES
+      5 COSMOS
+      6 FAN
+      7 BOSS (Paris et al. through DR12+SEQUELS)
+      8 MMT
+      9 KDE (Photometric; Richards et al.)
+     10 XDQSOZ (Photometric; Bovy et al.)
+     11 PAPOVICH
+     12 GLIKMAN
+     13 MADDOX
+     14 LAMOST
+     15 VHS (Photometric; calculated using the Vista Hemisphere Survey IR-data)
+     16 MCGREER
+     17 VCV
+     18 ALLBOSS
+
+     Notes from discussion with Myers:
+
+    For this reason we now exclude anyting with only bit 18 set
+    --------
+    I've also added, as bit 2L^18, a list of everything that
+    was visually inspected for BOSS. The redshifts for these objects
+    aren't necessarily correct, but if this bit is set for an
+    object and the object does not have a redshift corresponding
+    to bit 2L^0 or bit 2L^7 then this is not a quasar, as it was
+    visually inspected and not ultimately
+    included in a quasar catalog.
+
+
+    """
+
+    ispec = ((ADM_qso['SOURCEBIT'] & 2**0) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**1) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**2) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**3) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**4) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**5) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**6) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**7) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**8) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**11) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**12) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**13) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**14) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**16) != False) | \
+            ((ADM_qso['SOURCEBIT'] & 2**17) != False) & \
+            (ADM_qso['SOURCEBIT'] != 2**18)
+
+    return ispec
+
+
