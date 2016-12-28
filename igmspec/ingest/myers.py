@@ -39,7 +39,7 @@ def add_to_hdf(hdr, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
 
     # Read in the Myers file, match it to Myers sweeps photometry
     # Myers master QSO catalog
-    ADM_file = os.getenv('RAW_IGMSPEC') + '/Myers/GTR-ADM-QSO-master-wvcv.fits.gz'
+    ADM_file = os.getenv('RAW_IGMSPEC') + '/Myers/GTR-ADM-QSO-master-wvcv.fits'
     ADM_qso = Table.read(ADM_file)
     head1 = fits.open(ADM_file)[1].header
     DATE = head1['DATE']
@@ -86,7 +86,7 @@ def add_to_hdf(hdr, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     # 1) SDSS-MYERS match. Add Myers tags to the SDSS structure
     c_sdss = SkyCoord(ra=sdss_boss1['SDSS_PLUG_RA'] * u.deg, dec=sdss_boss1['SDSS_PLUG_DEC'] * u.deg)
     c_myers = SkyCoord(ra=ADM_qso['MYERS_RA'] * u.deg, dec=ADM_qso['MYERS_DEC'] * u.deg)
-    isdss, imyers, d2d, _ = search_around_sky(c_sdss, c_myers, MATCH_TOL * u.arcsec)
+    isdss, imyers, d2d, _ = search_around_sky(c_sdss, c_myers, MATCH_TOL)
     sdss_myers = hstack([sdss_boss1[isdss], ADM_qso[imyers]], join_type='exact')
     sdss_myers['SDSS_MYERS_FLAG'] = 'SDSS_MYERS'
     sdss_myers['RA'] = sdss_myers['SDSS_PLUG_RA']
@@ -123,8 +123,8 @@ def add_to_hdf(hdr, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
 
     # Cut down
     ztrim = (sdss_myers_out['ZEM'] >= Z_MIN) & (sdss_myers_out['ZEM'] <= Z_MAX)
-    coordtrim = (ADM_qso['RA'] >= 0.0) & (ADM_qso['RA'] <= 360.0) & (np.abs(
-        ADM_qso['DEC']) <= 90.0)
+    coordtrim = (sdss_myers_out['RA'] >= 0.0) & (sdss_myers_out['RA'] <= 360.0) & (np.abs(
+        sdss_myers_out['DEC']) <= 90.0)
     keep = ztrim & coordtrim
     sdss_myers_out = sdss_myers_out[keep]
 
