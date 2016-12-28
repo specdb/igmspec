@@ -11,7 +11,7 @@ from astropy.io import fits
 from astropy import units as u
 
 # What should this matching tolerance be?? Set to 2.0" for now
-def add_to_hdf(hdr, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
+def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
 
     from astropy import units as u
     from astropy.table import QTable, Table, Column, hstack, vstack
@@ -127,7 +127,6 @@ def add_to_hdf(hdr, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
         sdss_myers_out['DEC']) <= 90.0)
     keep = ztrim & coordtrim
     sdss_myers_out = sdss_myers_out[keep]
-
     hdf['quasars'] = sdss_myers_out
     hdf['quasars'].attrs['DATE'] = DATE
 
