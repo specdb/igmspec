@@ -4,13 +4,23 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import os
-import pdb
-
+#import pdb
+from xastropy.xutils import xdebug as xdb
 from astropy.table import Table
 from astropy.io import fits
 
 
-def add_to_hdf(hdf):
+def add_to_hdf(hdr, MATCH_TOL = 3.0*u.arcsec):
+
+    from astropy import units as u
+    from astropy.table import QTable, Table, Column, hstack, vstack
+    from astropy.coordinates import SkyCoord, match_coordinates_sky, search_around_sky
+
+
+
+
+
+def add_to_hdf_old(hdf):
     """ Add Myers catalog to hdf file
 
     Parameters
