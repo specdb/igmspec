@@ -17,6 +17,9 @@ from astropy import units as u
 from linetools import utils as ltu
 from linetools.spectra import io as lsio
 
+from specdb.build.utils import chk_meta
+from specdb.build.utils import init_data
+
 igms_path = imp.find_module('igmspec')[1]
 
 
@@ -78,10 +81,10 @@ def grab_meta():
                 zems.append(row['z_em'])
     # Generate
     meta = Table()
-    meta['RA'] = [coord.ra.deg for coord in coords]
-    meta['DEC'] = [coord.dec.deg for coord in coords]
+    meta['RA_GROUP'] = [coord.ra.deg for coord in coords]
+    meta['DEC_GROUP'] = [coord.dec.deg for coord in coords]
     meta['NAME'] = names
-    meta['zem'] = zems
+    meta['zem_GROUP'] = zems
     meta['INSTR'] = instrs
     meta['GRATING'] = gratings
     meta['DATE-INFO'] = dinfos
@@ -90,10 +93,16 @@ def grab_meta():
     meta['R'] = Rs
     t = Time(dates, out_subfmt='date')  # Fixes to YYYY-MM-DD
     meta.add_column(Column(t.iso, name='DATE-OBS'))
+    #
+    meta['sig_zem'] = 0.
+    meta['flag_zem'] = str('SDSS')
+    meta['STYPE'] = str('QSO')
+    # Check
+    assert chk_meta(meta, chk_cat_only=True)
     # Return
     return meta
 
-
+'''
 def meta_for_build():
     """ Generates the meta data needed for the IGMSpec build
     Returns
@@ -115,10 +124,11 @@ def meta_for_build():
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
+def hdf5_adddata(hdf, sname, musodla_meta, debug=False, chk_meta_only=False,
                  mk_test_file=False):
     """ Append MUSoDLA data to the h5 file
 
@@ -142,41 +152,17 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     hdlls_grp = hdf.create_group(sname)
-    # Load up
     # Checks
     if sname != 'MUSoDLA':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    musodla_meta = grab_meta()
-    bmeta = meta_for_build()
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
-    nspec = len(musodla_meta)
-
-    # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=musodla_meta['RA'], dec=musodla_meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 0.1*u.arcsec):
-        raise ValueError("Bad matches in ESI_DLA")
-    meta_IDs = IDs[idx]
-    musodla_meta.add_column(Column(meta_IDs, name='IGM_ID'))
-
 
     # Build spectra (and parse for meta)
     max_npix = 230000  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
-                              ])
+    data = init_data(max_npix, include_co=False)
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
+    nspec = len(musodla_meta)
     spec_set.resize((nspec,))
     wvminlist = []
     wvmaxlist = []
@@ -221,8 +207,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     musodla_meta.add_column(Column(npixlist, name='NPIX'))
     musodla_meta.add_column(Column(wvminlist, name='WV_MIN'))
     musodla_meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    musodla_meta.add_column(Column(np.arange(nmeta,dtype=int),name='SURVEY_ID'))
-    #musodla_meta.rename_column('Z_QSO', 'zem')
+    musodla_meta.add_column(Column(np.arange(nmeta,dtype=int),name='GROUP_ID'))
 
     # Add HDLLS meta to hdf5
     if chk_meta(musodla_meta):

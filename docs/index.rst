@@ -22,7 +22,7 @@ Contents
    :maxdepth: 2
 
    installing
-   datasets
+   groups
 
 
 Indices and tables

@@ -17,7 +17,7 @@ from astropy.io import fits
 
 from linetools import utils as ltu
 
-from specdb.build.utils import chk_meta, set_resolution
+from specdb.build.utils import chk_meta, set_resolution, init_data
 
 igms_path = imp.find_module('igmspec')[1]
 
@@ -46,38 +46,60 @@ def grab_meta_mike():
         # DATE
         dvals = row['DATE'].split(' ')
         dateobs.append(str('{:s}-{:s}-{:s}'.format(dvals[2],dvals[1],dvals[0])))
-    mike_meta.add_column(Column(ra, name='RA'))
-    mike_meta.add_column(Column(dec, name='DEC'))
+    mike_meta.add_column(Column(ra, name='RA_GROUP'))
+    mike_meta.add_column(Column(dec, name='DEC_GROUP'))
     mike_meta.add_column(Column(dateobs, name='DATE-OBS'))
     #
     return mike_meta
 
 
-def meta_for_build():
+def grab_meta():
     """ Generates the meta data needed for the IGMSpec build
     Returns
     -------
     meta : Table
     """
-    # Cut down to unique QSOs
+    # Read
     hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1/HD-LLS_DR1.fits')
-    names = np.array([name[0:26] for name in hdlls_meta['Name']])
-    uni, uni_idx = np.unique(names, return_index=True)
-    hdlls_meta = hdlls_meta[uni_idx]
-    nqso = len(hdlls_meta)
+    # Rename
+    hdlls_meta.rename_column('RA', 'RA_GROUP')
+    hdlls_meta.rename_column('DEC', 'DEC_GROUP')
+    hdlls_meta.rename_column('Z_QSO', 'zem_GROUP')
+
+    # Kludgy Table judo
+    hdlls_full = hdlls_meta[0:1]
+    spec_files = []
+
+    # Loop me to bid the full survey catalog
+    for kk,row in enumerate(hdlls_meta):
+        for spec_file in row['SPEC_FILES']:
+            if spec_file == 'NULL':
+                continue
+            # Add to full table
+            hdlls_full.add_row(row)
+            spec_files.append(spec_file)
+    # Build
+    hdlls_full = hdlls_full[1:]
+    hdlls_full.remove_column('SPEC_FILES')
+    hdlls_full.add_column(Column(spec_files,name='SPEC_FILE'))
+    # Cut on unique SPEC_FILEs
+    uni, uni_idx = np.unique(np.array(spec_files), return_index=True)
+    # REMOVE ONE FILE (A DUPLICATE) BY HAND
+    mt = uni != 'HD-LLS_J130756.70+042215.0_MIKE.fits'
+    uni_idx = uni_idx[mt]
     #
-    meta = Table()
-    meta['RA'] = hdlls_meta['RA']
-    meta['DEC'] = hdlls_meta['DEC']
-    meta['zem'] = hdlls_meta['Z_QSO']
-    meta['sig_zem'] = [0.]*nqso
-    meta['flag_zem'] = [str('UNKN')]*nqso
-    meta['STYPE'] = [str('QSO')]*nqso
+    hdlls_full = hdlls_full[uni_idx]
+    #
+    nspec = len(hdlls_full)
+    hdlls_full['sig_zem'] = [0.]*nspec
+    hdlls_full['flag_zem'] = [str('UNKN')]*nspec
+    hdlls_full['STYPE'] = [str('QSO')]*nspec
+    assert chk_meta(hdlls_full, chk_cat_only=True)
     # Return
-    return meta
+    return hdlls_full
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
                  mk_test_file=False):
     """ Append HD-LLS data to the h5 file
 
@@ -104,70 +126,21 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     # Load up
     Rdicts = defs.get_res_dicts()
     mike_meta = grab_meta_mike()
-    mike_coord = SkyCoord(ra=mike_meta['RA'], dec=mike_meta['DEC'], unit='deg')
+    mike_coord = SkyCoord(ra=mike_meta['RA_GROUP'], dec=mike_meta['DEC_GROUP'], unit='deg')
     # Checks
     if sname != 'HD-LLS_DR1':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    cut_meta = meta_for_build()
-    if len(cut_meta) != len(IDs):
-        raise ValueError("Wrong sized table..")
-    # DR1 Table by LLS, not spectrum
-    hdlls_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/HD-LLS_DR1/HD-LLS_DR1.fits')
-    nlls = len(hdlls_meta)
+    full_coord = SkyCoord(ra=meta['RA_GROUP'], dec=meta['DEC_GROUP'], unit='deg')
 
-    # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=cut_meta['RA'], dec=cut_meta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=hdlls_meta['RA'], dec=hdlls_meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 0.1*u.arcsec):
-        raise ValueError("Bad matches in HD-LLS")
-    meta_IDs = IDs[idx]
-
-    # Kludgy Table judo
-    hdlls_full = hdlls_meta[0:1]
-    spec_files = []
-
-    full_IDs = []
-    # Loop me to bid the full survey catalog
-    for kk,row in enumerate(hdlls_meta):
-        for spec_file in row['SPEC_FILES']:
-            if spec_file == 'NULL':
-                continue
-            # Add to full table
-            hdlls_full.add_row(row)
-            spec_files.append(spec_file)
-            full_IDs.append(meta_IDs[kk])
-    # Build
-    hdlls_full = hdlls_full[1:]
-    hdlls_full.remove_column('SPEC_FILES')
-    hdlls_full.add_column(Column(spec_files,name='SPEC_FILE'))
-    hdlls_full.add_column(Column(full_IDs, name='IGM_ID'))
-    # Cut on unique SPEC_FILEs
-    uni, uni_idx = np.unique(np.array(spec_files), return_index=True)
-    if sname == 'HD-LLS_DR1':
-        # REMOVE ONE FILE (A DUPLICATE) BY HAND
-        mt = uni != 'HD-LLS_J130756.70+042215.0_MIKE.fits'
-        uni_idx = uni_idx[mt]
-    hdlls_full = hdlls_full[uni_idx]
-    full_coord = SkyCoord(ra=hdlls_full['RA'], dec=hdlls_full['DEC'], unit='deg')
 
     # Build spectra (and parse for meta)
     if mk_test_file:
-        hdlls_full = hdlls_full[0:3]
-    nspec = len(hdlls_full)
+        meta = meta[0:3]
+    nspec = len(meta)
     max_npix = 210000  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
-                             ])
+    data = init_data(max_npix, include_co=False)
     # Init
-    full_idx = np.zeros(len(hdlls_full), dtype=int)
+    full_idx = np.zeros(len(meta), dtype=int)
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
@@ -191,7 +164,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         hdu = fits.open(f)
         # Parse name
         fname = f.split('/')[-1]
-        mt = np.where(hdlls_full['SPEC_FILE'] == fname)[0]
+        mt = np.where(meta['SPEC_FILE'] == fname)[0]
         if mk_test_file and (jj>=3):
             continue
         if len(mt) != 1:
@@ -308,7 +281,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
         spec_set[kk] = data
 
     # Add columns
-    meta = hdlls_full[full_idx]
+    meta = meta[full_idx]
     nmeta = len(meta)
     meta.add_column(Column([2000.]*nmeta, name='EPOCH'))
     meta.add_column(Column(npixlist, name='NPIX'))
@@ -316,11 +289,10 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False,
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
-    meta.add_column(Column(np.arange(nmeta,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(np.arange(nmeta,dtype=int),name='GROUP_ID'))
     meta.add_column(Column(gratinglist, name='GRATING'))
     meta.add_column(Column(instrlist, name='INSTR'))
     meta.add_column(Column(telelist, name='TELESCOPE'))
-    meta.rename_column('Z_QSO', 'zem')
 
     # Add HDLLS meta to hdf5
     if chk_meta(meta):

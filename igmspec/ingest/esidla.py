@@ -21,6 +21,7 @@ from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
 from specdb.build.utils import chk_meta
+from specdb.build.utils import init_data
 
 igms_path = imp.find_module('igmspec')[1]
 
@@ -48,11 +49,19 @@ def grab_meta():
     esidla_meta.add_column(Column(['KeckII']*nspec, name='TELESCOPE'))
     esidla_meta.add_column(Column(['ESI']*nspec, name='INSTR'))
     esidla_meta.add_column(Column(['ECH']*nspec, name='GRATING'))
+    # Rename
+    esidla_meta.rename_column('RA', 'RA_GROUP')
+    esidla_meta.rename_column('DEC', 'DEC_GROUP')
+    esidla_meta.rename_column('zem', 'zem_GROUP')
+    esidla_meta['STYPE'] = str('QSO')
     # Sort
-    esidla_meta.sort('RA')
+    esidla_meta.sort('RA_GROUP')
+    # Check
+    assert chk_meta(esidla_meta, chk_cat_only=True)
+    #
     return esidla_meta
 
-
+'''
 def meta_for_build(esidla_meta=None):
     """ Generates the meta data needed for the IGMSpec build
     Returns
@@ -69,9 +78,10 @@ def meta_for_build(esidla_meta=None):
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     """ Append ESI data to the h5 file
 
     Parameters
@@ -94,38 +104,15 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     esidla_grp = hdf.create_group(sname)
     # Load up
     Rdicts = defs.get_res_dicts()
-    meta = grab_meta()
-    bmeta = meta_for_build()
-    if len(meta) != len(bmeta):
-        raise ValueError("Should be the same size")
     # Checks
     if sname != 'ESI_DLA':
         raise IOError("Expecting ESI_DLA!!")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
 
-    # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 0.1*u.arcsec):
-        raise ValueError("Bad matches in ESI_DLA")
-    meta_IDs = IDs[idx]
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
     max_npix = 50000  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
-                             ])
+    data = init_data(max_npix, include_co=False)
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
@@ -187,7 +174,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
-    meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(np.arange(nspec,dtype=int),name='GROUP_ID'))
 
     # Add HDLLS meta to hdf5
     if chk_meta(meta):

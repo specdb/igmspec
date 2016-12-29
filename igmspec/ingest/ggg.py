@@ -18,6 +18,7 @@ from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
 from specdb.build.utils import chk_meta
+from specdb.build.utils import init_data
 
 igms_path = imp.find_module('igmspec')[1]
 
@@ -29,21 +30,29 @@ def grab_meta():
 
     """
     # This table has units in it!
-    ggg_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/GGG/GGG_catalog.fits.gz')
-    nqso = len(ggg_meta)
+    meta = Table.read(os.getenv('RAW_IGMSPEC')+'/GGG/GGG_catalog.fits.gz')
+    nqso = len(meta)
     # Turn off RA/DEC units
     for key in ['RA', 'DEC']:
-        ggg_meta[key].unit = None
+        meta[key].unit = None
+    meta.rename_column('RA', 'RA_GROUP')
+    meta.rename_column('DEC', 'DEC_GROUP')
     #
     # Add zem
-    ggg_meta['zem'] = ggg_meta['z_gmos']
-    ggg_meta['sig_zem'] = ggg_meta['zerror_gmos']
-    ggg_meta['flag_zem'] = [str('GGG')]*nqso
-    ggg_meta.add_column(Column([2000.]*nqso, name='EPOCH'))
+    meta['zem_GROUP'] = meta['z_gmos']
+    meta['sig_zem'] = meta['zerror_gmos']
+    meta['flag_zem'] = [str('GGG')]*nqso
+    meta.add_column(Column([2000.]*nqso, name='EPOCH'))
     #
+    meta['STYPE'] = [str('QSO')]*nqso
+    # Double up for the two gratings
+    ggg_meta = vstack([meta,meta])
+    # Check
+    assert chk_meta(ggg_meta, chk_cat_only=True)
+    # Return
     return ggg_meta
 
-
+'''
 def meta_for_build():
     """ Generates the meta data needed for the IGMSpec build
     Returns
@@ -63,18 +72,18 @@ def meta_for_build():
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     """ Append GGG data to the h5 file
 
     Parameters
     ----------
     hdf : hdf5 pointer
-    IDs : ndarray
-      int array of IGM_ID values in mainDB
     sname : str
       Survey name
+    meta : Table
     chk_meta_only : bool, optional
       Only check meta file;  will not write
 
@@ -86,35 +95,14 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     print("Adding {:s} survey to DB".format(sname))
     ggg_grp = hdf.create_group(sname)
     # Load up
-    meta = grab_meta()
-    bmeta = meta_for_build()
-    # Checks
     if sname != 'GGG':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
-
-    # Generate ID array from RA/DEC
-    meta_IDs = IDs
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
-
-
-    # Double up for the two gratings
-    meta = vstack([meta,meta])
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
     max_npix = 1600  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
-                             ])
     # Init
+    data = init_data(max_npix, include_co=False)
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
@@ -186,7 +174,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
-    meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(np.arange(nspec,dtype=int),name='GROUP_ID'))
 
     # Add HDLLS meta to hdf5
     if chk_meta(meta):
