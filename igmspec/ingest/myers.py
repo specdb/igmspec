@@ -5,13 +5,45 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import os
 #import pdb
-from xastropy.xutils import xdebug as xdb
+#from xastropy.xutils import xdebug as xdb
 from astropy.table import Table
 from astropy.io import fits
 from astropy import units as u
 
-# What should this matching tolerance be?? Set to 2.0" for now
+
 def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
+    """Generate Myers + SDSS_BOSS QSO catalog from Myers and DR12 files
+
+       This routine reads in the SDSS/BOSS specObj and PhotPosPlate files
+       and pulls out all QSOs. This is then matched amd merged with
+       the Myers QSO compilation with duplicates removed. Requires
+       that that environment varialble RAW_IGMSPEC be set to the top
+       directory where the SDSS/BOSS files and Myers files live.
+
+       Parameters
+       ----------
+       hdf: hdf5 object
+           database to hold QSO catalog
+
+       Z_MIN: float, optional [default Z_MIN = 0.1]
+           minimum QSO redshift applied to the catalog
+
+       Z_MAX: float. optimal [default Z_MAX = 7.1]
+           maximum QSO redshift applied to the catalo
+
+       MATCH_TOL: quantity, optional [default 2.0*u.arcsec]
+           matching radius between Myers and SDSS/BOSS catalogs
+
+       Returns
+       -------
+       None :
+           None
+
+       Examples
+    --------
+     >>> add_to_hdf(hdf)
+    None
+    """
 
     from astropy import units as u
     from astropy.table import QTable, Table, Column, hstack, vstack
@@ -137,7 +169,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     hdf['quasars'] = sdss_myers_out
     hdf['quasars'].attrs['DATE'] = DATE
 
-    return
+    return None
 
 
 def add_to_hdf_old(hdf):
