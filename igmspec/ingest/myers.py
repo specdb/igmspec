@@ -131,7 +131,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     # Deal with each in turn.
 
     # 1) SDSS-MYERS match. Add Myers tags to the SDSS structure
-    c_sdss = SkyCoord(ra=sdss_boss1['SDSS_PLUG_RA'], dec=sdss_boss1['SDSS_PLUG_DEC'], unit='deg')
+    c_sdss = SkyCoord(ra=sdss_boss1['SDSS_BOSS_PLUG_RA'], dec=sdss_boss1['SDSS_BOSS_PLUG_DEC'], unit='deg')
     c_myers = SkyCoord(ra=ADM_qso['MYERS_RA'], dec=ADM_qso['MYERS_DEC'], unit='deg')
     isdss, imyers, d2d, _ = search_around_sky(c_sdss, c_myers, MATCH_TOL)
     sdss_myers = hstack([sdss_boss1[isdss], ADM_qso[imyers]], join_type='exact')
