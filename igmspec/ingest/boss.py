@@ -19,6 +19,7 @@ from linetools.spectra import io as lsio
 
 from specdb.build.utils import chk_for_duplicates
 from specdb.build.utils import chk_meta
+from specdb.build.utils import init_data
 
 
 def grab_meta():
@@ -54,18 +55,25 @@ def grab_meta():
     boss_meta.add_column(Column([2100.]*nboss, name='R'))  # RESOLUTION
     boss_meta.add_column(Column(['SDSS 2.5-M']*nboss, name='TELESCOPE'))
     # Redshift logic
-    boss_meta['zem'] = boss_meta['Z_PCA']
+    boss_meta['zem_GROUP'] = boss_meta['Z_PCA']
     boss_meta['sig_zem'] = boss_meta['ERR_ZPCA']
     boss_meta['flag_zem'] = [str('BOSS_PCA ')]*nboss
     # Fix bad redshifts
     bad_pca = boss_meta['Z_PCA'] < 0.
-    boss_meta['zem'][bad_pca] = boss_meta['Z_PIPE'][bad_pca]
+    boss_meta['zem_GROUP'][bad_pca] = boss_meta['Z_PIPE'][bad_pca]
     boss_meta['sig_zem'][bad_pca] = boss_meta['ERR_ZPIPE'][bad_pca]
     boss_meta['flag_zem'][bad_pca] = str('BOSS_PIPE')
-    #
+    # Rename RA/DEC
+    boss_meta.rename_column('RA', 'RA_GROUP')
+    boss_meta.rename_column('DEC', 'DEC_GROUP')
+    # STYPE
+    boss_meta['STYPE'] = [str('QSO')]*len(boss_meta)
+    # Check
+    assert chk_meta(boss_meta, chk_cat_only=True)
+    # Return
     return boss_meta
 
-
+'''
 def meta_for_build():
     """ Load the meta info
     DR12 quasars : https://data.sdss.org/datamodel/files/BOSS_QSO/DR12Q/DR12Q.html
@@ -76,7 +84,7 @@ def meta_for_build():
     """
     boss_meta = grab_meta()
     # Cut down to unique
-    c_main = SkyCoord(ra=boss_meta['RA'], dec=boss_meta['DEC'], unit='deg')
+    c_main = SkyCoord(ra=boss_meta['RA_SPEC'], dec=boss_meta['DEC_SPEC'], unit='deg')
     idx, d2d, d3d = match_coordinates_sky(c_main, c_main, nthneighbor=2)
     dups = np.where(d2d < 2*u.arcsec)[0]
     flgs = np.array([True]*len(boss_meta))
@@ -94,6 +102,7 @@ def meta_for_build():
     meta['STYPE'] = [str('QSO')]*len(meta)
     # Return
     return meta
+'''
 
 
 def get_specfil(row, KG=False, hiz=False):
@@ -129,7 +138,7 @@ def get_specfil(row, KG=False, hiz=False):
     return specfil
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=None, **kwargs):
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, boss_hdf=None, **kwargs):
     """ Add BOSS data to the DB
 
     Parameters
@@ -155,17 +164,13 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
         boss_hdf.copy(sname, hdf)
         return
     boss_grp = hdf.create_group(sname)
+
+    '''
     # Load up
-    meta = grab_meta()
     bmeta = meta_for_build()
     # Checks
     if sname != 'BOSS_DR12':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
 
     # Generate ID array from RA/DEC
     c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
@@ -174,20 +179,12 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
     idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
     if np.sum(d2d > 1.2*u.arcsec):  # There is one system offset by 1.1"
         raise ValueError("Bad matches in BOSS")
-    meta_IDs = IDs[idx]
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
-
-    # Sort
+    '''
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
     max_npix = 4650  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              (str('co'),   'float32', (max_npix)),
-                              ])
+    data = init_data(max_npix, include_co=True)
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
@@ -199,17 +196,15 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
     # Loop
     maxpix = 0
     for jj,row in enumerate(meta):
+        # Generate full file
         full_file = get_specfil(row)
         if full_file == 'None':
             continue
-        # Extract
-        #print("BOSS: Reading {:s}".format(full_file))
-        # Generate full file
+        # Read
         spec = lsio.readspec(full_file)
         # npix
         npix = spec.npix
-        #if row['zem'] > 4.8:
-        #    pdb.set_trace()
+        # Kludge for higest redshift systems
         if npix < 10:
             full_file = get_specfil(row, hiz=True)
             try:
@@ -223,17 +218,17 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
             maxpix = max(npix,maxpix)
         # Parse name
         fname = full_file.split('/')[-1]
-        # Some fiddling about
+        # Fill
         for key in ['wave','flux','sig']:
             data[key] = 0.  # Important to init (for compression too)
         data['flux'][0][:npix] = spec.flux.value
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
-        # GZ Continuum
+        # GZ Continuum -- packed in with spectrum, generated by my IDL script
         try:
             co = spec.co.value
         except AttributeError:
-            co = np.ones_like(spec.flux.value)
+            co = np.zeros_like(spec.flux.value)
         # KG Continuum
         KG_file = get_specfil(row, KG=True)
         if os.path.isfile(KG_file) and (npix>1):  # Latter is for junk in GZ file.  Needs fixing
@@ -244,20 +239,17 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
                 assert (wvKG[0]-spec.wavelength[0].value) < 1e-5
             except:
                 pdb.set_trace()
-            gdpix = np.where(wvKG < (1+row['zem'])*1200.)[0]
+            gdpix = np.where(wvKG < (1+row['zem_GROUP'])*1200.)[0]
             co[gdpix] = KGtbl['CONT'][gdpix]
-            #from xastropy.xutils import xdebug as xdb
-            #xdb.set_trace()
-            #xdb.xplot(data['wave'][0][0:npix], data['flux'][0][0:npix], co)
         data['co'][0][:npix] = co
         # Meta
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
         npixlist.append(npix)
-        # Only way to set the dataset correctly
         if chk_meta_only:
             continue
+        # Only way to set the dataset correctly
         spec_set[jj] = data
 
     #
@@ -267,7 +259,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, boss_hdf=Non
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(np.arange(nspec,dtype=int),name='GROUP_ID'))
     meta.add_column(Column([2000.]*len(meta), name='EPOCH'))
 
     # Add HDLLS meta to hdf5

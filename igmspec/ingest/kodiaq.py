@@ -22,6 +22,7 @@ from linetools.spectra import io as lsio
 
 from specdb.build.utils import chk_meta
 from specdb.build.utils import set_resolution
+from specdb.build.utils import init_data
 
 igms_path = imp.find_module('igmspec')[1]
 
@@ -53,16 +54,22 @@ def grab_meta():
         tymd = str('{:s}-{:s}-{:02d}'.format(dvals[-1],dvals[1][0:3],int(dvals[2])))
         tval = datetime.datetime.strptime(tymd, '%Y-%b-%d')
         dateobs.append(datetime.datetime.strftime(tval,'%Y-%m-%d'))
-    kodiaq_meta.add_column(Column(ra, name='RA'))
-    kodiaq_meta.add_column(Column(dec, name='DEC'))
+    kodiaq_meta.add_column(Column(ra, name='RA_GROUP'))
+    kodiaq_meta.add_column(Column(dec, name='DEC_GROUP'))
     kodiaq_meta.add_column(Column(dateobs, name='DATE-OBS'))
     #
     kodiaq_meta.add_column(Column(['HIRES']*nspec, name='INSTR'))
     kodiaq_meta.add_column(Column(['Keck-I']*nspec, name='TELESCOPE'))
+    kodiaq_meta['STYPE'] = [str('QSO')]*nspec
+    # z
+    kodiaq_meta.rename_column('zem', 'zem_GROUP')
+    kodiaq_meta['sig_zem'] = [0.]*nspec
+    kodiaq_meta['flag_zem'] = [str('SIMBAD')]*nspec
     #
+    assert chk_meta(kodiaq_meta, chk_cat_only=True)
     return kodiaq_meta
 
-
+'''
 def meta_for_build():
     """ Generates the meta data needed for the IGMSpec build
     Returns
@@ -85,9 +92,9 @@ def meta_for_build():
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
-
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     """ Append KODIAQ data to the h5 file
 
     Parameters
@@ -108,42 +115,19 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     print("Adding {:s} survey to DB".format(sname))
     kodiaq_grp = hdf.create_group(sname)
     # Load up
-    meta = grab_meta()
-    bmeta = meta_for_build()
     # Checks
     if sname != 'KODIAQ_DR1':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
-
-    # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 0.1*u.arcsec):
-        raise ValueError("Bad matches in KODIAQ")
-    meta_IDs = IDs[idx]
-
-    # Loop me to bid the full survey catalog
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
     max_npix = 200000  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
-                             ])
     # Init
+    data = init_data(max_npix, include_co=False)
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
+    # Lists
     Rlist = []
     wvminlist = []
     wvmaxlist = []
@@ -204,7 +188,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
     meta.add_column(Column(gratinglist, name='GRATING'))
-    meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(np.arange(nspec,dtype=int),name='GROUP_ID'))
 
     # Add HDLLS meta to hdf5
     if chk_meta(meta):

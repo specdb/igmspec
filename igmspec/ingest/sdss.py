@@ -18,6 +18,7 @@ from linetools.spectra import io as lsio
 from linetools import utils as ltu
 
 from specdb.build.utils import chk_meta
+from specdb.build.utils import init_data
 
 
 def get_specfil(row, dr7=False):
@@ -43,13 +44,14 @@ def get_specfil(row, dr7=False):
     return specfil
 
 
-def grab_meta(old=False):
+def grab_meta(hdf, old=False):
     """ Grab SDSS meta Table
 
     Returns
     -------
     meta
     """
+    from specdb.zem.utils import zem_from_radec
     #sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/SDSS_DR7_qso.fits.gz')
     sdss_meta = Table.read(os.getenv('RAW_IGMSPEC')+'/SDSS/dr7qso.fit.gz')
     nspec = len(sdss_meta)
@@ -69,16 +71,32 @@ def grab_meta(old=False):
         sdss_meta.rename_column('RAOBJ', 'RA')
         sdss_meta.rename_column('DECOBJ', 'DEC')
         sdss_meta.rename_column('Z_ERR', 'sig_zem')
+        pdb.set_trace()
     else:
-        sdss_meta.rename_column('z', 'zem')
+        sdss_meta.rename_column('z', 'zem_GROUP')
         sdss_meta['sig_zem'] = 0.
-        sdss_meta['flag_zem'] = '          '
+        sdss_meta['flag_zem'] = str('          ')
+    # Fix zem
+    zem, zsource = zem_from_radec(sdss_meta['RA'], sdss_meta['DEC'], hdf['quasars'].value, toler=1.0*u.arcsec)
+    gdz = zem > 0.
+    sdss_meta['zem_GROUP'][gdz] = zem[gdz]
+    sdss_meta['flag_zem'] = zsource
+    sdss_meta['flag_zem'][~gdz] = str('SDSS-DR7')
+
     # Sort
     sdss_meta.sort('RA')
+    # Rename
+    sdss_meta.rename_column('RA', 'RA_GROUP')
+    sdss_meta.rename_column('DEC', 'DEC_GROUP')
+    # Add
+    sdss_meta['STYPE'] = [str('QSO')]*nspec
+    # Check
+    assert chk_meta(sdss_meta, chk_cat_only=True)
     # Return
     return sdss_meta
 
 
+'''
 def meta_for_build(old=False):
     """ Load the meta info
 
@@ -121,9 +139,10 @@ def meta_for_build(old=False):
     meta['STYPE'] = [str('QSO')]*nqso
     # Return
     return meta
+'''
 
 
-def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=None, **kwargs):
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, sdss_hdf=None, **kwargs):
     """ Add SDSS data to the DB
 
     Parameters
@@ -140,7 +159,6 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     -------
 
     """
-    from specdb.zem.utils import zem_from_radec
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
     if sdss_hdf is not None:
@@ -149,48 +167,24 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
         return
     sdss_grp = hdf.create_group(sname)
     # Load up
-    meta = grab_meta()
-    bmeta = meta_for_build()
     # Checks
     if sname != 'SDSS_DR7':
         raise IOError("Not expecting this survey..")
-    if np.sum(IDs < 0) > 0:
-        raise ValueError("Bad ID values")
-    # Open Meta tables
-    if len(bmeta) != len(IDs):
-        raise ValueError("Wrong sized table..")
-
-    # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 1.2*u.arcsec):  # There is one system offset by 1.1"
-        raise ValueError("Bad matches in SDSS")
-    meta_IDs = IDs[idx]
-    meta.add_column(Column(meta_IDs, name='IGM_ID'))
-
-    # Fix zem
-    zem, zsource = zem_from_radec(meta['RA'], meta['DEC'], hdf['quasars'].value)
-    gdz = zem > 0.
-    meta['zem'][gdz] = zem[gdz]
-    meta['flag_zem'] = zsource
-    meta['flag_zem'][~gdz] = 'SDSS-DR7'
-
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
     max_npix = 4000  # Just needs to be large enough
-    data = np.ma.empty((1,),
-                       dtype=[(str('wave'), 'float64', (max_npix)),
-                              (str('flux'), 'float32', (max_npix)),
-                              (str('sig'),  'float32', (max_npix)),
-                              #(str('co'),   'float32', (max_npix)),
-                             ])
+    data = init_data(max_npix, include_co=True)
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
+    # Read Zhu continua, wave file
+    cfile = os.getenv('RAW_IGMSPEC')+'/SDSS/ALLQSO_SPEC_106_continuum_nointerp.fits'
+    zhu_conti = Table.read(cfile)
+    wvfile = cfile.replace('continuum','wave')
+    zhu_wave = Table.read(wvfile)
+    #
     wvminlist = []
     wvmaxlist = []
     npixlist = []
@@ -202,7 +196,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
         if not os.path.isfile(full_file):
             full_file = get_specfil(row, dr7=True)
         # Extract
-        print("SDSS: Reading {:s}".format(full_file))
+        #print("SDSS: Reading {:s}".format(full_file))
         # Parse name
         fname = full_file.split('/')[-1]
         # Generate full file
@@ -214,11 +208,27 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
         else:
             maxpix = max(npix,maxpix)
         # Some fiddling about
-        for key in ['wave','flux','sig']:
+        for key in ['wave','flux','sig','co']:
             data[key] = 0.  # Important to init (for compression too)
         data['flux'][0][:npix] = spec.flux.value
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
+        # Continuum
+        mtc = (zhu_conti['PLATE'] == row['PLATE']) & (zhu_conti['FIBER']==row['FIBER'])
+        mtw = (zhu_wave['PLATE'] == row['PLATE']) & (zhu_wave['FIBER']==row['FIBER'])
+        if np.sum(mtc) == 1:
+            imin = np.argmin(np.abs(zhu_wave['WAVE'][0][:,np.where(mtw)[1]]-spec.wavelength[0].value))
+            data['co'][0][:npix] = zhu_conti['CONTINUUM'][0][imin:npix+imin,np.where(mtc)[1]].flatten()
+        elif np.sum(mtc) > 1:
+            print("Multiple continua for plate={:d}, row={:d}.  Taking the first".format(row['PLATE'], row['FIBER']))
+            imin = np.argmin(np.abs(zhu_wave['WAVE'][0][:,np.where(mtw)[1][0]]-spec.wavelength[0].value))
+            data['co'][0][:npix] = zhu_conti['CONTINUUM'][0][imin:npix+imin,np.where(mtc)[1][0]].flatten()
+        elif np.sum(mtc) == 0:
+            print("No SDSS continuum for plate={:d}, row={:d}".format(row['PLATE'], row['FIBER']))
+        #from xastropy.xutils import xdebug as xdb
+        #xdb.set_trace()
+        #xdb.xplot(data['wave'][0], data['flux'][0], data['co'][0])
+
         # Meta
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
@@ -236,7 +246,7 @@ def hdf5_adddata(hdf, IDs, sname, debug=False, chk_meta_only=False, sdss_hdf=Non
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
-    meta.add_column(Column(np.arange(nspec,dtype=int),name='SURVEY_ID'))
+    meta.add_column(Column(np.arange(nspec,dtype=int),name='GROUP_ID'))
 
     # Add HDLLS meta to hdf5
     if chk_meta(meta):
