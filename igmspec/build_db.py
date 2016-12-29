@@ -67,7 +67,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, **kwargs):
     hdf = h5py.File(outfil,'w')
 
     ''' Myers QSOs '''
-    myers.add_to_hdf(hdf)
+    myers.add_to_hdf_old(hdf)
 
     # Main DB Table
     maindb, tkeys = sdbbu.start_maindb(extras=dict(IGM_ID=0))
