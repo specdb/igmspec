@@ -36,16 +36,13 @@ from specdb.specdb import IgmSpec
 #survey_dict = get_survey_dict()
 
 
-def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
+def ver01(test=False, clobber=False, **kwargs):
     """ Build version 1.0
 
     Parameters
     ----------
     test : bool, optional
       Run test only
-    mk_test_file : bool, optional
-      Generate the test file for Travis tests?
-      Writes catalog and HD-LLS dataset only
 
     Returns
     -------
@@ -53,24 +50,19 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
     """
     version = 'v01'
     # HDF5 file
-    if mk_test_file:
-        outfil = igmspec.__path__[0]+'/tests/files/IGMspec_DB_{:s}_debug.hdf5'.format(version)
-        print("Building debug file: {:s}".format(outfil))
-        test = True
-    else:
-        outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
-    # Clobber?
-    if not chk_clobber(outfil, clobber=clobber):
-        return
+    outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    # Chk clobber
+    if os.path.isfile(outfil):
+        if clobber:
+            warnings.warn("Overwriting previous DB file {:s}".format(outfil))
+        else:
+            warnings.warn("Not overwiting previous DB file.  Use clobber=True to do so")
+            return
     # Begin
     hdf = h5py.File(outfil,'w')
 
     ''' Myers QSOs '''
-    if False:
-        igmsp = IgmSpec()
-        igmsp.hdf.copy('quasars', hdf)
-    else:
-        myers.add_to_hdf(hdf)
+    myers.add_to_hdf(hdf)
 
     # Main DB Table
     idkey = 'IGM_ID'
@@ -119,7 +111,7 @@ def ver01(test=False, mk_test_file=False, clobber=False, outfil=None, **kwargs):
     print("Update DB info in specdb.defs.dbase_info !!")
 
 
-def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
+def ver02(test=False, skip_copy=False, clobber=False):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -128,9 +120,6 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     ----------
     test : bool, optional
       Run test only
-    mk_test_file : bool, optional
-      Generate the test file for Travis tests?
-      Writes catalog and HD-LLS dataset only
     skip_copy : bool, optional
       Skip copying the data from v01
 
@@ -141,7 +130,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
     from specdb.specdb import IgmSpec
     # Read v01
     v01file = os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5'
-    v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
+    #v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     print("Loading v01")
     igmsp_v01 = IgmSpec(db_file=v01file)
     v01hdf = igmsp_v01.hdf
@@ -149,12 +138,7 @@ def ver02(test=False, mk_test_file=False, skip_copy=False, clobber=False):
 
     # Start new file
     version = 'v02'
-    if mk_test_file:
-        outfil = igmspec.__path__[0]+'/tests/files/IGMspec_DB_{:s}_debug.hdf5'.format(version)
-        print("Building debug file: {:s}".format(outfil))
-        test = True
-    else:
-        outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     # Clobber?
     if not chk_clobber(outfil, clobber=clobber):
         return
