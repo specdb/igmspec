@@ -16,7 +16,10 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
 
        This routine reads in the SDSS/BOSS specObj and PhotPosPlate files
        and pulls out all QSOs. This is then matched amd merged with
-       the Myers QSO compilation with duplicates removed. Requires
+       the Myers QSO compilation with duplicates removed. It adds this
+       catalog to the 'quasars' field of the hdf5 object hdf
+
+       Requires
        that that environment varialble RAW_IGMSPEC be set to the top
        directory where the SDSS/BOSS files and Myers files live.
 
@@ -43,17 +46,29 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     --------
      >>> add_to_hdf(hdf)
     None
+
+    Notes
+    -----
+    In the 'quasars' table added to the hdf5 object hdf, tags with the SDSS_BOSS_ prefix are
+    the SDSS/BOSS tags, and tags with MYERS_ are from the Myers catalog. We also add the following
+    tags
+
+    'SDSS_BOSS_MYERS_FLAG' = set to either SDSS_BOSS_MYERS, SDSS_BOSS_ONLY, or MYERS_ONLY
+    'RA', 'DEC' = our best knowledge of the coordinates (PLUG_RA, PLUG_DEC for SDSS/BOSS, otherwise Myers)
+    'SOURCEBIT' = Myers catalog sourcebits, with a new 2**19 sourcebit for objects in SDSS_BOSS_ONLY objects
+    'ZEM' = Our best knwoledge of the redshift ( either MYERS_ZEM or SDSS/BOSS redshift for SDSS_BOSS_ONLY objects
+    'ZEM_SOURCE' = The source of the redshift following the Myers classification with an additional SDSS_BOSS_ONLY
+            
     """
 
-    from astropy import units as u
-    from astropy.table import QTable, Table, Column, hstack, vstack
-    from astropy.coordinates import SkyCoord, match_coordinates_sky, search_around_sky
+    from astropy.table import Column, hstack, vstack
+    from astropy.coordinates import SkyCoord, search_around_sky
 
     ## SDSS/BOSS data stuff
-    specfile = os.getenv('RAW_IGMSPEC') + '/sdss/specObj-dr12_trim.fits'
+    specfile = os.getenv('RAW_IGMSPEC') + '/SDSS_BOSS/specObj-dr12_trim.fits'
     spec = Table.read(specfile)
     # Read in select columns from DR12 photometry. This and the file above are aligned
-    posfile = os.getenv('RAW_IGMSPEC') + '/sdss/photoPosPlate-dr12_trim.fits'
+    posfile = os.getenv('RAW_IGMSPEC') + '/SDSS_BOSS/photoPosPlate-dr12_trim.fits'
     phot = Table.read(posfile)
 
     # Trim to QSO, Specprimary, spec2d called it a QSO, redshift flag cuts, sanity check on coords
@@ -67,7 +82,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     sdss_boss1 = hstack([spec, phot], join_type='exact')
     # Add SDSS prefix to all SDSS tags
     for key in sdss_boss1.keys():
-        sdss_boss1.rename_column(key, 'SDSS_' + key)
+        sdss_boss1.rename_column(key, 'SDSS_BOSS_' + key)
 
     # Read in the Myers file, match it to Myers sweeps photometry
     # Myers master QSO catalog
@@ -81,8 +96,8 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     ADM_sweep_file = os.getenv('RAW_IGMSPEC') + '/Myers/GTR-ADM-QSO-master-sweeps-Feb5-2016.fits'
     ADM_sweep = Table.read(ADM_sweep_file)
 
-    c_qso = SkyCoord(ra=ADM_qso['RA'] * u.deg, dec=ADM_qso['DEC'] * u.deg)
-    c_swp = SkyCoord(ra=ADM_sweep['RA'] * u.deg, dec=ADM_sweep['DEC'] * u.deg)
+    c_qso = SkyCoord(ra=ADM_qso['RA'], dec=ADM_qso['DEC'],unit ='deg')
+    c_swp = SkyCoord(ra=ADM_sweep['RA'], dec=ADM_sweep['DEC'], unit='deg')
 
     ## Create an aligned Table for matching photometry from sweeps
     nqso = len(ADM_qso)
@@ -94,7 +109,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     # for the RA and DEC, which we renamed)
     dupe_keys = list(set(ADM_qso.keys()) & set(qso_phot.keys()))
     qso_phot.remove_columns(dupe_keys)
-
+    # Match the Myers catalog to the Myers sweeps
     idx, d2d, d3d = c_qso.match_to_catalog_sky(c_swp)
     # Currently using 1.0" for matching, as for the SDSS objects, these will mostly be the exact
     # same coordinates.
@@ -116,13 +131,13 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     # Deal with each in turn.
 
     # 1) SDSS-MYERS match. Add Myers tags to the SDSS structure
-    c_sdss = SkyCoord(ra=sdss_boss1['SDSS_PLUG_RA'] * u.deg, dec=sdss_boss1['SDSS_PLUG_DEC'] * u.deg)
-    c_myers = SkyCoord(ra=ADM_qso['MYERS_RA'] * u.deg, dec=ADM_qso['MYERS_DEC'] * u.deg)
+    c_sdss = SkyCoord(ra=sdss_boss1['SDSS_PLUG_RA'], dec=sdss_boss1['SDSS_PLUG_DEC'], unit='deg')
+    c_myers = SkyCoord(ra=ADM_qso['MYERS_RA'], dec=ADM_qso['MYERS_DEC'], unit='deg')
     isdss, imyers, d2d, _ = search_around_sky(c_sdss, c_myers, MATCH_TOL)
     sdss_myers = hstack([sdss_boss1[isdss], ADM_qso[imyers]], join_type='exact')
-    sdss_myers['SDSS_MYERS_FLAG'] = 'SDSS_MYERS'
-    sdss_myers['RA'] = sdss_myers['SDSS_PLUG_RA']
-    sdss_myers['DEC'] = sdss_myers['SDSS_PLUG_DEC']
+    sdss_myers['SDSS_BOSS_MYERS_FLAG'] = 'SDSS_BOSS_MYERS'
+    sdss_myers['RA'] = sdss_myers['SDSS_BOSS_PLUG_RA'] # SDSS/BOSS Plug coords most accurate
+    sdss_myers['DEC'] = sdss_myers['SDSS_BOSS_PLUG_DEC']
     sdss_myers['SOURCEBIT'] = sdss_myers['MYERS_SOURCEBIT']
     sdss_myers['ZEM'] = sdss_myers['MYERS_ZEM']
     sdss_myers['ZEM_SOURCE'] = sdss_myers['MYERS_ZEM_SOURCE']
@@ -132,19 +147,19 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     inomatch = np.ones(len(c_sdss), dtype=bool)
     inomatch[isdss] = False
     sdss_only = sdss_boss1[inomatch]
-    sdss_only['SDSS_MYERS_FLAG'] = 'SDSS_ONLY'
-    sdss_only['RA'] = sdss_only['SDSS_PLUG_RA']
-    sdss_only['DEC'] = sdss_only['SDSS_PLUG_DEC']
+    sdss_only['SDSS_BOSS_MYERS_FLAG'] = 'SDSS_BOSS_ONLY'
+    sdss_only['RA'] = sdss_only['SDSS_BOSS_PLUG_RA']
+    sdss_only['DEC'] = sdss_only['SDSS_BOSS_PLUG_DEC']
     sdss_only['SOURCEBIT'] = 2 ** 19  # New source bit for SDSS only objects
-    sdss_only['ZEM'] = sdss_only['SDSS_Z']
-    sdss_only['ZEM_SOURCE'] = 'SDSS_ONLY'
+    sdss_only['ZEM'] = sdss_only['SDSS_BOSS_Z']
+    sdss_only['ZEM_SOURCE'] = 'SDSS_BOSS_ONLY'
 
     # 3) Myers only
     # Find the Myers objects that have no match in SDSS/BOSS
-    inomatch = np.ones(len(c_myers), dtype=bool)
+    inomatch = np.ones_like(c_myers, dtype=bool)
     inomatch[imyers] = False
     myers_only = ADM_qso[inomatch]
-    myers_only['SDSS_MYERS_FLAG'] = 'MYERS_ONLY'
+    myers_only['SDSS_BOSS_MYERS_FLAG'] = 'MYERS_ONLY'
     myers_only['RA'] = myers_only['MYERS_RA']
     myers_only['DEC'] = myers_only['MYERS_DEC']
     myers_only['SOURCEBIT'] = myers_only['MYERS_SOURCEBIT']
@@ -167,55 +182,11 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
             sdss_myers_out.remove_column(key)
             sdss_myers_out[key] = tmp
     hdf['quasars'] = sdss_myers_out
-    hdf['quasars'].attrs['DATE'] = DATE
+    hdf['quasars'].attrs['MYERS_DATE'] = DATE
 
     return None
 
 
-def add_to_hdf_old(hdf):
-    """ Add Myers catalog to hdf file
-
-    Parameters
-    ----------
-    hdf : HDF5 file
-    """
-    print("Adding Myers catalog")
-    # Load
-    ADM_qso, date = load()
-    # Redshifts
-    zbest_myers(ADM_qso)
-    # Cut down
-    ztrim = (ADM_qso['ZEM'] >= 0.1) & (ADM_qso['ZEM'] <= 7.0)
-    coordtrim = (ADM_qso['RA'] >= 0.0) & (ADM_qso['RA'] <= 360.0) & (np.abs(
-            ADM_qso['DEC']) <= 90.0)
-    keep = ztrim & coordtrim
-    ADM_qso = ADM_qso[keep]
-    # Add
-    hdf['quasars'] = ADM_qso
-    hdf['quasars'].attrs['DATE'] = date
-    #
-    return
-
-
-def load():
-    """ Load catalog
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-    cat : Table
-    date : str
-      DATE of creation
-
-    """
-    ADM_file = os.getenv('RAW_IGMSPEC')+'/Myers/GTR-ADM-QSO-master-wvcv.fits.gz'
-    ADM_qso = Table.read(ADM_file)
-    # Grab header for DATE
-    head1 = fits.open(ADM_file)[1].header
-    # Return
-    return ADM_qso, head1['DATE']
 
 
 def zbest_myers(ADM_qso):
