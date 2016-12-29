@@ -58,7 +58,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     'SOURCEBIT' = Myers catalog sourcebits, with a new 2**19 sourcebit for objects in SDSS_BOSS_ONLY objects
     'ZEM' = Our best knwoledge of the redshift ( either MYERS_ZEM or SDSS/BOSS redshift for SDSS_BOSS_ONLY objects
     'ZEM_SOURCE' = The source of the redshift following the Myers classification with an additional SDSS_BOSS_ONLY
-            
+
     """
 
     from astropy.table import Column, hstack, vstack
