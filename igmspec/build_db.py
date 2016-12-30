@@ -62,7 +62,7 @@ def ver01(test=False, clobber=False, **kwargs):
     hdf = h5py.File(outfil,'w')
 
     ''' Myers QSOs '''
-    myers.add_to_hdf_old(hdf)
+    myers.add_to_hdf(hdf)
 
     # Main DB Table
     idkey = 'IGM_ID'
