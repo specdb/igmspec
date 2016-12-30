@@ -156,7 +156,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
 
     # 3) Myers only
     # Find the Myers objects that have no match in SDSS/BOSS
-    inomatch = np.ones_like(c_myers, dtype=bool)
+    inomatch = np.ones(len(c_myers), dtype=bool)
     inomatch[imyers] = False
     myers_only = ADM_qso[inomatch]
     myers_only['SDSS_BOSS_MYERS_FLAG'] = 'MYERS_ONLY'
