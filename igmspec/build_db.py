@@ -165,7 +165,7 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     for key in tkeys:
         assert key in mkeys
 
-    meta_only = True
+    meta_only = False
     # Loop over the groups
     for gname in new_groups:
         print("Working on group: {:s}".format(gname))
