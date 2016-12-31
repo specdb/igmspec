@@ -235,3 +235,20 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
     #
     return
 
+
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    ssa_dict = default_fields(flux='flambda')
+    ssa_dict['FluxCalib']='ABSOLUTE'
+    ssa_dict['Title'] = 'Quasar Spectra from the COS-Halos Survey'
+    hdf[dset]['meta'].attrs['SSA_COS'] = json.dumps(ltu.jsonify(ssa_dict))
+    # HIRES
+    ssa_dict = default_fields(flux='normalized')
+    ssa_dict['Title'] = 'Quasar Spectra from the COS-Halos Survey'
+    hdf[dset]['meta'].attrs['SSA_HIRES'] = json.dumps(ltu.jsonify(ssa_dict))

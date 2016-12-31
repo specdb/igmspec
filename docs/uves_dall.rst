@@ -27,5 +27,5 @@ we have adopte the redshift listed in Dall'aglio et al.
 Spectra
 =======
 
-The data are fluxed but an estimated continuum is provided.
+The data are fluxed and an estimated continuum is provided.
 

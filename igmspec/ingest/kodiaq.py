@@ -216,6 +216,5 @@ def add_ssa(hdf, dset):
     """
     from specdb.ssa import default_fields
     ssa_dict = default_fields(flux='normalized')
-    #ssa_dict['FluxCalib']='ABSOLUTE'
     ssa_dict['Title']='Keck/HIRES KODIAQ DR1'
     hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))
