@@ -141,20 +141,21 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     # Begin
     hdf = h5py.File(outfil,'w')
 
-    # Setup groups
-    new_groups = get_build_groups(version)
 
     # Copy over the old stuff
     #skip_copy = True
     if (not test) and (not skip_copy):
+        old_groups = get_build_groups('v01')
         for key in v01hdf.keys():
-            if key in ['catalog','quasars']:
+            if key in ['catalog','quasars', 'BOSS_DR12']:
                 continue
             else:
                 v01hdf.copy(key, hdf)
-                new_groups[key].add_ssa(hdf, key)
+                old_groups[key].add_ssa(hdf, key)
     warnings.warn("NEED TO ADD NEW MYERS!")
 
+    # Setup groups
+    new_groups = get_build_groups(version)
     pair_groups = []
     group_dict = igmsp_v01.qcat.group_dict
     # Set/Check keys (and set idkey internally for other checks)
