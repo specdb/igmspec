@@ -26,5 +26,16 @@ def test_sdss_ssa_querydata():
     votable.to_xml('sdss_querydata.xml')
 
 
+def test_chalos_ssa_querydata():
+    """ Mixes COS and HIRES
+    """
+    db_file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v02.hdf5'
+    igmsp = IgmSpec(db_file=db_file)
+    #
+    ssa = spdb_ssa.SSAInterface(igmsp)
+    votable = ssa.querydata('125.100875,23.580667', SIZE=1e-3)
+    # Write
+    votable.to_xml('sdss_querydata.xml')
+
 
 
