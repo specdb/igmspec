@@ -153,6 +153,7 @@ def ver02(test=False, skip_copy=False, clobber=False):
                 continue
             else:
                 v01hdf.copy(key, hdf)
+                # Add SSA here, to meta
     # Setup
     new_groups = OrderedDict()
     new_groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
