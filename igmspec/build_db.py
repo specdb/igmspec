@@ -148,11 +148,12 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     #skip_copy = True
     if (not test) and (not skip_copy):
         for key in v01hdf.keys():
-            if key == 'catalog':
+            if key in ['catalog','quasars']:
                 continue
             else:
                 v01hdf.copy(key, hdf)
                 new_groups[key].add_ssa(hdf, key)
+    warnings.warn("NEED TO ADD NEW MYERS!")
 
     pair_groups = []
     group_dict = igmsp_v01.qcat.group_dict
