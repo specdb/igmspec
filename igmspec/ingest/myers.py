@@ -23,26 +23,26 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
        that that environment varialble RAW_IGMSPEC be set to the top
        directory where the SDSS/BOSS files and Myers files live.
 
-       Parameters
-       ----------
-       hdf: hdf5 object
+    Parameters
+    ----------
+    hdf : hdf5 object
            database to hold QSO catalog
 
-       Z_MIN: float, optional [default Z_MIN = 0.1]
+    Z_MIN : float, optional [default Z_MIN = 0.1]
            minimum QSO redshift applied to the catalog
 
-       Z_MAX: float. optimal [default Z_MAX = 7.1]
+    Z_MAX : float. optimal [default Z_MAX = 7.1]
            maximum QSO redshift applied to the catalo
 
-       MATCH_TOL: quantity, optional [default 2.0*u.arcsec]
+    MATCH_TOL : quantity, optional [default 2.0*u.arcsec]
            matching radius between Myers and SDSS/BOSS catalogs
 
-       Returns
-       -------
-       None :
+    Returns
+    -------
+    None :
            None
 
-       Examples
+    Examples
     --------
      >>> add_to_hdf(hdf)
     None
@@ -317,3 +317,43 @@ def spectro_myers(ADM_qso):
     return ispec
 
 
+def orig_add_to_hdf(hdf):
+    """ Add Myers catalog to hdf file
+    Parameters
+    ----------
+    hdf : HDF5 file
+    """
+    print("Adding Myers catalog")
+    # Load
+    ADM_qso, date = load()
+    # Redshifts
+    zbest_myers(ADM_qso)
+    # Cut down
+    ztrim = (ADM_qso['ZEM'] >= 0.1) & (ADM_qso['ZEM'] <= 7.0)
+    coordtrim = (ADM_qso['RA'] >= 0.0) & (ADM_qso['RA'] <= 360.0) & (np.abs(
+            ADM_qso['DEC']) <= 90.0)
+    keep = ztrim & coordtrim
+    ADM_qso = ADM_qso[keep]
+    # Add
+    hdf['quasars'] = ADM_qso
+    hdf['quasars'].attrs['DATE'] = date
+    #
+    return
+
+
+def load():
+    """ Load catalog
+    Parameters
+    ----------
+    Returns
+    -------
+    cat : Table
+    date : str
+      DATE of creation
+    """
+    ADM_file = os.getenv('RAW_IGMSPEC')+'/Myers/GTR-ADM-QSO-master-wvcv.fits.gz'
+    ADM_qso = Table.read(ADM_file)
+    # Grab header for DATE
+    head1 = fits.open(ADM_file)[1].header
+    # Return
+    return ADM_qso, head1['DATE']

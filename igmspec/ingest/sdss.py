@@ -263,3 +263,17 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, sdss_hdf=No
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return
+
+
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    ssa_dict = default_fields(flux='flambda')
+    ssa_dict['FluxCalib']='ABSOLUTE'
+    ssa_dict['Title']='SDSS DR7 Quasars'
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

@@ -36,7 +36,7 @@ from specdb.specdb import IgmSpec
 #survey_dict = get_survey_dict()
 
 
-def ver01(test=False, clobber=False, **kwargs):
+def ver01(test=False, clobber=False, publisher='J.X. Prochaska', **kwargs):
     """ Build version 1.0
 
     Parameters
@@ -62,7 +62,7 @@ def ver01(test=False, clobber=False, **kwargs):
     hdf = h5py.File(outfil,'w')
 
     ''' Myers QSOs '''
-    myers.add_to_hdf(hdf)
+    myers.orig_add_to_hdf(hdf)
 
     # Main DB Table
     idkey = 'IGM_ID'
@@ -72,12 +72,7 @@ def ver01(test=False, clobber=False, **kwargs):
     group_dict = {}
 
     # Organize for main loop
-    groups = OrderedDict()
-    groups['BOSS_DR12'] = boss
-    groups['SDSS_DR7'] = sdss
-    groups['KODIAQ_DR1'] = kodiaq
-    groups['HD-LLS_DR1'] = hdlls
-    groups['GGG'] = ggg
+    groups = get_build_groups(version)
 
     pair_groups = ['SDSS_DR7']
 
@@ -106,12 +101,13 @@ def ver01(test=False, clobber=False, **kwargs):
     zpri = defs.z_priority()
 
     # Finish
-    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri, group_dict, version)
+    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri,
+                    group_dict, version, Publisher=str(publisher))
     print("Wrote {:s} DB file".format(outfil))
     print("Update DB info in specdb.defs.dbase_info !!")
 
 
-def ver02(test=False, skip_copy=False, clobber=False):
+def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -145,6 +141,9 @@ def ver02(test=False, skip_copy=False, clobber=False):
     # Begin
     hdf = h5py.File(outfil,'w')
 
+    # Setup groups
+    new_groups = get_build_groups(version)
+
     # Copy over the old stuff
     #skip_copy = True
     if (not test) and (not skip_copy):
@@ -153,20 +152,7 @@ def ver02(test=False, skip_copy=False, clobber=False):
                 continue
             else:
                 v01hdf.copy(key, hdf)
-                # Add SSA here, to meta
-    # Setup
-    new_groups = OrderedDict()
-    new_groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
-    new_groups['XQ-100'] = xq100        # Lopez et al. 2016
-    new_groups['HDLA100'] = hdla100     # Neeleman et al. 2013
-    new_groups['2QZ'] = twodf           # Croom et al.
-    new_groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
-    new_groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
-    new_groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
-    new_groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
-    new_groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
-    new_groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
-    new_groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
+                new_groups[key].add_ssa(hdf, key)
 
     pair_groups = []
     group_dict = igmsp_v01.qcat.group_dict
@@ -191,6 +177,7 @@ def ver02(test=False, skip_copy=False, clobber=False):
         # Spectra
         if not meta_only:
             new_groups[gname].hdf5_adddata(hdf, gname, meta)
+            new_groups[gname].add_ssa(hdf, gname)
 
     # Check for duplicates -- There is 1 pair in SDSS (i.e. 2 duplicates)
     if not sdbbu.chk_for_duplicates(maindb, dup_lim=2):
@@ -198,7 +185,8 @@ def ver02(test=False, skip_copy=False, clobber=False):
 
     # Finish
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
-    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri, group_dict, version)
+    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri,
+                    group_dict, version, Publisher=str(publisher))
 
     print("Wrote {:s} DB file".format(outfil))
     print("Update DB info in specdb.defs.dbase_info !!")
@@ -219,3 +207,41 @@ def chk_clobber(outfil, clobber=False):
             return False
     else:
         return True
+
+
+def get_build_groups(version):
+    """
+    Parameters
+    ----------
+    version : str
+
+    Returns
+    -------
+    build_groups : dict
+
+    """
+
+    groups = OrderedDict()
+    if version == 'v01':
+        groups['BOSS_DR12'] = boss
+        groups['SDSS_DR7'] = sdss
+        groups['KODIAQ_DR1'] = kodiaq
+        groups['HD-LLS_DR1'] = hdlls
+        groups['GGG'] = ggg
+    elif version == 'v02':
+        groups = OrderedDict()
+        groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
+        groups['XQ-100'] = xq100        # Lopez et al. 2016
+        groups['HDLA100'] = hdla100     # Neeleman et al. 2013
+        groups['2QZ'] = twodf           # Croom et al.
+        groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
+        groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
+        groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
+        groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
+        groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
+        groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
+        groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
+    else:
+        raise IOError("Not ready for this version")
+    # Return
+    return groups
