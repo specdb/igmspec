@@ -165,22 +165,6 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, boss_hdf=No
         return
     boss_grp = hdf.create_group(sname)
 
-    '''
-    # Load up
-    bmeta = meta_for_build()
-    # Checks
-    if sname != 'BOSS_DR12':
-        raise IOError("Not expecting this survey..")
-
-    # Generate ID array from RA/DEC
-    c_cut = SkyCoord(ra=bmeta['RA'], dec=bmeta['DEC'], unit='deg')
-    c_all = SkyCoord(ra=meta['RA'], dec=meta['DEC'], unit='deg')
-    # Find new sources
-    idx, d2d, d3d = match_coordinates_sky(c_all, c_cut, nthneighbor=1)
-    if np.sum(d2d > 1.2*u.arcsec):  # There is one system offset by 1.1"
-        raise ValueError("Bad matches in BOSS")
-    '''
-
     # Build spectra (and parse for meta)
     nspec = len(meta)
     max_npix = 4650  # Just needs to be large enough
@@ -278,3 +262,17 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, boss_hdf=No
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return
+
+
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    ssa_dict = default_fields(flux='flambda')
+    ssa_dict['FluxCalib']='ABSOLUTE'
+    ssa_dict['Title']='BOSS DR12 Quasars'
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

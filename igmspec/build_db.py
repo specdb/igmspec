@@ -62,7 +62,7 @@ def ver01(test=False, clobber=False, publisher='J.X. Prochaska', **kwargs):
     hdf = h5py.File(outfil,'w')
 
     ''' Myers QSOs '''
-    myers.add_to_hdf(hdf)
+    myers.orig_add_to_hdf(hdf)
 
     # Main DB Table
     idkey = 'IGM_ID'
@@ -102,7 +102,7 @@ def ver01(test=False, clobber=False, publisher='J.X. Prochaska', **kwargs):
 
     # Finish
     sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri,
-                    group_dict, version, publisher=str(publisher))
+                    group_dict, version, Publisher=str(publisher))
     print("Wrote {:s} DB file".format(outfil))
     print("Update DB info in specdb.defs.dbase_info !!")
 
@@ -141,6 +141,9 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     # Begin
     hdf = h5py.File(outfil,'w')
 
+    # Setup groups
+    new_groups = get_build_groups(version)
+
     # Copy over the old stuff
     #skip_copy = True
     if (not test) and (not skip_copy):
@@ -149,8 +152,7 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
                 continue
             else:
                 v01hdf.copy(key, hdf)
-    # Setup
-    new_groups = get_build_groups(version)
+                new_groups[key].add_ssa(hdf, key)
 
     pair_groups = []
     group_dict = igmsp_v01.qcat.group_dict
@@ -175,6 +177,7 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
         # Spectra
         if not meta_only:
             new_groups[gname].hdf5_adddata(hdf, gname, meta)
+            new_groups[gname].add_ssa(hdf, gname)
 
     # Check for duplicates -- There is 1 pair in SDSS (i.e. 2 duplicates)
     if not sdbbu.chk_for_duplicates(maindb, dup_lim=2):
@@ -183,7 +186,7 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     # Finish
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
     sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri,
-                    group_dict, version, publisher=str(publisher))
+                    group_dict, version, Publisher=str(publisher))
 
     print("Wrote {:s} DB file".format(outfil))
     print("Update DB info in specdb.defs.dbase_info !!")
@@ -204,6 +207,7 @@ def chk_clobber(outfil, clobber=False):
             return False
     else:
         return True
+
 
 def get_build_groups(version):
     """
