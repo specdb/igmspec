@@ -35,7 +35,7 @@ def test_chalos_ssa_querydata():
     ssa = spdb_ssa.SSAInterface(igmsp)
     votable = ssa.querydata('125.100875,23.580667', SIZE=1e-3)
     # Write
-    votable.to_xml('sdss_querydata.xml')
+    votable.to_xml('cos_querydata.xml')
 
 
 
