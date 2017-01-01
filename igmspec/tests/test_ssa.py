@@ -35,7 +35,7 @@ def test_chalos_ssa_querydata():
     igmsp = IgmSpec(db_file=db_file)
     #
     ssa = spdb_ssa.SSAInterface(igmsp)
-    votable = ssa.querydata('125.100875,23.580667', SIZE=1e-3)
+    votable = ssa.querydata('344.4092,13.6793', SIZE=1e-3)
     # Write
     votable.to_xml('cos_querydata.xml')
 
