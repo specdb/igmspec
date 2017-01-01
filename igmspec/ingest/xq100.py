@@ -264,7 +264,6 @@ def add_ssa(hdf, dset):
     dset : str
     """
     from specdb.ssa import default_fields
-    ssa_dict = default_fields(flux='flambda')
-    ssa_dict['FluxCalib']='RELATIVE'
-    ssa_dict['Title']='The XQ-100 Survey of 100 z>3 quasars with VLT/XShooter'
+    Title = '{:s}: The XQ-100 Survey of 100 z>3 quasars with VLT/XShooter'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda')
     hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

@@ -211,7 +211,6 @@ def add_ssa(hdf, dset):
     dset : str
     """
     from specdb.ssa import default_fields
-    ssa_dict = default_fields(flux='flambda')
-    ssa_dict['FluxCalib']='RELATIVE'
-    ssa_dict['Title'] = 'Dall''Aglio et al. (2008) compilation of VLT/UVES spectra'
+    Title = '{:s}: Dall''Aglio et al. (2008) compilation of VLT/UVES spectra'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda')
     hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

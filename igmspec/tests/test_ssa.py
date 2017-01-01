@@ -24,7 +24,6 @@ def test_sdss_ssa_querydata():
     votable = ssa.querydata('0.027228,0.515341', SIZE=1e-3)
     # Write
     votable.to_xml('sdss_querydata.xml')
-'''
 
 
 def test_chalos_ssa_querydata():
@@ -37,7 +36,4 @@ def test_chalos_ssa_querydata():
     votable = ssa.querydata('344.4092,13.6793', SIZE=1e-3)
     # Write
     votable.to_xml('cos_querydata.xml')
-
-
-'''
 

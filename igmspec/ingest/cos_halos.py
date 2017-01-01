@@ -244,11 +244,9 @@ def add_ssa(hdf, dset):
     dset : str
     """
     from specdb.ssa import default_fields
-    ssa_dict = default_fields(flux='flambda')
-    ssa_dict['FluxCalib']='ABSOLUTE'
-    ssa_dict['Title'] = 'Quasar Spectra from the COS-Halos Survey'
+    Title = '{:s}: Quasar Spectra from the COS-Halos Survey'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda', fxcalib='ABSOLUTE')
     hdf[dset]['meta'].attrs['SSA_COS'] = json.dumps(ltu.jsonify(ssa_dict))
     # HIRES
-    ssa_dict = default_fields(flux='normalized')
-    ssa_dict['Title'] = 'Quasar Spectra from the COS-Halos Survey'
+    ssa_dict = default_fields(Title, flux='normalized')
     hdf[dset]['meta'].attrs['SSA_HIRES'] = json.dumps(ltu.jsonify(ssa_dict))
