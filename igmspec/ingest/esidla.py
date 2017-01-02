@@ -196,3 +196,15 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     return
 
 
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: The Keck/ESI Survey for high-z DLAs'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))
