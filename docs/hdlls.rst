@@ -10,7 +10,8 @@ Sources
 =======
 
 The high dispersion Lyman Limit System (HD-LLS) sample is a set of
-echelle and echellette spectra acquired by
+echelle and echellette spectra from the Keck and Magellan
+observatories acquired by
 `Prochaska et al. (2015) <http://adsabs.harvard.edu/abs/2015ApJS..221....2P>`_
 for the analysis of z~3 LLS.
 The quasars are a heterogenous set of sources useful
@@ -20,7 +21,7 @@ for such analysis (ie. bright).
 Meta Data
 =========
 
-The meta data provided with HD-LLS includes information on the
+The meta data provided with HD-LLS also includes information on the
 LLS analyzed:
 
 ============  ======== =========================================

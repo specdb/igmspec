@@ -9,24 +9,28 @@ This document describes the data groups of igmspec.
 List of Surveys
 ===============
 
-Below is the list of data groups included in igmspec v02
+Below is the list of data groups included in igmspec v02:
 
 * :doc:`boss`  [BOSS_DR12]
-* :doc:`hdlls` [HD-LLS_DR1]
-* :doc:`kodiaq` [KODIAQ_DR1]
-* :doc:`sdss`   [SDSS_DR7]
-* :doc:`ggg`   [GGG]
-* :doc:`hst_z2`   [HST_z2]
-* :doc:`twoqz`   [2QZ]
-* :doc:`esidla`   [ESI_DLA]
-* :doc:`xq100`   [XQ-100]
-* :doc:`cos_halos`   [COS-Halos]
 * :doc:`cos_dwarfs`   [COS-Dwarfs]
-* :doc:`musodla`   [MUSoDLA]
-* :doc:`hst_qso`   [HSTQSO]
+* :doc:`cos_halos`   [COS-Halos]
+* :doc:`esidla`   [ESI_DLA]
+* :doc:`ggg`   [GGG]
 * :doc:`hdla100`   [HDLA100]
-* :doc:`uvpsm4`   [UVpSM4]
+* :doc:`hdlls` [HD-LLS_DR1]
+* :doc:`hst_z2`   [HST_z2]
+* :doc:`hst_qso`   [HSTQSO]
+* :doc:`kodiaq` [KODIAQ_DR1]
+* :doc:`musodla`   [MUSoDLA]
+* :doc:`xq100`   [XQ-100]
+* :doc:`sdss`   [SDSS_DR7]
 * :doc:`uves_dall`   [UVES_Dall]
+* :doc:`uvpsm4`   [UVpSM4]
+* :doc:`twoqz`   [2QZ]
+
+Each document provides the survey reference
+and additional details on the spectra and
+associated meta data.
 
 Overview
 ========
@@ -47,9 +51,9 @@ inclusion in igmspec:
 Key         Type     Description
 ==========  ======== ============================================
 IGM_ID      int      Unique igmspec identifier
-zem         float    Emission redshift of background source
-RA          float    Right Ascension (deg)
-DEC         float    Declination (deg)
+zem_GROUP   float    Emission redshift of background source given by the survey
+RA_GROUP    float    Right Ascension (deg) given by the survey
+DEC_GROUP   float    Declination (deg) given by the survey
 EPOCH       float    Coordinate epoch (only 2000 in igmspec v1.0)
 DATE-OBS    str      Date observed (YYYY-MM-DD)
 R           float    Instrument resolution, :math:`\lambda/\Delta\lambda` (FWHM)
@@ -58,20 +62,26 @@ WV_MAX      float    Maximum wavelength of the spectrum
 NPIX        int      Number of pixels in the spectrum; may include null values
 GROUP_ID    int      Unique identifier for the group [not well implemented yet]
 SPEC_FILE   str      Spectrum file name
-INSTR       str      Instrument file name (see `Instruments and Gratings`_ below for definitions)
-GRATING     str      Grating name (see `Instruments and Gratings`_ below for definitions)
+INSTR       str      Instrument file name (see `Instruments and Dispersers`_ for definitions)
+DISPERSER   str      Disperser name (see `Instruments and Dispersers`_ for definitions)
 TELESCOPE   str      Telescope name (see `Telescopes`_ below for definitions)
 ==========  ======== ============================================
 
+Additional meta data may be provided for
+individual surveys.
 
-Instruments and Gratings
-------------------------
+.. _Instruments and Dispersers:
 
-The complete list of instruments that may be
-used in igmspec are provided in the
+Instruments and Dispersers
+--------------------------
+
+The complete list of instruments and associated
+dispersers that may be used in igmspec
+are provided in the
 `specdb <http://specdb.readthedocs.io/en/latest/>`_
 documentation.
 
+.. _Telescopes:
 
 Telescopes
 ----------
@@ -97,6 +107,8 @@ sig            float32 Error array; same units as flux
 co (optional)  float32 Continuum array; same units as flux
 =============  ======= =============================================
 
-The software included with specdb read these data into
-a XSpectrum1D object from
-`linetools <http://linetools.readthedocs.io/en/latest/>`_.
+The software included with
+`specdb <http://specdb.readthedocs.io/en/latest/>`_
+read these data into a XSpectrum1D object in the
+`linetools <http://linetools.readthedocs.io/en/latest/>`_
+software repository.

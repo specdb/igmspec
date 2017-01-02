@@ -15,16 +15,18 @@ echelle HIRES spectra published by
 for the analysis of z>2 DLA.
 The quasars are a heterogenous set of sources useful
 for such analysis (ie. bright).
+Each sightline contains at least one DLA.
 
 
 Meta Data
 =========
 
 The meta data provided with HDLA100 is very simple.
-See pyigm for a complete set of measurements on the DLA.
+See pyigm for a complete set of published
+measurements on the DLA.
 
 
 Spectra
 =======
 
-The coadded HIRES spectra are provided.
+The coadded, normalized HIRES spectra are provided.

@@ -26,7 +26,8 @@ full details.
 Spectra
 =======
 
-In igmspec v2.0 are all of the combined spectra released in
+In igmspec v02 are all of the combined spectra released in
 XQ-100 except the 3-arm stitched products.  That is, each
 spectrum is from an individual camera of X-SHOOTER.
-This includes the continuum that was ingested in the ESO archive.
+This includes the continua that were also ingested
+into the ESO archive.
