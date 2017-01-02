@@ -62,15 +62,15 @@ WV_MAX      float    Maximum wavelength of the spectrum
 NPIX        int      Number of pixels in the spectrum; may include null values
 GROUP_ID    int      Unique identifier for the group [not well implemented yet]
 SPEC_FILE   str      Spectrum file name
-INSTR       str      Instrument file name (see `Instruments and Dispersers`_ for definitions)
-DISPERSER   str      Disperser name (see `Instruments and Dispersers`_ for definitions)
-TELESCOPE   str      Telescope name (see `Telescopes`_ below for definitions)
+INSTR       str      Instrument file name (see :ref:`instr-and-disp` for definitions)
+DISPERSER   str      Disperser name (see :ref:`instr-and-disp` for definitions)
+TELESCOPE   str      Telescope name (see :ref:`telescopes` below for definitions)
 ==========  ======== ============================================
 
 Additional meta data may be provided for
 individual surveys.
 
-.. _Instruments and Dispersers:
+.. _instr-and_disp:
 
 Instruments and Dispersers
 --------------------------
@@ -81,7 +81,7 @@ are provided in the
 `specdb <http://specdb.readthedocs.io/en/latest/>`_
 documentation.
 
-.. _Telescopes:
+.. _telescopes:
 
 Telescopes
 ----------
