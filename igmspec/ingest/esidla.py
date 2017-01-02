@@ -48,7 +48,7 @@ def grab_meta():
     esidla_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     esidla_meta.add_column(Column(['KeckII']*nspec, name='TELESCOPE'))
     esidla_meta.add_column(Column(['ESI']*nspec, name='INSTR'))
-    esidla_meta.add_column(Column(['ECH']*nspec, name='GRATING'))
+    esidla_meta.add_column(Column(['ECH']*nspec, name='DISPERSER'))
     # Rename
     esidla_meta.rename_column('RA', 'RA_GROUP')
     esidla_meta.rename_column('DEC', 'DEC_GROUP')

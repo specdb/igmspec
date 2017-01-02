@@ -94,7 +94,7 @@ def grab_meta():
     tdf_meta.add_column(Column([580.]*nspec, name='R'))
     #
     tdf_meta.add_column(Column(['2dF']*nspec, name='INSTR'))
-    tdf_meta.add_column(Column(['300B']*nspec, name='GRATING'))
+    tdf_meta.add_column(Column(['300B']*nspec, name='DISPERSER'))
     tdf_meta.add_column(Column(['UKST']*nspec, name='TELESCOPE'))
     # Rename
     rad = (tdf_meta['RAh00']*3600 + tdf_meta['RAm00']*60 + tdf_meta['RAs00'])*360./86400.

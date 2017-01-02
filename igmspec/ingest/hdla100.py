@@ -175,7 +175,7 @@ def hdf5_adddata(hdf, sname, hdla100_meta, debug=False, chk_meta_only=False,
     hdla100_meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     hdla100_meta.add_column(Column(Rlist, name='R'))
     hdla100_meta.add_column(Column(np.arange(nmeta,dtype=int),name='GROUP_ID'))
-    hdla100_meta.add_column(Column(gratinglist, name='GRATING'))
+    hdla100_meta.add_column(Column(gratinglist, name='DISPERSER'))
     hdla100_meta['INSTR'] = ['HIRES']*nspec
     hdla100_meta['TELESCOPE'] = ['Keck-I']*nspec
     #hdla100_meta.rename_column('Z_QSO', 'zem')
