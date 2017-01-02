@@ -152,7 +152,8 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
             else:
                 v01hdf.copy(key, hdf)
                 old_groups[key].add_ssa(hdf, key)
-    warnings.warn("NEED TO ADD NEW MYERS!")
+    #warnings.warn("NEED TO ADD NEW MYERS!")
+    myers.add_to_hdf(hdf)
 
     # Setup groups
     new_groups = get_build_groups(version)
