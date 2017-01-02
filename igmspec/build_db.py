@@ -149,7 +149,7 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     if (not test) and (not skip_copy):
         old_groups = get_build_groups('v01')
         for key in v01hdf.keys():
-            if key in ['catalog','quasars', 'BOSS_DR12', 'SDSS_DR7']:
+            if key in ['catalog','quasars']:#, 'BOSS_DR12', 'SDSS_DR7']:
                 continue
             else:
                 #v01hdf.copy(key, hdf)  # ONE STOP SHOPPING
@@ -164,10 +164,11 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
                     hdf[key+'/meta'].attrs[akey] = v01hdf[key+'/meta'].attrs[akey]
                 # SSA info
                 old_groups[key].add_ssa(hdf, key)
-    warnings.warn("NEED TO PUT BACK SDSS AND BOSS!")
+    #warnings.warn("NEED TO PUT BACK SDSS AND BOSS!")
     skip_myers = False
     if skip_myers:
         warnings.warn("NEED TO INCLUDE MYERS!")
+    else:
         myers.add_to_hdf(hdf)
 
     # Setup groups
