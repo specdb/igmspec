@@ -86,7 +86,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
 
     # Read in the Myers file, match it to Myers sweeps photometry
     # Myers master QSO catalog
-    ADM_file = os.getenv('RAW_IGMSPEC') + '/Myers/GTR-ADM-QSO-master-wvcv.fits'
+    ADM_file = os.getenv('RAW_IGMSPEC') + '/Myers/GTR-ADM-QSO-master-wvcv.fits.gz'
     ADM_qso = Table.read(ADM_file)
     head1 = fits.open(ADM_file)[1].header
     DATE = head1['DATE']

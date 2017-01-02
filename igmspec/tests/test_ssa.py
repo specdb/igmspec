@@ -17,8 +17,7 @@ def data_path(filename):
     return os.path.join(data_dir, filename)
 
 def test_sdss_ssa_querydata():
-    db_file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v02.hdf5'
-    igmsp = IgmSpec(db_file=db_file)
+    igmsp = IgmSpec()#db_file=db_file)
     #
     ssa = spdb_ssa.SSAInterface(igmsp)
     votable = ssa.querydata('0.027228,0.515341', SIZE=1e-3)
@@ -29,8 +28,7 @@ def test_sdss_ssa_querydata():
 def test_chalos_ssa_querydata():
     """ Mixes COS and HIRES
     """
-    db_file = igmspec.__path__[0]+'/../DB/IGMspec_DB_v02.hdf5'
-    igmsp = IgmSpec(db_file=db_file)
+    igmsp = IgmSpec()#db_file=db_file)
     #
     ssa = spdb_ssa.SSAInterface(igmsp)
     votable = ssa.querydata('344.4092,13.6793', SIZE=1e-3)
