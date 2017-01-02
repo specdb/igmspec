@@ -10,11 +10,11 @@ Sources
 =======
 
 The COS-Dwarfs Survey
-is a set of HST/COS
+is a set of HST/COS spectra published by
 `Bordoloi et al. (2014) <http://adsabs.harvard.edu/abs/2014ApJ...796..136B>`_
 for the analysis of the circumgalactic medium of z~0 dwarf galaxies.
 The quasars are a set of sources from the SDSS with
-zem ~ 0.3 to 1. and bright in the FUV.
+zem ~ 0.3 to 1 and bright in the FUV.
 
 
 Meta Data

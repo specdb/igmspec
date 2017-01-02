@@ -54,12 +54,12 @@ Continua
 There are two sets of continua included in igmspec.  As a default,
 we use the continua kindly provided by G. Zhu using the methodology
 described in this paper:
-`Zhu et al. 2014 <http://adsabs.harvard.edu/abs/2014MNRAS.439.3139Z>`.
+`Zhu et al. 2014 <http://adsabs.harvard.edu/abs/2014MNRAS.439.3139Z>`_.
 These are primarily useful for analysis *outside* of the Lya forest.
 Note that these were only generated for sources with z<4.8 and
 for data processed in v_5_7_0.
 
 When available, we have used mean flux regulated continua kindly
 provided by K.G. Lee, as described in these papers:
-`Lee et al. 2012 <http://adsabs.harvard.edu/abs/2012AJ....143...51L>`,
-`Lee et al. 2013 <http://adsabs.harvard.edu/abs/2013AJ....145...69L>`.
+`Lee et al. 2012 <http://adsabs.harvard.edu/abs/2012AJ....143...51L>`_,
+`Lee et al. 2013 <http://adsabs.harvard.edu/abs/2013AJ....145...69L>`_.

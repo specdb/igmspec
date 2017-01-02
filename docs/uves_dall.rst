@@ -22,7 +22,7 @@ The only additional keyword is a Simbad-friendly name.
 
 Note that for 4 of the sources:
 HE2243-6031, HE1341-1020, Q0002-422, PKS2000-330
-we have adopte the redshift listed in Dall'aglio et al.
+we have adopted the redshift listed in Dall'aglio et al.
 
 Spectra
 =======
