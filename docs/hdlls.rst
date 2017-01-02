@@ -24,13 +24,13 @@ Meta Data
 The meta data provided with HD-LLS also includes information on the
 LLS analyzed:
 
-============  ======== =========================================
-Key           Type     Description
-============  ======== =========================================
-Z_LLS         float    Absorption redshift of the LLS
-log_NHI       float    log10 of the HI column density
-sig(log_NHI)  float(2) log10 of the HI column density uncertainty (lower/upper)
-============  ======== =========================================
+============ ======== =========================================
+Key          Type     Description
+============ ======== =========================================
+Z_LLS        float    Absorption redshift of the LLS
+log_NHI      float    log10 of the HI column density
+sig(log_NHI) float(2) log10 of the HI column density uncertainty (lower/upper)
+============ ======== =========================================
 
 
 Spectra
