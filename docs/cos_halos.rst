@@ -11,9 +11,9 @@ Sources
 
 The COS-Halos Survey
 is a set of HST/COS
-`Tumlinson et al. (2013) <http://adsabs.harvard.edu/abs/2013ApJ...777...59T>`_
+(`Tumlinson et al. (2013) <http://adsabs.harvard.edu/abs/2013ApJ...777...59T>`_)
 and Keck/HIRES spectra
-`Werk et al. (2013) <http://adsabs.harvard.edu/abs/2013ApJS..204...17W>`_
+(`Werk et al. (2013) <http://adsabs.harvard.edu/abs/2013ApJS..204...17W>`_)
 for the analysis of the circumgalactic medium of z~0.2 galaxies.
 The quasars are a set of sources from the SDSS with
 zem ~ 0.3 to 1. and bright in the FUV.
@@ -46,3 +46,4 @@ CALCOS and then coadded with proprietary code
 
 The Keck/HIRES spectra are standard HIRedux reductions
 (see Werk et al. 2013).
+These spectra are normalized.

@@ -33,7 +33,7 @@ Meta Data
 =========
 
 See `catalog description <http://www.2dfquasar.org/Spec_Cat/catalogue.html>`_
-for a full description of the meta data.
+for a full description of the additional meta data.
 
 Spectra
 =======
@@ -42,4 +42,3 @@ Spectra are straight from the long format of the
 server.  Bad pixels have sig=0.  Note that we have
 not included spectra with error arrays having all zeros
 or those without a spectrum available via the website.
-These do not occur within the source catalog.

@@ -4,10 +4,13 @@
 Installing igmspec
 ******************
 
-This document describes how to install igmspec.
-It is *very* unlikely that you wish to do this.
-It is only for building the database and odds are
-that only JXP will do so.
+This document would have described how to install igmspec.
 
-As such, these notes have been scrubbed.
+It is *very unlikely* that you wish to do this.
+The *igmspec* software is only used
+to build the database.   Odds are
+that only JXP and a few others will
+ever wish to do so.
+
+As such, notes on dependencies have been scrubbed.
 
