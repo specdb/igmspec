@@ -10,6 +10,7 @@ from astropy.table import Table
 from astropy.io import fits
 from astropy import units as u
 
+from linetools import utils as ltu
 
 def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     """Generate Myers + SDSS_BOSS QSO catalog from Myers and DR12 files
@@ -60,6 +61,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     'ZEM_SOURCE' = The source of the redshift following the Myers classification with an additional SDSS_BOSS_ONLY
 
     """
+    import json
 
     from astropy.table import Column, hstack, vstack
     from astropy.coordinates import SkyCoord, search_around_sky
@@ -183,11 +185,44 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
             sdss_myers_out[key] = tmp
     hdf['quasars'] = sdss_myers_out
     hdf['quasars'].attrs['MYERS_DATE'] = DATE
+    # Myers dict
+    mdict = myers_dict()
+    hdf['quasars'].attrs['MYERS_DICT'] = json.dumps(ltu.jsonify(mdict))
 
     return None
 
+def myers_dict():
+    """ Generate a dict for coding Myers sources
 
-
+    Returns
+    -------
+    mdict : dict
+    """
+    source = ['SDSS', # (Schneider et al. with Hewett and Wild redshifts)
+        '2QZ', #
+        '2SLAQ', #
+        'AUS', #
+        'AGES', #
+        'COSMOS', #
+        'FAN', #
+        'BOSS', # (Paris et al. through DR12+SEQUELS)
+        'MMT', #
+        'KDE', # (Photometric; Richards et al.)
+        'XDQSOZ', # (Photometric; Bovy et al.)
+        'PAPOVICH', #
+        'GLIKMAN', #
+        'MADDOX', #
+        'LAMOST', #
+        'VHS', # (Photometric; calculated using the Vista Hemisphere Survey IR-data)
+        'MCGREER', #
+        'VCV', #
+        'ALLBOSS', #
+    ]
+    mdict = {}
+    for kk,key in enumerate(source):
+        mdict[key] = 2**kk
+    # Return
+    return mdict
 
 def zbest_myers(ADM_qso):
     """ Assign best redshift within the Myers catalog
