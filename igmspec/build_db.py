@@ -48,6 +48,8 @@ def ver01(test=False, clobber=False, publisher='J.X. Prochaska', **kwargs):
     -------
 
     """
+    pdb.set_trace()  # THIS VERSION IS NOW FROZEN
+    raise IOError("THIS VERSION IS NOW FROZEN")
     version = 'v01'
     # HDF5 file
     outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
@@ -150,10 +152,24 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
             if key in ['catalog','quasars']:#, 'BOSS_DR12', 'SDSS_DR7']:
                 continue
             else:
-                v01hdf.copy(key, hdf)
+                #v01hdf.copy(key, hdf)  # ONE STOP SHOPPING
+                grp = hdf.create_group(key)
+                # Copy spectra
+                v01hdf.copy(key+'/spec', hdf[key])
+                # Modify v01 meta and add
+                meta = Table(v01hdf[key+'/meta'].value)
+                meta.rename_column('GRATING', 'DISPERSER')
+                hdf[key+'/meta'] = meta
+                for akey in v01hdf[key+'/meta'].attrs.keys():
+                    hdf[key+'/meta'].attrs[akey] = v01hdf[key+'/meta'].attrs[akey]
+                # SSA info
                 old_groups[key].add_ssa(hdf, key)
     #warnings.warn("NEED TO PUT BACK SDSS AND BOSS!")
-    myers.add_to_hdf(hdf)
+    skip_myers = False
+    if skip_myers:
+        warnings.warn("NEED TO INCLUDE MYERS!")
+    else:
+        myers.add_to_hdf(hdf)
 
     # Setup groups
     new_groups = get_build_groups(version)
