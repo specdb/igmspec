@@ -229,7 +229,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     #
     print("Max pix = {:d}".format(maxpix))
     # Add columns
-    meta.add_column(Column(gratinglist, name='GRATING'))
+    meta.add_column(Column(gratinglist, name='DISPERSER'))
     meta.add_column(Column(telelist, name='TELESCOPE'))
     meta.add_column(Column(instrlist, name='INSTR'))
     meta.add_column(Column(npixlist, name='NPIX'))

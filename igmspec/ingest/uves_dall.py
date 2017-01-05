@@ -78,7 +78,7 @@ def grab_meta():
     uvesdall_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     uvesdall_meta.add_column(Column(['VLT']*nspec, name='TELESCOPE'))
     uvesdall_meta.add_column(Column(['UVES']*nspec, name='INSTR'))
-    uvesdall_meta.add_column(Column(['BOTH']*nspec, name='GRATING'))
+    uvesdall_meta.add_column(Column(['BOTH']*nspec, name='DISPERSER'))
     uvesdall_meta.add_column(Column([45000.]*nspec, name='R'))
     uvesdall_meta['STYPE'] = str('QSO')
     # Sort

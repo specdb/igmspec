@@ -66,7 +66,7 @@ def grab_meta():
                 int(chv[3:icmma])))
     cdwarfs_meta.add_column(Column(datet, name='DATE-OBS'))
     # Others
-    cdwarfs_meta.add_column(Column(['G130M/G160M']*len(cdwarfs_meta), name='GRATING'))
+    cdwarfs_meta.add_column(Column(['G130M/G160M']*len(cdwarfs_meta), name='DISPERSER'))
     cdwarfs_meta.add_column(Column([20000.]*len(cdwarfs_meta), name='R'))
     cdwarfs_meta.add_column(Column([2000.]*len(cdwarfs_meta), name='EPOCH'))
     cdwarfs_meta['INSTR'] = 'COS' # Deals with padding

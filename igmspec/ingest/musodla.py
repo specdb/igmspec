@@ -86,7 +86,7 @@ def grab_meta():
     meta['NAME'] = names
     meta['zem_GROUP'] = zems
     meta['INSTR'] = instrs
-    meta['GRATING'] = gratings
+    meta['DISPERSER'] = gratings
     meta['DATE-INFO'] = dinfos
     meta['SPEC_FILE'] = sfiles
     meta['TELESCOPE'] = telescopes

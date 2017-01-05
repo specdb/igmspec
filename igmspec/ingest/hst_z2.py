@@ -52,7 +52,7 @@ def grab_meta():
     hstz2_meta.rename_column('obsdate','DATE-OBS')
     hstz2_meta.rename_column('tel','TELESCOPE')
     hstz2_meta.rename_column('inst','INSTR')
-    hstz2_meta.rename_column('grating','GRATING')
+    hstz2_meta.rename_column('grating','DISPERSER')
     hstz2_meta.rename_column('resolution','R')
     # Check
     assert chk_meta(hstz2_meta, chk_cat_only=True)
