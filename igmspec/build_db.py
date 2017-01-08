@@ -30,8 +30,6 @@ from astropy import units as u
 
 from linetools import utils as ltu
 
-from specdb.specdb import IgmSpec
-
 #from igmspec.defs import get_survey_dict
 #survey_dict = get_survey_dict()
 
@@ -222,6 +220,12 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     # Check for duplicates -- There is 1 pair in SDSS (i.e. 2 duplicates)
     if not sdbbu.chk_for_duplicates(maindb, dup_lim=2):
         raise ValueError("Failed duplicates")
+
+    # Check stacking
+    if not sdbbu.chk_vstack(hdf):
+        print("Meta data will not stack using specdb.utils.clean_vstack")
+        print("Proceed to write at your own risk..")
+        pdb.set_trace()
 
     # Finish
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
