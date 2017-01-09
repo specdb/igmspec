@@ -41,8 +41,16 @@ which loads the database file and then enables IVOA queries following
 the SSA v1.1 protocol.  I am still a novice at this and would greatly
 appreciate further guidance from the Reviewers and the Editor
 (including tips on how to test whether the VOTables produced are
-compliant).  I fear I do not have the proper resources at the present
-time to stage an online SSA service.
+compliant).  I believe that I have included all mandatory fields
+of the spectral data model (v2.0) except:
+(1) Char.SpatialAxis.Coverage.Bounds.Extent,
+as the aperture is not precisely known for all spectra in igmspec;
+(2) Char.TimeAxis.Coverage.Bounds.Extent, because
+the total exposure time is not always recorded for
+spectra coadded across multiple exposures.
+As far as online staging goes, I fear I do not have the
+resources at present time to stage the database online as a proper
+SSA service.
 
 4.  The specdb software to generate a new (e.g. private) database has
 been greatly expanded.  This is now briefly described in the manuscript.
