@@ -1,0 +1,206 @@
+Editor Mann,
+
+I have read carefully the input and criticisms of the two reviewers
+and yourself as regards my manuscipt "The igmspec Database of Public
+Spectra Probing the Intergalactic Medium" as submitted to the
+journal of Astronomy and Computing.  As you will see, I have taken
+these suggestions and made many modifications to the database, software,
+and manuscript.  I believe these have improved each considerably
+and I ask that you now review the revised, resubmitted manuscript.
+Below, I detail the changes and provide clarifications on several
+of the issues previously raised.
+
+Before providing responses to the detailed comments of each
+Reviewer, I wish to summarize the major modifications to the
+igmspec database and its related specdb repository:
+
+1. Changes to v02 of the igmspec database
+ -- I have ingested three new data groups (referred to as MUSoDLA,
+ UVpSM4, UVES_Dall).  These were nearly ingested at submission but
+ were suffering from a few issues.  They are now in v02.
+ -- The quasar catalog has been revised to include only
+ spectroscopically confirmed sources and expanded to include
+ SDSS photometry.  This is described in the manuscript.
+ -- The meta data tables now include attributes that describe the
+ spectra with IVOA descriptors (e.g. UCDs).
+
+2.  The software provided in specdb to interface with the
+database from within Python has been substantially refactored.
+Substantial documentation including Python Notebooks are in
+readthedocs and at github.  Here are some highlights (the description
+in the manuscript remains modest but can be expanded if the Reviewers
+suggest it):
+  -- The source catalog can be queried by position, by a list of
+  coordiantes, and/or by constraints on its meta data (e.g. redshift).
+  -- The spectral meta data can be queried.  This can be coupled with
+  constraints on position on the sky or coordinate lists.
+  -- The methods to retrieve spectra are more straightforward.
+
+3.  The specdb software now includes a Python object (SSAInterface)
+which loads the database file and then enables IVOA queries following
+the SSA v1.1 protocol.  I am still a novice at this and would greatly
+appreciate further guidance from the Reviewers and the Editor
+(including tips on how to test whether the VOTables produced are
+compliant).  I fear I do not have the proper resources at the present
+time to stage an online SSA service.
+
+4.  The specdb software to generate a new (e.g. private) database has
+been greatly expanded.  This is now briefly described in the manuscript.
+
+
+============================================
+> I now provide detailed responses.  The original report is provided
+> and my text is prefaced with a ">" symbol.
+============================================
+Comments from the editors and reviewers:
+-Reviewer 1
+
+  -
+
+I have reviewed the paper “The igmspec Database of Public Spectra Probing the Intergalactic Medium” by J. X. Prochaska. In this manuscript the author describes igmspec, a large database of quasar-absorption-line (QAL) spectra, which he is making available online. The database contains almost half a million sources over a range of redshift. This represents a valuable resource for the community and will enable a broad range of IGM science. My comments are minor, which is a reflection of my high opinion of this effort. The author should be commended for this service to the community.
+
+> I appreciate the referee's comments.
+
+If this is v2 of igmspec, what was v1?
+
+> v01 was a prototype and will not be distributed.  This is now
+> footnoted in the mansucript.
+
+
+Are there any S/N cuts on what enters the database? E.g. are the noisiest spectra thrown out? Clearly this would depend on the S/N cuts of each individual survey that comprise the meta-survey, but it is relevant.
+
+> There was no explicit culling other than several hundred spectra from
+> 2QZ that had null error values for their entire arrays.  This is now
+> detailed in the manuscript.
+
+
+Section 2
+
+“we include the quasar catalog complied… by A .Myers”
+
+This is vague. Where did A. Myers get it from? What telescopes/surveys were used, etc?
+
+> This catalog has been revised and additional details have been provided.
+
+
+Section 3.5
+
+What telescope/instrument does HD-LLS DR1 come from?
+
+> We have added text detailing the observatories (Keck, Magellan).
+
+
+I have several questions relating to the HST portion of the database (COS-Halos, COS-Dwarfs, HSTQSO, HST _z2):
+
+1) HSTQSO should be described in more detail in Section 3.12. How many sources are from FOS, GHRS, STIS, and COS, respectively (the four Hubble spectrographs with UV channels)? This breakdown would be useful, since “all HST QSO” spectra is a very heterogeneous set, covering a wide range of spectral resolution and signal-to-noise.
+
+> Further details are now provided.  None of the spectra in this data group
+> were with GHRS.
+
+2) Aren’t the COS-Halos and COS-Dwarfs datasets a subset of HSTQSO? In that case, they are not needed as separate entries.
+
+> Yes, there is substantial overlap between these but we prefer to provide
+> each because (i) the COS-Halos data group include Keck/HIRES spectra
+> (ii) the COS spectra were processed separately and distinctly;
+> (iii) there are a number of users who may wish to restrict specifically
+> to the COS-Dwarfs and/or COS-Halos datasets.
+
+3) The full dataset of COS FUV QSO spectra (as of January 2016) is available at the Hubble Spectroscopic Legacy Archive (HSLA). I’m not sure how much that overlaps with HSTQSO (presumably a lot), but has the author considered including the HSLA in igmspec?
+
+> Indeed it was an oversight not to include the fact that the COS spectra
+> are from HSLA.  This is now properly described in the manuscript.
+
+
+Section 4
+
+“some surveys also include ‘co’ which is an estimate of the source continuum”
+
+This is important and I suspect users of igmspec will be interested in this - how many of the surveys and what fraction of the sources have continuum estimates? How are they fitted (polynomials, etc)? Some details would help.
+
+> The overwhelming majority of spectra include a continuum.  We have added
+> additional text describing these, especially within the descriptions of
+> the individual data groups.
+
+All the references are in numerical format. Maybe that is the journal style(?), but author-year is easier on the eye and appear in a couple of places anyway (Rubin et al., Lehner et al.)
+
+> I am using the elsarcticle-num bibstyle file that came with the
+> Elsevier template.  I have tried to replace it with other style files
+> but cannot figure out how to over-ride the Elsavier approach..
+
+Typo in ‘pubicly’ in abstract
+
+> Whoops..
+
+
+Abstract, ’world’s greatest observatories’. While I tend to agree, this is rather subjective.
+
+> I prefer to leave as is.
+
+Footnote 1 sounds rather harsh. Is it really needed given that the point is made in the text?
+
+> Agreed and removed.
+
+
+Table 2, a note is needed saying lambda_min and _max are in Angstroms.
+
+> Added to the column labels.
+
+======
+
+-Reviewer 2
+
+  -
+
+The manuscript describes igmspec, the database of spectra collected from multiple public archives, which may be interesting for researchers of intergalactic media. In fact the author has collected spectra from thirteen collections and packed them into a compact hdf5 file together with some routines for Python access. He has also developed the package which creates the hdf5 file using downloads from all the given archives and collections. It may be easily modified to get data from more resources or their latest releases (e.g. for SDSS). The author has an intention to deliver more similar hdf5 files with other target-oriented collections (e.g. galaxy or supernovae spectra).
+
+The main motivation of such effort is (according to the statement on page 2) the lack of standard data format for spectra handling and distribution, the author also speculates that this is due to general failure of Virtual Observatory.
+
+I see the advantage of this hdf5 file in the field of small-scale machine learning of spectral features, fitting of template libraries and general batch processing analysis. In addition to original data, the author has added the continuum estimates where necessary.
+
+I think the Python access interface is useful for the larger part of the astronomical community and the reasonably big single HDF5 file allows for the immediate exploitation of the datasets in the interactive Ipython environment.  But, unfortunately, the usage is  limited to users working on local machine in Python. The automated complex workflows on multi-node machines or interaction with the spectra  (e.g. display, metadata review) for average non-Python-centric user are quite difficult.  In my opinion the individual agglomerated datasets  could be promoted better in the wider community by preparing the web portal connected to the database/datasets.
+
+> I have taken this recommendation seriously and have begun the effort
+> to enable a web portal using IVOA/SSA protocol.  Specifically, I have
+> modified the database to have the meta data demanded for the IVOA
+> Spectral Data Model and generated new software to perform SSA queries on
+> a database file.  I have not, however, provided an actual web portal, in
+> part due to a lack of resources.  And, I suspect the VOTable is not yet fully
+> IVOA compliant.  Additional guidance on this topic would be appreciated.
+
+In the article I am missing the description of the practical usage of the igmspec database. The article just lists the individual source data sets and the whole architecture and SW environment are just summarized on less than a half page. The author refers the reader to the examples in the package distribution (on github), namely to the Ipython notebook with short examples.  However, the github repository is not well structured and I could not find quickly where to start and to what to load (I expected e.g classical README).  After finding the notebook using the link from the article (hardly found looking only in  repository) I realized that the handling of spectra was not trivial and the query interface is not very intuitive.
+
+> These were fair criticisms.  A major refactoring of the software and
+> documentation has taken place (now on readthedocs).
+> As with most documentation, there can
+> never be enough but I am hopeful that what is provided is sufficient
+> to get the casual user started.   Please comment.
+> I have also restructured and enhanced the Architecture and Software
+> sections in the manuscript.  I prefer > to leave the discussion at
+> a high level (e.g. individual software methods tend to evolve in time)
+> but can provide further details if warranted.
+
+The most confusing part, however, is the database itself. On the github there is just a placeholder with README, which I can understand (github will not allow for storage of tens of GB file).  But then I did not find in the article any reference to the real 25 GB hdf5 file. So the article looses its sense - what do the author offer to the community ? There is no explanation - is the user expected to build the database himself using the Python packages ?
+
+> This was unfortunate.  The manuscript has been revised to clearly
+> describe how one can download the file.  The user is not expected (nor
+> capable) of building igmspec.  The user may wish, however, to use specdb
+> to generate his/her own database [a subsection of the manuscript now
+> briefly describes this too].
+
+The formal presentation of the article must be definitely changed as well.  (I suppose it will be required anyway by the editor) as (in addition to the proper formatting)  the present form citations are not according to the natbib standard (author year). The bibliography is quite inconsistently formatted (and sometimes confusing) and there are numerous typos.
+
+> I am not overly fond of the bibliography, but this is the Elsavier format.
+> Specifically, I am using the elsarticle-num.bst file provided with their
+> template and the elsarticle.cls file.
+
+In summary, I think the article fits in the profile of Astronomy and Computing with its topic, however it must be considerably extended with description of SW package connected to the presented database, namely from the point of view of the general user, and reformatted according to the journal standard template. In the present form I cannot recommend it for publication.  I would also recommend to polish the SW repository, make the database interface more intuitive and mainly devote some time to preparing the proper user's manual.
+
+> I believe I have addressed these issues (aside from the reformatting of the
+> manuscript) including improving the database interface.  I am hopeful it is
+> now more intuitive;  at the least it is more consistent with SSA protocol.
+
+Some comments not relevant to the review of the manuscript: I  disagree with the statement about the failure of VO. I have a feeling that the author does not know what is the VO about and how important is it for every day life of the astronomers (Simbad, Aladin, SPLAT-VO, VO-Spec, Vizier, HST archive .... all VO-based). The importance of VO standards has been fully acknowledged in the Gaia  archive or ESASky portal, built from the scratch on VO technology. On the other hand I can confirm that the VO-compatible spectra handling  is ignored by a large part of optical spectra providers (with the exception of space projects.), despite the precise VO standard for publishing spectra (VOTable, SSAP, Obscore, TAP to name the most relevant). Creating the VO-compatible service on top  of  igmspec databases file would be a great help for the whole community.
+
+> Agreed.  I have taken significant steps in this direction and am hopeful
+> that igmspec will be fully integrated within the IVOA.
+

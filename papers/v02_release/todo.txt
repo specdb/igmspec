@@ -8,3 +8,4 @@
 7. Check through other issues
 8. Get UCO link for package
 9. Stage file with Shaw
+10. Make sure database file access is obvious in the Intro

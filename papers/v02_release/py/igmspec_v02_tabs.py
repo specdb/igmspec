@@ -57,7 +57,7 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     tbfil.write('\\hline \n')
 
     # Looping on systems
-    restrict = True
+    restrict = False
     for survey in groups:
         if survey == 'quasars':
             continue
