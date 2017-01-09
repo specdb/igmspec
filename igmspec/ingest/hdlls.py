@@ -16,6 +16,7 @@ from astropy import units as u
 from astropy.io import fits
 
 from linetools import utils as ltu
+from linetools.spectra import io as lsio
 
 from specdb.build.utils import chk_meta, set_resolution, init_data
 
@@ -175,9 +176,6 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
             full_idx[kk] = mt[0]
         # npix
         head = hdu[0].header
-        npix = head['NAXIS1']
-        if npix > max_npix:
-            raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
         # Some fiddling about
         for key in ['wave','flux','sig']:
             data[key] = 0.  # Important to init (for compression too)
@@ -186,9 +184,16 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
             assert hdu[1].name == 'ERROR'
             assert hdu[2].name == 'WAVELENGTH'
         # Write
-        data['flux'][0][:npix] = hdu[0].data
-        data['sig'][0][:npix] = hdu[1].data
-        data['wave'][0][:npix] = hdu[2].data
+        spec = lsio.readspec(f)  # Handles dummy pixels in ESI
+        npix = spec.npix
+        if npix > max_npix:
+            raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
+        data['flux'][0][:npix] = spec.flux.value
+        data['sig'][0][:npix] = spec.sig.value
+        data['wave'][0][:npix] = spec.wavelength.value
+        #data['flux'][0][:npix] = hdu[0].data
+        #data['sig'][0][:npix] = hdu[1].data
+        #data['wave'][0][:npix] = hdu[2].data
         # Meta
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
@@ -293,6 +298,8 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
     meta.add_column(Column(gratinglist, name='GRATING'))
     meta.add_column(Column(instrlist, name='INSTR'))
     meta.add_column(Column(telelist, name='TELESCOPE'))
+    # v02
+    meta.rename_column('GRATING', 'DISPERSER')
 
     # Add HDLLS meta to hdf5
     if chk_meta(meta):
@@ -311,3 +318,14 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
     return
 
 
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: Keck+Magellan HD-LLS DR1'.format(dset)
+    ssa_dict = default_fields(Title, flux='normalized')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

@@ -86,7 +86,7 @@ def grab_meta():
     meta['NAME'] = names
     meta['zem_GROUP'] = zems
     meta['INSTR'] = instrs
-    meta['GRATING'] = gratings
+    meta['DISPERSER'] = gratings
     meta['DATE-INFO'] = dinfos
     meta['SPEC_FILE'] = sfiles
     meta['TELESCOPE'] = telescopes
@@ -225,3 +225,15 @@ def hdf5_adddata(hdf, sname, musodla_meta, debug=False, chk_meta_only=False,
     #
     return
 
+
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: The Magellan uniform survey of damped Lya systems'.format(dset)
+    ssa_dict = default_fields(Title, flux='normalized')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

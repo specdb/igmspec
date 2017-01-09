@@ -78,7 +78,7 @@ def grab_meta():
     uvesdall_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     uvesdall_meta.add_column(Column(['VLT']*nspec, name='TELESCOPE'))
     uvesdall_meta.add_column(Column(['UVES']*nspec, name='INSTR'))
-    uvesdall_meta.add_column(Column(['BOTH']*nspec, name='GRATING'))
+    uvesdall_meta.add_column(Column(['BOTH']*nspec, name='DISPERSER'))
     uvesdall_meta.add_column(Column([45000.]*nspec, name='R'))
     uvesdall_meta['STYPE'] = str('QSO')
     # Sort
@@ -203,3 +203,14 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     return
 
 
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: Dall''Aglio et al. (2008) compilation of VLT/UVES spectra'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

@@ -18,7 +18,6 @@ def parser(options=None):
         description='Build the igmspec DB')
     parser.add_argument("-v", "--version", help="DB version to generate")
     parser.add_argument("-t", "--test", default=False, action='store_true', help="Test?")
-    parser.add_argument("-m", "--mk_test_file", default=False, action='store_true', help="Generate debug file?")
     parser.add_argument("--boss_hdf", help="HDF file with BOSS dataset [avoids repeating spectra ingestion]")
     parser.add_argument("--sdss_hdf", help="HDF file with SDSS dataset [avoids repeating spectra ingestion]")
     parser.add_argument("--clobber", default=False, action='store_true', help="Clobber existing file?")
@@ -65,14 +64,14 @@ def main(args=None):
     # Run
     if pargs.version is None:
         print("Building v02 of the igmspec DB")
-        build_db.ver02(test=pargs.test, mk_test_file=pargs.mk_test_file, clobber=pargs.clobber)
+        build_db.ver02(test=pargs.test, clobber=pargs.clobber)
     elif pargs.version == 'v01':
         print("Building v01 of the igmspec DB")
-        build_db.ver01(test=pargs.test, mk_test_file=pargs.mk_test_file,
+        build_db.ver01(test=pargs.test,
                        boss_hdf=boss_hdf, sdss_hdf=sdss_hdf, clobber=pargs.clobber)
     elif pargs.version == 'v02':
         print("Building v02 of the igmspec DB")
-        build_db.ver02(test=pargs.test, mk_test_file=pargs.mk_test_file, clobber=pargs.clobber)
+        build_db.ver02(test=pargs.test, clobber=pargs.clobber)
     else:
         raise IOError("Bad version number")
 

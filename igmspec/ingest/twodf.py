@@ -94,7 +94,7 @@ def grab_meta():
     tdf_meta.add_column(Column([580.]*nspec, name='R'))
     #
     tdf_meta.add_column(Column(['2dF']*nspec, name='INSTR'))
-    tdf_meta.add_column(Column(['300B']*nspec, name='GRATING'))
+    tdf_meta.add_column(Column(['300B']*nspec, name='DISPERSER'))
     tdf_meta.add_column(Column(['UKST']*nspec, name='TELESCOPE'))
     # Rename
     rad = (tdf_meta['RAh00']*3600 + tdf_meta['RAm00']*60 + tdf_meta['RAs00'])*360./86400.
@@ -261,3 +261,17 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
     #
     return
+
+
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: The 2QZ Quasar Survey'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

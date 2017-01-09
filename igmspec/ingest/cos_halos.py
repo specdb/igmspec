@@ -66,7 +66,7 @@ def grab_meta():
     # Others
     chalos_meta.add_column(Column(['      ']*len(chalos_meta), name='TELESCOPE')) # Padding
     chalos_meta.add_column(Column(['     ']*len(chalos_meta), name='INSTR')) # Padding for HIRES
-    chalos_meta.add_column(Column(['G130M/G160M']*len(chalos_meta), name='GRATING'))
+    chalos_meta.add_column(Column(['G130M/G160M']*len(chalos_meta), name='DISPERSER'))
     chalos_meta.add_column(Column([20000.]*len(chalos_meta), name='R'))
     chalos_meta.add_column(Column([2000.]*len(chalos_meta), name='EPOCH'))
     chalos_meta['INSTR'] = 'COS' # Deals with padding
@@ -94,7 +94,7 @@ def grab_meta():
         hires_tab.add_row(chalos_meta[mt[0]])
         hires_tab[-1]['INSTR'] = 'HIRES'
         hires_tab[-1]['TELESCOPE'] = 'Keck I'
-        hires_tab[-1]['GRATING'] = 'Red'
+        hires_tab[-1]['DISPERSER'] = 'Red'
         hires_tab[-1]['R'] = Rdicts['HIRES']['C1']
     # Combine
     chalos_meta = vstack([chalos_meta, hires_tab])
@@ -235,3 +235,18 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
     #
     return
 
+
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: Quasar Spectra from the COS-Halos Survey'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda', fxcalib='ABSOLUTE')
+    hdf[dset]['meta'].attrs['SSA_COS'] = json.dumps(ltu.jsonify(ssa_dict))
+    # HIRES
+    ssa_dict = default_fields(Title, flux='normalized')
+    hdf[dset]['meta'].attrs['SSA_HIRES'] = json.dumps(ltu.jsonify(ssa_dict))

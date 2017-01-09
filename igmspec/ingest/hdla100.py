@@ -175,7 +175,7 @@ def hdf5_adddata(hdf, sname, hdla100_meta, debug=False, chk_meta_only=False,
     hdla100_meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     hdla100_meta.add_column(Column(Rlist, name='R'))
     hdla100_meta.add_column(Column(np.arange(nmeta,dtype=int),name='GROUP_ID'))
-    hdla100_meta.add_column(Column(gratinglist, name='GRATING'))
+    hdla100_meta.add_column(Column(gratinglist, name='DISPERSER'))
     hdla100_meta['INSTR'] = ['HIRES']*nspec
     hdla100_meta['TELESCOPE'] = ['Keck-I']*nspec
     #hdla100_meta.rename_column('Z_QSO', 'zem')
@@ -197,3 +197,14 @@ def hdf5_adddata(hdf, sname, hdla100_meta, debug=False, chk_meta_only=False,
     return
 
 
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: The Keck/HIRES Survey of 100 Damped Lya Systems'.format(dset)
+    ssa_dict = default_fields(Title, flux='normalized')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

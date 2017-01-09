@@ -229,7 +229,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     #
     print("Max pix = {:d}".format(maxpix))
     # Add columns
-    meta.add_column(Column(gratinglist, name='GRATING'))
+    meta.add_column(Column(gratinglist, name='DISPERSER'))
     meta.add_column(Column(telelist, name='TELESCOPE'))
     meta.add_column(Column(instrlist, name='INSTR'))
     meta.add_column(Column(npixlist, name='NPIX'))
@@ -255,3 +255,15 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     return
 
 
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: The XQ-100 Survey of 100 z>3 quasars with VLT/XShooter'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

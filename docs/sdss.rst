@@ -34,15 +34,14 @@ PSF_SX        float    Error in PSF magnitude for X=[U,G,R,I,Z]
 Spectra
 =======
 
-Spectra straight from the SDSS database.
-Future igmspec releases will include continua.
+The spectra were gathered from the SDSS database.
 
 Continua
 ========
 
 We use the continua kindly provided by G. Zhu using the methodology
 described in this paper:
-`Zhu et al. 2014 <http://adsabs.harvard.edu/abs/2014MNRAS.439.3139Z>`.
+`Zhu et al. 2014 <http://adsabs.harvard.edu/abs/2014MNRAS.439.3139Z>`_.
 These are primarily useful for analysis *outside* of the Lya forest.
 
 

@@ -48,7 +48,7 @@ def grab_meta():
     esidla_meta.add_column(Column([2000.]*nspec, name='EPOCH'))
     esidla_meta.add_column(Column(['KeckII']*nspec, name='TELESCOPE'))
     esidla_meta.add_column(Column(['ESI']*nspec, name='INSTR'))
-    esidla_meta.add_column(Column(['ECH']*nspec, name='GRATING'))
+    esidla_meta.add_column(Column(['ECH']*nspec, name='DISPERSER'))
     # Rename
     esidla_meta.rename_column('RA', 'RA_GROUP')
     esidla_meta.rename_column('DEC', 'DEC_GROUP')
@@ -196,3 +196,15 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     return
 
 
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: The Keck/ESI Survey for high-z DLAs'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

@@ -326,7 +326,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
     meta.add_column(Column(npixlist, name='NPIX'))
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(Rlist, name='R'))
-    meta.add_column(Column(gratinglist, name='GRATING'))
+    meta.add_column(Column(gratinglist, name='DISPERSER'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(datelist, name='DATE-OBS'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='GROUP_ID'))
@@ -348,3 +348,15 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
     #
     return
 
+
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: HST and FUSE spectra of AGN and Quasars by Cooksey et al. (2010)'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

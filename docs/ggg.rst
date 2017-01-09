@@ -23,13 +23,16 @@ Meta Data
 The meta data provided with the GGG survey include a considerable
 set of data related to the SDSS survey.
 It also includes the redshift measurements on these quasars
-described in Worseck et al. (2014).
+as described by
+`Worseck et al. (2014) <http://adsabs.harvard.edu/abs/2014MNRAS.445.1745W>`_.
 
 Spectra
 =======
 
-In igmspec v1.0 are all of the spectra released in the GGG
-survey.  These are fluxed as described in Worseck et al. (2014).
-Relative fluxes should be accurate but the absolute value may
-have significant error (>10%).
-Every quasar was observed with both the R400 and B600 gratings.
+igmspec v02 includes all of the spectra released in the GGG
+survey.  These are flux calibrated, as by Worseck et al. (2014).
+Relative fluxes should be accurate but the absolute scaling
+may have significant error (>10%).
+Every quasar was observed with GMOS using
+both the R400 and B600 gratings.
+

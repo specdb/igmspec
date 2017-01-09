@@ -55,13 +55,18 @@ def get_cat_dict():
     return cdict
 
 
-'''
-def get_survey_dict():
+def get_ssa_dict():
     """ Return the survey dict
     Returns
     -------
 
     """
+    ssa_dict = dict(Title='BOSS DR12 Quasars', Publisher='JXP',
+                    FluxUcd='phot.fluDens;em.wl',
+                    FluxUnit='erg s**(-1) angstrom**(-1)',
+                    SpecUcd='em.wl',
+                    SpecUnit='Angstrom',
+                    )
     survey_dict = OrderedDict()
     survey_dict['BOSS_DR12'] = 1
     survey_dict['SDSS_DR7'] = 2
@@ -81,4 +86,3 @@ def get_survey_dict():
     survey_dict['UVpSM4'] = 2**15    # Cooksey et al. 2010, 2011
     #
     return survey_dict
-'''

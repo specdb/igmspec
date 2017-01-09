@@ -10,6 +10,7 @@ from astropy.table import Table
 from astropy.io import fits
 from astropy import units as u
 
+from linetools import utils as ltu
 
 def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     """Generate Myers + SDSS_BOSS QSO catalog from Myers and DR12 files
@@ -23,26 +24,26 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
        that that environment varialble RAW_IGMSPEC be set to the top
        directory where the SDSS/BOSS files and Myers files live.
 
-       Parameters
-       ----------
-       hdf: hdf5 object
+    Parameters
+    ----------
+    hdf : hdf5 object
            database to hold QSO catalog
 
-       Z_MIN: float, optional [default Z_MIN = 0.1]
+    Z_MIN : float, optional [default Z_MIN = 0.1]
            minimum QSO redshift applied to the catalog
 
-       Z_MAX: float. optimal [default Z_MAX = 7.1]
+    Z_MAX : float. optimal [default Z_MAX = 7.1]
            maximum QSO redshift applied to the catalo
 
-       MATCH_TOL: quantity, optional [default 2.0*u.arcsec]
+    MATCH_TOL : quantity, optional [default 2.0*u.arcsec]
            matching radius between Myers and SDSS/BOSS catalogs
 
-       Returns
-       -------
-       None :
+    Returns
+    -------
+    None :
            None
 
-       Examples
+    Examples
     --------
      >>> add_to_hdf(hdf)
     None
@@ -60,6 +61,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     'ZEM_SOURCE' = The source of the redshift following the Myers classification with an additional SDSS_BOSS_ONLY
 
     """
+    import json
 
     from astropy.table import Column, hstack, vstack
     from astropy.coordinates import SkyCoord, search_around_sky
@@ -86,7 +88,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
 
     # Read in the Myers file, match it to Myers sweeps photometry
     # Myers master QSO catalog
-    ADM_file = os.getenv('RAW_IGMSPEC') + '/Myers/GTR-ADM-QSO-master-wvcv.fits'
+    ADM_file = os.getenv('RAW_IGMSPEC') + '/Myers/GTR-ADM-QSO-master-wvcv.fits.gz'
     ADM_qso = Table.read(ADM_file)
     head1 = fits.open(ADM_file)[1].header
     DATE = head1['DATE']
@@ -183,11 +185,44 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
             sdss_myers_out[key] = tmp
     hdf['quasars'] = sdss_myers_out
     hdf['quasars'].attrs['MYERS_DATE'] = DATE
+    # Myers dict
+    mdict = myers_dict()
+    hdf['quasars'].attrs['MYERS_DICT'] = json.dumps(ltu.jsonify(mdict))
 
     return None
 
+def myers_dict():
+    """ Generate a dict for coding Myers sources
 
-
+    Returns
+    -------
+    mdict : dict
+    """
+    source = ['SDSS', # (Schneider et al. with Hewett and Wild redshifts)
+        '2QZ', #
+        '2SLAQ', #
+        'AUS', #
+        'AGES', #
+        'COSMOS', #
+        'FAN', #
+        'BOSS', # (Paris et al. through DR12+SEQUELS)
+        'MMT', #
+        'KDE', # (Photometric; Richards et al.)
+        'XDQSOZ', # (Photometric; Bovy et al.)
+        'PAPOVICH', #
+        'GLIKMAN', #
+        'MADDOX', #
+        'LAMOST', #
+        'VHS', # (Photometric; calculated using the Vista Hemisphere Survey IR-data)
+        'MCGREER', #
+        'VCV', #
+        'ALLBOSS', #
+    ]
+    mdict = {}
+    for kk,key in enumerate(source):
+        mdict[key] = 2**kk
+    # Return
+    return mdict
 
 def zbest_myers(ADM_qso):
     """ Assign best redshift within the Myers catalog
@@ -317,3 +352,43 @@ def spectro_myers(ADM_qso):
     return ispec
 
 
+def orig_add_to_hdf(hdf):
+    """ Add Myers catalog to hdf file
+    Parameters
+    ----------
+    hdf : HDF5 file
+    """
+    print("Adding Myers catalog")
+    # Load
+    ADM_qso, date = load()
+    # Redshifts
+    zbest_myers(ADM_qso)
+    # Cut down
+    ztrim = (ADM_qso['ZEM'] >= 0.1) & (ADM_qso['ZEM'] <= 7.0)
+    coordtrim = (ADM_qso['RA'] >= 0.0) & (ADM_qso['RA'] <= 360.0) & (np.abs(
+            ADM_qso['DEC']) <= 90.0)
+    keep = ztrim & coordtrim
+    ADM_qso = ADM_qso[keep]
+    # Add
+    hdf['quasars'] = ADM_qso
+    hdf['quasars'].attrs['DATE'] = date
+    #
+    return
+
+
+def load():
+    """ Load catalog
+    Parameters
+    ----------
+    Returns
+    -------
+    cat : Table
+    date : str
+      DATE of creation
+    """
+    ADM_file = os.getenv('RAW_IGMSPEC')+'/Myers/GTR-ADM-QSO-master-wvcv.fits.gz'
+    ADM_qso = Table.read(ADM_file)
+    # Grab header for DATE
+    head1 = fits.open(ADM_file)[1].header
+    # Return
+    return ADM_qso, head1['DATE']

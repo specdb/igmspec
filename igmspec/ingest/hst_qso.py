@@ -108,7 +108,7 @@ def grab_meta():
     hstqso_meta.rename_column('SPEC_FILE', 'ORIG_SPEC_FILE')
     hstqso_meta['SPEC_FILE'] = spec_files
     # RENAME
-    hstqso_meta.rename_column('GRATE', 'GRATING')
+    hstqso_meta.rename_column('GRATE', 'DISPERSER')
     hstqso_meta.rename_column('QSO_ZEM', 'zem_GROUP')
     hstqso_meta.rename_column('INST', 'INSTR')
     hstqso_meta['STYPE'] = str('QSO')
@@ -229,9 +229,9 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
         elif 'FOS-H' in fname:
             Rlist.append(14000.)
         elif 'STIS' in fname:
-            if row['GRATING'] == 'G230L':
+            if row['DISPERSER'] == 'G230L':
                 Rlist.append(700.)
-            elif row['GRATING'] == 'G140L':
+            elif row['DISPERSER'] == 'G140L':
                 Rlist.append(1200.)
             else:
                 raise ValueError("Bad STIS grating")
@@ -277,3 +277,14 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
     #
     return
 
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: HST UV spectra for surveying LLS and DLAs'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda', fxcalib='ABSOLUTE')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

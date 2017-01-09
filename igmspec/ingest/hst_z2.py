@@ -52,7 +52,7 @@ def grab_meta():
     hstz2_meta.rename_column('obsdate','DATE-OBS')
     hstz2_meta.rename_column('tel','TELESCOPE')
     hstz2_meta.rename_column('inst','INSTR')
-    hstz2_meta.rename_column('grating','GRATING')
+    hstz2_meta.rename_column('grating','DISPERSER')
     hstz2_meta.rename_column('resolution','R')
     # Check
     assert chk_meta(hstz2_meta, chk_cat_only=True)
@@ -191,3 +191,16 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
     #
     return
 
+
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: HST Grism survey of z~2.5 Quasars'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda', fxcalib='ABSOLUTE')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))

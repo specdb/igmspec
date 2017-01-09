@@ -36,7 +36,7 @@ from specdb.specdb import IgmSpec
 #survey_dict = get_survey_dict()
 
 
-def ver01(test=False, clobber=False, **kwargs):
+def ver01(test=False, clobber=False, publisher='J.X. Prochaska', **kwargs):
     """ Build version 1.0
 
     Parameters
@@ -48,6 +48,8 @@ def ver01(test=False, clobber=False, **kwargs):
     -------
 
     """
+    pdb.set_trace()  # THIS VERSION IS NOW FROZEN
+    raise IOError("THIS VERSION IS NOW FROZEN")
     version = 'v01'
     # HDF5 file
     outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
@@ -62,7 +64,7 @@ def ver01(test=False, clobber=False, **kwargs):
     hdf = h5py.File(outfil,'w')
 
     ''' Myers QSOs '''
-    myers.add_to_hdf(hdf)
+    myers.orig_add_to_hdf(hdf)
 
     # Main DB Table
     idkey = 'IGM_ID'
@@ -72,12 +74,7 @@ def ver01(test=False, clobber=False, **kwargs):
     group_dict = {}
 
     # Organize for main loop
-    groups = OrderedDict()
-    groups['BOSS_DR12'] = boss
-    groups['SDSS_DR7'] = sdss
-    groups['KODIAQ_DR1'] = kodiaq
-    groups['HD-LLS_DR1'] = hdlls
-    groups['GGG'] = ggg
+    groups = get_build_groups(version)
 
     pair_groups = ['SDSS_DR7']
 
@@ -106,12 +103,13 @@ def ver01(test=False, clobber=False, **kwargs):
     zpri = defs.z_priority()
 
     # Finish
-    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri, group_dict, version)
+    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri,
+                    group_dict, version, Publisher=str(publisher))
     print("Wrote {:s} DB file".format(outfil))
     print("Update DB info in specdb.defs.dbase_info !!")
 
 
-def ver02(test=False, skip_copy=False, clobber=False):
+def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -145,28 +143,37 @@ def ver02(test=False, skip_copy=False, clobber=False):
     # Begin
     hdf = h5py.File(outfil,'w')
 
+
     # Copy over the old stuff
-    #skip_copy = True
+    redo_groups = ['HD-LLS_DR1']
+    skip_groups = []#'BOSS_DR12', 'SDSS_DR7'] #warnings.warn("NEED TO PUT BACK SDSS AND BOSS!")
+    skip_copy = False
     if (not test) and (not skip_copy):
+        old_groups = get_build_groups('v01')
         for key in v01hdf.keys():
-            if key == 'catalog':
+            if key in ['catalog','quasars']+redo_groups+skip_groups:
                 continue
             else:
-                v01hdf.copy(key, hdf)
-    # Setup
-    new_groups = OrderedDict()
-    new_groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
-    new_groups['XQ-100'] = xq100        # Lopez et al. 2016
-    new_groups['HDLA100'] = hdla100     # Neeleman et al. 2013
-    new_groups['2QZ'] = twodf           # Croom et al.
-    new_groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
-    new_groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
-    new_groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
-    new_groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
-    new_groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
-    new_groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
-    new_groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
+                #v01hdf.copy(key, hdf)  # ONE STOP SHOPPING
+                grp = hdf.create_group(key)
+                # Copy spectra
+                v01hdf.copy(key+'/spec', hdf[key])
+                # Modify v01 meta and add
+                meta = Table(v01hdf[key+'/meta'].value)
+                meta.rename_column('GRATING', 'DISPERSER')
+                hdf[key+'/meta'] = meta
+                for akey in v01hdf[key+'/meta'].attrs.keys():
+                    hdf[key+'/meta'].attrs[akey] = v01hdf[key+'/meta'].attrs[akey]
+                # SSA info
+                old_groups[key].add_ssa(hdf, key)
+    skip_myers = False
+    if skip_myers:
+        warnings.warn("NEED TO INCLUDE MYERS!")
+    else:
+        myers.add_to_hdf(hdf)
 
+    # Setup groups
+    old_groups = get_build_groups('v01')
     pair_groups = []
     group_dict = igmsp_v01.qcat.group_dict
     # Set/Check keys (and set idkey internally for other checks)
@@ -176,20 +183,41 @@ def ver02(test=False, skip_copy=False, clobber=False):
     for key in tkeys:
         assert key in mkeys
 
+    # Loop over the old groups to update (as needed)
+    new_IDs = False
+    for gname in redo_groups:
+        print("Working to replace meta/spec for group: {:s}".format(gname))
+        # Meta
+        meta = old_groups[gname].grab_meta()
+        # Group flag
+        flag_g = group_dict[gname]
+        # IDs
+        if new_IDs:
+            pdb.set_trace()  # NOT READY FOR THIS
+            #maindb = sdbbu.add_ids(maindb, meta, flag_g, tkeys, idkey,
+            #                   first=(flag_g==1), close_pairs=(gname in pair_groups))
+        else:
+            _, _, ids = sdbbu.set_new_ids(maindb, meta, idkey)
+        # Spectra
+        old_groups[gname].hdf5_adddata(hdf, gname, meta)
+        old_groups[gname].add_ssa(hdf, gname)
+
     meta_only = False
-    # Loop over the groups
+    new_groups = get_build_groups(version)
+    # Loop over the new groups
     for gname in new_groups:
         print("Working on group: {:s}".format(gname))
         # Meta
         meta = new_groups[gname].grab_meta()
         # Survey flag
-        flag_g = sdbbu.add_to_group_dict(gname, group_dict)
+        flag_g = sdbbu.add_to_group_dict(gname, group_dict, skip_for_debug=True)
         # IDs
         maindb = sdbbu.add_ids(maindb, meta, flag_g, tkeys, idkey,
                                first=(flag_g==1), close_pairs=(gname in pair_groups))
         # Spectra
         if not meta_only:
             new_groups[gname].hdf5_adddata(hdf, gname, meta)
+            new_groups[gname].add_ssa(hdf, gname)
 
     # Check for duplicates -- There is 1 pair in SDSS (i.e. 2 duplicates)
     if not sdbbu.chk_for_duplicates(maindb, dup_lim=2):
@@ -197,7 +225,8 @@ def ver02(test=False, skip_copy=False, clobber=False):
 
     # Finish
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
-    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri, group_dict, version)
+    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri,
+                    group_dict, version, Publisher=str(publisher))
 
     print("Wrote {:s} DB file".format(outfil))
     print("Update DB info in specdb.defs.dbase_info !!")
@@ -218,3 +247,41 @@ def chk_clobber(outfil, clobber=False):
             return False
     else:
         return True
+
+
+def get_build_groups(version):
+    """
+    Parameters
+    ----------
+    version : str
+
+    Returns
+    -------
+    build_groups : dict
+
+    """
+
+    groups = OrderedDict()
+    if version == 'v01':
+        groups['BOSS_DR12'] = boss
+        groups['SDSS_DR7'] = sdss
+        groups['KODIAQ_DR1'] = kodiaq
+        groups['HD-LLS_DR1'] = hdlls
+        groups['GGG'] = ggg
+    elif version == 'v02':
+        groups = OrderedDict()
+        groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
+        groups['XQ-100'] = xq100        # Lopez et al. 2016
+        groups['HDLA100'] = hdla100     # Neeleman et al. 2013
+        groups['2QZ'] = twodf           # Croom et al.
+        groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
+        groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
+        groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
+        groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
+        groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
+        groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
+        groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
+    else:
+        raise IOError("Not ready for this version")
+    # Return
+    return groups
