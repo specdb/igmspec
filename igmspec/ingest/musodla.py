@@ -188,7 +188,10 @@ def hdf5_adddata(hdf, sname, musodla_meta, debug=False, chk_meta_only=False,
             data[key] = 0.  # Important to init (for compression too)
         data['flux'][0][:npix] = spec.flux.value
         if 'MagE' in f:
-            data['sig'][0][:npix] = 1./np.sqrt(spec.sig.value)  # IVAR
+            if fname in ['J2122-0014_MagE.ascii','J0011+1446_MagE.ascii']:
+                data['sig'][0][:npix] = spec.sig.value  # Special cases..
+            else:
+                data['sig'][0][:npix] = 1./np.sqrt(spec.sig.value)  # IVAR
         else:
             data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
@@ -237,3 +240,16 @@ def add_ssa(hdf, dset):
     Title = '{:s}: The Magellan uniform survey of damped Lya systems'.format(dset)
     ssa_dict = default_fields(Title, flux='normalized')
     hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))
+
+
+def chk_mage_flux():
+    """ At least one MagE file has a mix of fluxed and normalized spectra
+    And a 'normal' error array
+    """
+    mage_files = glob.glob(os.getenv('RAW_IGMSPEC')+'/MUSoDLA/data/*MagE.ascii')
+    for mfile in mage_files:
+        spec = lsio.readspec(mfile)
+        nhigh = np.sum(spec.flux.value > 1e10)
+        print("File={:s} with nhigh={:d}".format(mfile, nhigh))
+        if nhigh > 1:
+            pdb.set_trace()
