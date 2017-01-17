@@ -7,6 +7,8 @@ probe the intergalactic medium (IGM).
 Parties interested in accessing and interfacing
 with the database should see the primary 
 publication: http://coming_to_arxiv.soon
+Further documentation is available at readthedocs:
+http://specdb.readthedocs.io/en/latest/igmspec.html
 
 This repository has two main purposes:
 
@@ -15,6 +17,6 @@ ingested into the igmspec database.
 
 1.  Maintain the software required to build the database.
 
-It is unlikely that you will want or need to 
+It is rather unlikely that you will want or need to 
 clone this repository.
 

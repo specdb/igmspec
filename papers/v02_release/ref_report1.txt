@@ -1,0 +1,134 @@
+
+
+Ref: ASCOM_2016_47
+Title: The igmspec Database of Public Spectra Probing the Intergalactic Medium
+Journal: Astronomy and Computing
+
+Dear Prof. Prochaska,
+
+Thank you for submitting your manuscript to Astronomy and Computing . I have received comments from reviewers on your manuscript. Your paper should become acceptable for publication pending suitable revision and modification of the article in light of the appended reviewer comments.
+
+When resubmitting your manuscript, please carefully consider all issues mentioned in the reviewers' comments, outline every change made point by point, and provide suitable rebuttals for any comments not addressed.
+
+I think the key issue is the analysis of the technical choices made in the production of your database - not just what you did, but why you did it that way. In that regard, I think you need to address the VO more thoroughly. Both referees mention your footnote about the failure of the VO, which should be removed. More important, though, is your statement that appropriate standards don't exist. The IVOA Simple Spectral Access protocol provides a standard for the kind of service you are providing, so you need to discuss that; it may be that you can argue convincingly that the use case that you are addressing with your database is not well met by the SSA protocol, but I think you need to discuss that, because that is the relevant community standard.
+
+The SSA protocol would also address several questions either mentioned by the referees or that arise implicitly in your paper. Referee 1 asked for more details on some of the data subsets than are included in your Table. SSA describes how to publish the metadata for spectra in a queryable format, so that exactly these questions can be answered. The registration of SSA services in the VO registry enables the discovery of data resources in a more effective way than hoping that users read this paper. The publication of the metadata through SSA also allows people to find that your database has been extended, and what its new contents are. 
+
+As Referee 2 notes, SSA has not been adopted as widely as one might have hoped, but it's a chicken and egg, to some extent; people aren't motivated to publish data using the standards if more data isn't published through the VO. There are toolkits - e.g. SAADA and DaCHS - that do the VO-compliant analogue of what you have done: i.e. they can take a collection of spectra as FITS files, extract the metadata from the headers and publish them to the VO through an SSA service. As I say, you may be able to make a convincing case that your use case has requirements that are not well served by the VO standards and the toolkits that implement them, but those standards do exist and are used (e.g. by STScI for HST spectra) so you need to discuss them as part of a technical analysis of what you did or why.
+
+Alternatively, you may decide that it's not worth the effort and that the current document should just be posted on GitHub. Either would be fine, depending on what you want for this paper, but currently it doesn't fit the bill for publication in A&C, so I think you need to think about what your intention for it is.
+
+To submit your revised manuscript:
+
+    Log into EVISE® at: http://www.evise.com/evise/faces/pages/navigation/NavController.jspx?JRNL_ACR=ASCOM
+    Locate your manuscript under the header 'My Submissions that need Revisions' on your 'My Author Tasks' view
+    Click on 'Agree to Revise'
+    Make the required edits
+    Click on 'Complete Submission' to approve
+
+What happens next?
+
+After you approve your submission preview you will receive a notification that the submission is complete. To track the status of your paper throughout the editorial process, log in to EVISE® at: http://www.evise.com/evise/faces/pages/navigation/NavController.jspx?JRNL_ACR=ASCOM.
+
+Enrich your article to present your research with maximum impact. This journal supports the following Content Innovations:
+
+    Explain your research in your own words and attract interest in your work using AudioSlides : 5-minute webcast-style presentations that are displayed next to your published article and can be posted on other websites. You will receive an invitation email to create an AudioSlides presentation within three weeks after your paper has been accepted.
+
+I look forward to receiving your revised manuscript as soon as possible.
+
+Kind regards,
+
+Bob Mann
+
+Editor
+Astronomy and Computing
+
+Comments from the editors and reviewers:
+-Reviewer 1
+
+  -
+
+I have reviewed the paper “The igmspec Database of Public Spectra Probing the Intergalactic Medium” by J. X. Prochaska. In this manuscript the author describes igmspec, a large database of quasar-absorption-line (QAL) spectra, which he is making available online. The database contains almost half a million sources over a range of redshift. This represents a valuable resource for the community and will enable a broad range of IGM science. My comments are minor, which is a reflection of my high opinion of this effort. The author should be commended for this service to the community.
+
+
+If this is v2 of igmspec, what was v1?
+
+
+Are there any S/N cuts on what enters the database? E.g. are the noisiest spectra thrown out? Clearly this would depend on the S/N cuts of each individual survey that comprise the meta-survey, but it is relevant.
+
+
+Section 2
+
+“we include the quasar catalog complied… by A .Myers”
+
+This is vague. Where did A. Myers get it from? What telescopes/surveys were used, etc?
+
+
+Section 3.5
+
+What telescope/instrument does HD-LLS DR1 come from?
+
+
+I have several questions relating to the HST portion of the database (COS-Halos, COS-Dwarfs, HSTQSO, HST _z2):
+
+1) HSTQSO should be described in more detail in Section 3.12. How many sources are from FOS, GHRS, STIS, and COS, respectively (the four Hubble spectrographs with UV channels)? This breakdown would be useful, since “all HST QSO” spectra is a very heterogeneous set, covering a wide range of spectral resolution and signal-to-noise.
+
+2) Aren’t the COS-Halos and COS-Dwarfs datasets a subset of HSTQSO? In that case, they are not needed as separate entries.
+
+3) The full dataset of COS FUV QSO spectra (as of January 2016) is available at the Hubble Spectroscopic Legacy Archive (HSLA). I’m not sure how much that overlaps with HSTQSO (presumably a lot), but has the author considered including the HSLA in igmspec? 
+
+
+Section 4
+
+“some surveys also include ‘co’ which is an estimate of the source continuum”
+
+This is important and I suspect users of igmspec will be interested in this - how many of the surveys and what fraction of the sources have continuum estimates? How are they fitted (polynomials, etc)? Some details would help.
+
+
+All the references are in numerical format. Maybe that is the journal style(?), but author-year is easier on the eye and appear in a couple of places anyway (Rubin et al., Lehner et al.)
+
+
+Typo in ‘pubicly’ in abstract
+
+
+Abstract, ’world’s greatest observatories’. While I tend to agree, this is rather subjective.
+
+
+Footnote 1 sounds rather harsh. Is it really needed given that the point is made in the text?
+
+
+Table 2, a note is needed saying lambda_min and _max are in Angstroms.
+
+
+-Reviewer 2
+
+  -
+
+The manuscript describes igmspec, the database of spectra collected from multiple public archives, which may be interesting for researchers of intergalactic media. In fact the author has collected spectra from thirteen collections and packed them into a compact hdf5 file together with some routines for Python access. He has also developed the package which creates the hdf5 file using downloads from all the given archives and collections. It may be easily modified to get data from more resources or their latest releases (e.g. for SDSS). The author has an intention to deliver more similar hdf5 files with other target-oriented collections (e.g. galaxy or supernovae spectra).
+
+The main motivation of such effort is (according to the statement on page 2) the lack of standard data format for spectra handling and distribution, the author also speculates that this is due to general failure of Virtual Observatory.
+
+I see the advantage of this hdf5 file in the field of small-scale machine learning of spectral features, fitting of template libraries and general batch processing analysis. In addition to original data, the author has added the continuum estimates where necessary.
+
+I think the Python access interface is useful for the larger part of the astronomical community and the reasonably big single HDF5 file allows for the immediate exploitation of the datasets in the interactive Ipython environment.  But, unfortunately, the usage is  limited to users working on local machine in Python. The automated complex workflows on multi-node machines or interaction with the spectra  (e.g. display, metadata review) for average non-Python-centric user are quite difficult.  In my opinion the individual agglomerated datasets  could be promoted better in the wider community by preparing the web portal connected to the database/datasets.
+
+In the article I am missing the description of the practical usage of the igmspec database. The article just lists the individual source data sets and the whole architecture and SW environment are just summarized on less than a half page. The author refers the reader to the examples in the package distribution (on github), namely to the Ipython notebook with short examples.  However, the github repository is not well structured and I could not find quickly where to start and to what to load (I expected e.g classical README).  After finding the notebook using the link from the article (hardly found looking only in  repository) I realized that the handling of spectra was not trivial and the query interface is not very intuitive.
+
+The most confusing part, however, is the database itself. On the github there is just a placeholder with README, which I can understand (github will not allow for storage of tens of GB file).  But then I did not find in the article any reference to the real 25 GB hdf5 file. So the article looses its sense - what do the author offer to the community ? There is no explanation - is the user expected to build the database himself using the Python packages ?
+
+The formal presentation of the article must be definitely changed as well.  (I suppose it will be required anyway by the editor) as (in addition to the proper formatting)  the present form citations are not according to the natbib standard (author year). The bibliography is quite inconsistently formatted (and sometimes confusing) and there are numerous typos.
+
+In summary, I think the article fits in the profile of Astronomy and Computing with its topic, however it must be considerably extended with description of SW package connected to the presented database, namely from the point of view of the general user, and reformatted according to the journal standard template. In the present form I cannot recommend it for publication.  I would also recommend to polish the SW repository, make the database interface more intuitive and mainly devote some time to preparing the proper user's manual. 
+
+Some comments not relevant to the review of the manuscript: I  disagree with the statement about the failure of VO. I have a feeling that the author does not know what is the VO about and how important is it for every day life of the astronomers (Simbad, Aladin, SPLAT-VO, VO-Spec, Vizier, HST archive .... all VO-based). The importance of VO standards has been fully acknowledged in the Gaia  archive or ESASky portal, built from the scratch on VO technology. On the other hand I can confirm that the VO-compatible spectra handling  is ignored by a large part of optical spectra providers (with the exception of space projects.), despite the precise VO standard for publishing spectra (VOTable, SSAP, Obscore, TAP to name the most relevant). Creating the VO-compatible service on top  of  igmspec databases file would be a great help for the whole community.
+
+
+Have questions or need assistance?
+For further assistance, please visit our Customer Support site. Here you can search for solutions on a range of topics, find answers to frequently asked questions, and learn more about EVISE® via interactive tutorials. You can also talk 24/5 to our customer support team by phone and 24/7 by live chat and email.
+
+-------------------------------------------------------------
+
+Copyright © 2016 Elsevier B.V. | Privacy Policy
+
+Elsevier B.V., Radarweg 29, 1043 NX Amsterdam, The Netherlands, Reg. No. 33156677.
+

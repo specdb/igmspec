@@ -5,9 +5,10 @@
 \begin{document}
 
 
+\def\weblink{http:ucsc.link coming}
 \def\nhdlls{154}
-\def\nsource{403265}  % Without UVpSM4, UVES
-\def\nspectra{433910}  % Without UVpSM4, UVES
+\def\nsource{403277}  % v02
+\def\nspectra{434686}  % v02
 \def\npair{179}  % Within 10"
 \def\nlee{several thousands}
 \def\hub{h_{72}^{-1}}
@@ -103,6 +104,8 @@ the Intergalactic Medium}
 
 % V2.0 -- Ready to submit!
 % V2.1 -- submitted version by JXP on 11oct2016
+% V3.0 -- Resub editing begins (07jan2017)
+% V3.1 -- Next pass (09jan2017)
 
 \author{
 J. Xavier Prochaska}%\fnref{1}} 
@@ -117,22 +120,27 @@ of the {\it specdb} repository in the {\it specdb} github organization,
 comprises \nsource~unique
 sources and \nspectra~spectra obtained with the world's greatest
 observatories.  All of these data are distributed in a single
-$\approx 20$\,GB HDF5 file maintained by the University of
+$\approx 25$\,GB HDF5 file maintained at the University of
 California Observatories and the University of California,
-Santa Cruz.  The {\it specdb} package includes
+Santa Cruz.  The {\it specdb} software package includes
 Python scripts and modules for searching the source catalog
 and spectral datasets, and software links to the {\it linetools}
 package for spectral analysis.
+The repository also includes software to generate 
+private spectral datasets that are compliant 
+with International Virtual Observatory Alliance (IVOA) protocols
+and a Python-based interface for IVOA Simple Spectral Access
+queries.
 Future versions of {\it igmspec} will ingest other sources
 (e.g.\ gamma-ray burst afterglows) and other surveys as they become
 publicly available.  
 The overall goal is to include every 
 spectrum that effectively probes the IGM.  
 Future databases of {\it specdb}
-will include 
-all publicly available galaxy spectra 
+may include 
+publicly available galaxy spectra 
 ({\it exgalspec}) and 
-all published supernovae spectra ({\it snspec}). 
+published supernovae spectra ({\it snspec}). 
 The community is encouraged to join the effort on github:
 https://github.com/specdb
 \end{abstract}
@@ -161,8 +169,7 @@ An obvious exception was the data archives of the
 International Ultraviolet Explorer
 and the Hubble Space Telescope 
 \citep[{\it HST};][]{hstkeyproj_1,bechtold02},
-but even these were difficult to 
-collate and combine.
+but even these have been difficult to  collate and combine.
 One also recognizes the policy of European Southern
 Observatory to archive and
 make public their Very Large Telescope (VLT) datasets.
@@ -172,33 +179,55 @@ rise of large, public spectral datasets, especially
 the 2dF Survey and Sloan Digital Sky Survey \citep[SDSS;][]{yaa+00,croom01}.
 These include the spectra of several hundred thousand quasars
 that probe the IGM \citep[e.g.][]{sdss_qso_dr7}.
-These surveys have also stimulated the public release
+Their surveys have further stimulated the public release
 of smaller spectroscopic surveys with higher quality
-(S/N, resolution) and/or complimentary sources
+data (S/N, resolution) on complimentary sources
 \citep[e.g.][]{pwh+07,prochaska+15}.
 Accessing both the large survey datasets 
 and these modest high-quality datasets of IGM spectroscopy
-has remained a challenge, however, due to the lack of a
-uniform standard in data format and distribution within the astronomical
-community\footnote{This speaks to a general failure of the
-Virtual Observatory.}.
-Ironically, this holds despite the fact that the entire set of
-reduced and calibrated spectra 
-comprises less than a few tens GB of disk space.
+has remained a challenge, however. 
+This is primarily due to the diverse range of 
+data formats adopted within 
+the astronomical community.
+For example, science-grade spectra are often processed and combined
+with custom software that may not preserve or record salient meta 
+data.  While the International Virtual Observatory Alliance (IVOA)
+has taken significant effort to establish a
+spectral data model\footnote{http://www.ivoa.net/documents/SpectralDM/}
+and  standards for Simple Spectral Access\footnote{http://www.ivoa.net/documents/SSA/} (
+SSA) protocols, these have seen limited usage.
+%\footnote{This speaks to a general failure of the
+%Virtual Observatory.}.
+Despite the fact that the entire set of
+reduced and calibrated spectra for the IGM
+comprises less than a few tens GB of disk space,
+there has been no method established for
+wide-spread distribution.
 
 Therefore, as a service to IGM researchers, ourselves, and the
 broader community, we have initiated an effort to collate 
-all of the published surveys of IGM spectroscopy. We distribute
-these together with a simple software package
-for accessing and manipulating the data.  
-The uber-project is {\it specdb}\footnote{http://specdb.ucolick.org},
-a suite of software
-for the generation and manipulation of spectral databases.
+all of the published surveys of IGM spectroscopy. 
+These are packaged in a single HDF5 file referred to as
+the {\it igmspec} database, staged for direct download
+at the University of California, 
+Santa Cruz\footnote{\weblink}.
+We also have developed Python software 
+for querying the source catalog and meta data
+and for accessing the spectra. 
+This includes an SSA compliant interface for data queries,
+although we do not yet include a web portal for SSA service.
+
+The uber-project of {\it igmspec}
+is {\it specdb}\footnote{http://specdb.ucolick.org}, 
+which includes a suite of software for the generation 
+and manipulation  of spectral databases.
 With this publication we provide the first database,
 {\it igmspec}, which focuses on spectra that probe the IGM. 
-In v02, we consider only quasars but 
+In v02\footnote{v01 of {\it igmspec} was a prototype and was
+accessed by only a few guinea pigs.}, 
+we consider only quasars but 
 this database will grow with future surveys 
-and we will also expand it to include other sources
+and we will be expanded to include other sources
 \citep[e.g. gamma-ray burst afterglow spectra, star-forming
 galaxies, supernovae;][]{fjp+09,rpk+10,cooke+12}
 We will also ingest other historical 
@@ -210,7 +239,10 @@ this may be of interest for surveys
 under construction, i.e.\ prior to publication.
 
 This paper describes version v02 of the {\it igmspec}
-database.  The manuscript is organized as follows:
+database and an overview of the {\it specdb} software.  
+Additional documentation is available\footnote{http://specdb.readthedocs.io}
+on {\it Read the Docs}.
+The manuscript is organized as follows:
 Section~\ref{sec:catalog} describes the catalogs
 included in {\it igmspec}.
 Section~\ref{sec:datasets} details the spectral datasets
@@ -220,34 +252,37 @@ briefly describe the database architecture and
 related software.
 
 
-
-\section{The {\it igmspec} Catalog}
+\section{The {\it igmspec} Source Catalog}
 \label{sec:catalog}
 
 At the heart of {\it igmspec}, and any other database  
-of {\it specdb}, is a catalog of all unique sources.
-Each source is assigned an identifier IGM\_ID to be
-preserved in all future versions of the database.
+of {\it specdb}, is a catalog of unique sources.
+Each source is assigned an identifier or IDKEY
+(e.g.\ IGM\_ID for {\it igmspec})
+to be preserved in all future versions of the database.
 If a source is discovered to be erroneous, 
 we will remove it without modifying
 any other IGM\_ID values.
 
-To construct the catalog, we followed these steps:
+To construct the source catalog of {\it igmspec}, 
+we followed these steps, in order:
 
 \begin{enumerate}
 \item Ingest all quasars from the BOSS DR12 survey.\footnote{See
 http://www.sdss.org/dr12/algorithms/boss-dr12-quasar-catalog/}
 \item Add all quasars from the SDSS DR7 survey not observed by BOSS.
 These were defined as any sources with $\theta > 2''$ angular separation
-from the BOSS dataset.
+from sources in the BOSS dataset.
 \item Add any additional, unique sources ($\theta > 2''$)
 from the {\it igmspec} datasets.
-\end{enumerate}
-We then examined each pair of sources with $\theta \le 10''$ 
+\item Examine each pair of sources with $\theta \le 10''$ 
 (\npair\ total) to establish whether they are truly unique.
-The {\it igmspec} catalog includes a bare minimum of meta data
+\end{enumerate}
+The {\it igmspec} source catalog includes a minimum of meta data
 to limit its size and maximize search speed.
 The columns are described in Table~\ref{tab:cat_keys}.
+We caution that other than the BOSS and SDSS surveys 
+the adopted astrometry may not have sub-arcsecond accuracy.
 
  
 \begin{table}
@@ -263,42 +298,84 @@ flavor       & str     & Type of source (quasar, GRB, galaxy) \\
 zem          & float64 & Redshift of the source \\
 sig\_zem     & float64 & Uncertainty in the source redshift \\
 flag\_zem    & str     & String describing the redshift measurement \\
-flag\_survey & int     & Bitwise flag indicating the surveys covering the source \\
+flag\_group  & int     & Bitwise flag indicating the data groups covering the source \\
 \hline
 \end{tabular}
 \end{table}
 
-In addition to the {\it igmspec} catalog, we include the quasar
-catalog  compiled, maintained, and kindly shared by A. Myers 
-(see Table 1 of \cite{peters+15}
-and Table 1 of \cite{richards+15}). 
-See the code\footnote{https://github.com/specdb/igmspec/blob/master/igmspec/ingest/myers.py} 
-for a description of the priority given to 
-redshift measurements collated in that catalog.
+%In addition to the {\it igmspec} source catalog, we include a
+%version of the quasar catalog that was compiled, maintained, 
+%and kindly shared by A. Myers.
+%Briefly, the parent catalog collates sources from
+%Table 1 of \cite{peters+15} and Table 1 of \cite{richards+15} 
+%[ADD MORE DETAILS]
+%See the code\footnote{https://github.com/specdb/igmspec/blob/master/igmspec/ingest/myers.py} 
+%for a description of the priority given to 
+%redshift measurements collated in that catalog.
 
 
-\section{{\it igmspec} Datasets}
+\section{{\it igmspec} Data Groups}
 \label{sec:datasets}
 
 This manuscript describes v02 of the {\it igmspec}
 database and represents our first comprehensive effort to collate
 spectra probing the IGM at UV and optical wavebands at all
-redshifts.  Future efforts will extend to other wavebands and/or
+redshifts.  
+The first version was a prototype and is not being
+distributed.
+Future efforts will extend to other wavebands and/or
 additional types of sources 
 \citep[e.g. star-forming galaxies;][]{rpk+10}.
 
 Table~\ref{tab:datasets} lists the surveys included in
-v02 of {\it igmspec} and briefly summarizes properties
-of each survey.  The {\it igmspec} documentation and 
-the original references provide greater detail on the meta data
-and spectra included within each survey, but the following
-sub-sections also provide a brief description of each.
+v02 of {\it igmspec} and summarizes properties
+of each survey.  
+Within our database terminology, each of these
+is referred to as a data group.
+This table lists the number of unique sources and spectra
+ingested.  We have not explicitly culled any data
+from the survey, e.g. by S/N or any other attribute.
+There were occasional spectra in the surveys
+that identified as junk and ignored (see details in the
+sub-sections). 
+
 Table~\ref{tab:meta_spec} lists the meta data included
 for every spectrum ingested into {\it igmspec}.
+The RA\_GROUP, DEC\_GROUP, and zem\_GROUP values are the
+coordinates and redshifts for the source as reported by
+the survey.  As described in Section~\ref{sec:catalog},
+these have been collated across all data groups for the
+database to generate a catalog of unique sources.
+Therefore, the values in the meta tables need not 
+identically match those in the source catalog.
+In addition, each meta table includes a title, reference,
+and additional data descriptions (in HDF5 attributes)
+to be compliant with the IVOA spectral data model
+and to enable compliant SSA queries.
+Each data group also typically includes additional meta data
+specific to it (e.g.\ photometry for SDSS sources).
+The {\it igmspec} documentation and 
+the original references provide greater detail on the meta data
+and spectra included within each survey, but the following
+sub-sections also provide brief descriptions. 
 
-We also caution that there may be some overlap between
-datasets, i.e.\ the same spectrum ingested twice.  One
-should refer to the observation date. 
+The majority of IGM research is performed on continuum-normalized
+spectra to assess the opacity of intervening gas.
+Table~\ref{tab:datasets} indicates whether the spectral flux
+is normalized or, for unnormalized data, whether the flux calibration
+was relative or absolute.  For many of the unnormalized
+datasets, we provide a separate estimate of the 
+quasar continuum in the database that can be applied in
+software for normalization.
+These continua were primarily generated from low-order
+polynomial fits to the spectrum or `by-hand' with spline models
+of unabsorbed regions but
+see the following sub-sections for further details.
+We caution that is limited overlap between
+datasets, i.e.\ nearly the same spectrum has been
+ingested twice in multiple data groups.  Such
+duplications can be identified by
+referring to the observation date (DATE-OBS). 
 
 \input{tab_datasets.tex}
 
@@ -309,20 +386,21 @@ should refer to the observation date.
 \begin{tabular}{lcl}
 Column & Type  & Description \\
 \hline
-RA           & float64 & Right Ascension in J2000 (degrees) \\
-DEC          & float64 & Declination in J2000 (degrees) \\
+RA\_GROUP    & float64 & Right Ascension in J2000 (degrees) \\
+DEC\_GROUP   & float64 & Declination in J2000 (degrees) \\
 EPOCH        & float64 & Epoch \\
-zem          & float64 & Redshift of the source \\
+zem\_GROUP   & float64 & Redshift of the source \\
+flag\_zem    & str     & Description of the redshift source \\
 IGM\_ID      & int     & Unique {\it igmspec} identifier \\
-SURVEY\_ID   & int     & Unique survey identifier \\
-GRATING      & str     & Name of the grating used \\
+GROUP\_ID    & int     & Unique group identifier \\
+DISPERSER    & str     & Name of the dispersing element used \\
 INSTR        & str     & Name of the instrument used \\
 TELESCOPE    & str     & Name of the telescope used \\
 DATE-OBS     & str     & Date of observation (YYYY-MM-DD) \\
 SPEC\_FILE   & str     & Name of individual file containing the spectrum \\
 R            & float64 & Spectral resolution (FWHM) \\
-WVMIN        & float64 & Minimum wavelength of the spectrum \\
-WVMAX        & float64 & Maximum wavelength of the spectrum \\
+WVMIN        & float64 & Minimum wavelength of the spectrum (\AA) \\
+WVMAX        & float64 & Maximum wavelength of the spectrum (\AA) \\
 NPIX         & int     & Number of pixels in the spectrum$^a$ \\
 \hline
 \multicolumn{3}{l}{
@@ -341,7 +419,7 @@ The Baryonic Oscillations Spectroscopic Survey (BOSS)
 observed several hundred thousand quasars as part of its
 primary survey.  With its final, complete data release
 (DR12), the BOSS team provided several catalogs of quasars
-observed in the main survey.  We have drawn all sources
+observed by the main survey.  We have drawn all sources
 from the three catalogs at their main website.\footnote{http://www.sdss.org/dr12/algorithms/boss-dr12-quasar-catalog/}
 
 
@@ -350,13 +428,14 @@ from the main data server and correspond to versions
 v5\_7\_0 or v5\_7\_2 of the data reduction pipeline.
 In addition to the calibrated spectra, we include a
 continuum estimate for the majority of quasars.  
-For wavelengths long-ward of the quasar's \lya\ emission we adopt
-the model generated by G. Zhu 
+For wavelengths long-ward of the quasar's \lya\ emission we 
+have ingested
+the continuum models generated by G. Zhu 
 \citep[see][for details on the algorithm]{zhu+14}.
 For the \nlee~quasars analyzed to assess
 the flux probability distribution function of the 
-\lya\ forest \cite{lee+13}, we adopt their mean-flux-regulated continua
-\citep{lee+12}.
+\lya\ forest \cite{lee+13}, we include their 
+mean-flux-regulated continua \citep{lee+12}.
 
 %
 \subsection{SDSS DR7}
@@ -366,8 +445,12 @@ The Sloan Digital Sky Survey observed over 100,000 quasars
 as part of the SDSS-I survey.  These were primarily targeted
 based on their optical photometry \citep[e.g.][]{richards09}.  
 Upon completion of their final data release (DR7),
-the team provide a catalog of quasars \citep{sdss_qso_dr7}.
+the team provided a catalog of quasars \citep{sdss_qso_dr7}.
 This forms the basis of the dataset in v02 of {\it igmspec}.
+We have also ingested estimates of the quasar continua, as
+published in \cite{zhu+14}.  Their analysis focused on a 
+separate list of quasars from SDSS DR7 which overlaps the 
+\cite{sdss_qso_dr7} catalog, but not completely. 
 In a future version, we will provide continua for the majority
 of these spectra and also additional quasars discovered in 
 SDSS-I but not part of the catalog \cite{sdss_qso_dr7}.
@@ -389,8 +472,10 @@ SDSS-I but not part of the catalog \cite{sdss_qso_dr7}.
 The 2QZ survey is a catalog of quasars discovered in the 
 course of the 2dF redshift survey on the 3.9\,m
 Anglo-Australian Telescope \citep{croom01}.  The
-majority of spectra are available online\footnote{http://www.2dfquasar.org/Spec\_Cat/2qzsearch2.html};
-all of these have been ingested into {\it igmspec}.
+majority of spectra are available online\footnote{http://www.2dfquasar.org/Spec\_Cat/2qzsearch2.html}.
+We retrieved all available sources in their catalog 
+with $z_{\rm em}> 0.05$ and discarded several hundred with
+null values in their entire error arrays.
 
 
 \subsection{KODIAQ\_DR1}
@@ -408,7 +493,8 @@ We have ingested the complete DR1 dataset.
 \label{sec:hdlls}
 
 The high dispersion Lyman Limit System (HD-LLS) sample is a set of 
-normalized echelle and echellette spectra \cite{prochaska+15}.  
+normalized echelle and echellette spectra obtained with spectrographs
+at the Keck and Magellan observatories \cite{prochaska+15}.  
 These were primarily acquired
 to perform an analysis of $z \sim 3$ LLS. 
 The quasars are a heterogeneous set of sources that
@@ -432,8 +518,10 @@ The survey comprises XSHOOTER spectra of 100 quasars
 at $z>3.5$ and is the only dataset of v02 in {\it igmspec}
 with near-IR coverage.
 Note that the coordinates provided in their archival products
-are erroneous by up to several arcseconds 
+are erroneous by up to several arcseconds, 
 but we have cross-matched these to the correct sources.
+We have also ingested estimate of the continuum for each
+source that are provided with the archival spectra.
 
 \subsection{HDLA100}
 \label{sec:hdla100}
@@ -453,20 +541,25 @@ with the ESI spectrometer \citep{sbe+02} on the Keck~II telescope
 to study $z>4$ DLAs.  This dataset is their
 full sample of spectra.
 
-\subsection{UVES\_Dall}
-\cite{dallaglio+08} compiled a set of 40 quasars at $2.1 < z < 4.7$ observed
-at high signal-to-noise (S/N~$\sim 70$) and high spectral resolution ($R\sim 45,000$)
-with the UVES spectrometer \citep{uves} at the VLT.  They resampled the reduced spectra to
-$0.05$\AA\ bins and estimated contiua for each spectrum.  We provide their dataset.
-
 \subsection{MUSoDLA}
+\label{sec:musodla}
 
-The MUSoDLA is a survey of damped \lya\ systems drawn from the
-Sloan Digital Sky Survey \citep{musodla1}.   The dataset
-comprises spectra of 97~quasars observed primarily with the
-MagE spectrometer at Magellan and supplemented with $\approx 15$ spectra
-with Keck/HIRES and VLT/UVES.
-The spectra ingested into igmspec have been continuum normalized.
+\cite{jorgenson+13} performed a survey of DLAs drawn from the
+SDSS with follow-up spectra obtained primarily with the 
+MagE spectrometer at the Magellan Observatory.  The survey was 
+supplemented by echelled data taken from the Keck and VLT
+archives.  The spectra, as provided in {\it igmspec}, were continuum
+normalized by \cite{jorgenson+13}.
+
+\subsection{UVES\_Dall}
+\label{sec:uvesdall}
+
+\cite{dww08} processed archival VLT/UVES spectra for 40 quasars 
+to study the IGM at $z \sim 2$ with emphasis on the proximity effect.
+The quasars were selected to have $z_{\rm em} \approx 2.5$ and the
+spectra were required to have high S/N in the \lya\ forest.
+We provide the complete dataset of fluxed spectra and also include
+an estimate of the quasar continuum.
 
 \subsection{COS-Halos}
 \label{sec:cos-halos}
@@ -492,27 +585,38 @@ We provide the full dataset, binned at 3~pixels.
 \subsection{UVpSM4}
 \label{sec:hstmetals}
 
-\cite{ctp+10,cpt+11} compiled all of the medium
+\cite{ctp+10,cpt+11} compiled and processed all of the medium
 resolution ($R \sim 2000$) and high resolution
-($R > 20000$) UV spectra available in 2010 on
-quasars with STIS and GHRS to
-study metal-line absorption in the $z<1$ IGM.
-For the 69 quasars that they collated, they added
-data from the Far-Ultraviolet
-Spectrographic Explorer (FUSE).
-All of these spectra are ingested including
-continua for most of the data.
+($R > 20000$) UV spectra available in 2010 
+(i.e.\ prior to the SM4 servicing mission)
+to study metal-line absorption in the $z<1$ IGM.
+From {\it HST}, these were primarily STIS and
+GHRS datasets.  The authors also included
+supporing data from the Far-Ultraviolet Spectrographic 
+Explorer (FUSE).
+All of these fluxed spectra are ingested and we
+also include the \cite{ctp+10} continuum models.
 
 \subsection{HSTQSO}
 \label{sec:hstqso}
 
 \cite{ribaudo11} and \cite{neeleman+16}
-compiled nearly the entire set of UV spectra of
+compiled nearly the entire set of UV spectra of 
 quasars and AGN available in the {\it HST} archive
 to survey for Lyman limit and damped \lya\ systems.
 This includes the Faint Object Spectrometer dataset
-compiled by \cite{bechtold02} and data from STIS
-and COS (Lehner et al., in prep.).
+compiled by \cite{bechtold02} and data from GHRS,
+STIS and COS (Lehner et al., in prep.).
+The data group includes 360 spectra from COS,
+339 spectra with FOS, and 205 spectra taken
+with STIS.  For the COS spectra, we have ingested
+the files provided by the Hubble Space Legacy 
+Archive\footnote{https://archive.stsci.edu/hst/spectral\_legacy/}
+(HSLA).
+Note that there is overlap in spectra
+between this data group and
+the other {\it HST} datasets listed above, although
+each was processed separately.
 
 \subsection{HST\_z2}
 \label{sec:hstz2}
@@ -521,58 +625,165 @@ and COS (Lehner et al., in prep.).
 (with the Wide Field Camera 3) and prism (with the
 Advanced Camera for Science) spectra with {\it HST}
 of optically bright quasars at $z \sim 2.5$
-to survey LLS.  We have ingested their entire dataset.
+to survey LLS at $z \sim 2$.  
+We have ingested their entire dataset.
 
 %%%%%%%%%%%%%%
-\section{{\it igmspec} Architecture}
+\section{Architecture of the {\it igmspec} Data File}
 \label{sec:arch}
 
 The {\it igmspec} database is provided as a single HDF5 file
 (IGMspec\_DB\_v02.hdf5)
-containing both the catalogs and the survey spectral data.  
-Each dataset comprises an HDF5 Group
-with a {\it meta} Dataset and a {\it spec} Dataset.
-The former is an {\tt astropy} Table, with one row per
-spectrum, converted into an HDF5 object.
-The latter is an {\tt numpy.ndarray} 
-with dtype names `wave', `flux', and `sig' for the
-wavelength, flux, and $1\sigma$ error arrays.
-Some surveys also include `co' which is an estimate of the source
-continuum.  
-
+containing the source catalog, a separate quasar catalog,
+and the spectra with their meta data.  
 The HDF5 format enables rapid access to the data without
 reading the entire database into memory.  
 Figure~\ref{fig:arch} illustrates the 
 architecture of the HDF5 file.
-Note that the {\it igmspec} database file may be
-downloaded and used without installing the {\it igmspec}
-repository.
+It was built using Python's {\it h5py} package
+and software within the {\it igmspec, specdb, linetools}
+and {\it astropy} packages.
+
+Each dataset comprises an HDF5 Group
+with a {\it meta} Dataset and a {\it spec} Dataset.
+The former is first generated as an 
+{\tt astropy} Table, with one row per
+spectrum, and then converted into an HDF5 object.
+The latter is an {\tt numpy.ndarray} 
+with dtype names `wave', `flux', and `sig' for the
+wavelength, flux, and $1\sigma$ error arrays.
+The wavelength values are stored as float64 data type
+and the rest are float32.
+Many of the datasets also include 
+an estimate of the source continuum which is
+recorded in the `co' column.
+
+The {\it igmspec} database file may be
+downloaded\footnote{UCO\_link\_here} and 
+used without installing the {\it igmspec} repository.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Software}
 \label{sec:software}
 
-The {\it igmspec} repository includes 
-a modest set of Python modules and scripts to build the
+The {\it igmspec} repository\footnote{https://github.com/specdb/igmspec} 
+includes a set of Python modules and scripts to build the
 {\it igmspec} database.  
 These are not intended to be used by the general community.
-The software to use the {\it igmspec}
-database is provided within the {\it specdb} repository.
-This includes the
-IgmSpec class which provides a lightweight object for
-interfacing with the catalog and spectroscopic datasets
-from within Python.  See the iPython Notebook\footnote{
-https://github.com/specdb/igmspec/blob/master/docs/examples/Simple\_Usage.ipynb}
-for simple usage cases.
-All of the software is provided in a git repository\footnote{
-https://github.com/specdb/specdb}
-and is being actively developed by the community.
+Access to the {\it igmspec}
+database file is provided within the 
+{\it specdb} repository.  This section summarizes the key
+software in the {\it specdb} repository with emphasis
+on accessing and using {\it igmspec}. 
+
+\subsection{Downloading {\it igmspec}}
+
+The {\it specdb} repository includes a simple script for retrieving
+a copy of any of its public databases.  This includes {\it igmspec};
+the corresponding Python script is specdb\_get\_igmspec.
+This script uses a {\tt wget} call to the URL of the database file.
+A related script, specdb\_chk, summarizes the contents and creation data
+of any {\it specdb} database file.
+
+\subsection{Interfacing with the Database in Python}
+
+The {\it specdb} repository\footnote{https://github.com/specdb/specdb}
+includes software developed in Python
+for interacting with a {\it specdb} database file.  The primary
+object is the SpecDB class and one may use a child IgmSpec for the
+{\it igmspec} database.
+After instantiating this object, one may query the source catalog,
+the spectra meta data, and retrieve spectra into memory.
+%This includes the
+%IgmSpec class which provides a lightweight object for
+%interfacing with the catalog and spectroscopic datasets
+%from within Python.  
+Details are provided in the online {\it specdb} 
+documentation\footnote{http://specdb.readthedocs.io/en/latest/}
+and here is a summary:
+
+\begin{itemize}
+\item {\it Querying the source catalog:}  The SpecDB class instantiates
+a QueryCatalog class to load and then query the source catalog.  The
+majority of methods use position on the sky or a user-input set of
+coordinates in the queries.  Documentation is given here\footnote{http://specdb.readthedocs.io/en/latest/catalog.html\#querying-the-source-catalog}
+and the repository includes an iPython Notebook\footnote{https://github.com/specdb/specdb/blob/master/docs/nb/Query\_Catalog.ipynb}
+with examples.
+
+\item {\it Querying the spectral meta data:}  Each spectrum in the
+database has associated meta data which may be queried.  The interface
+is the InterfaceGroup class which reads the data into an astropy Table
+and performs queries.  The relevant documentation is found 
+here\footnote{http://specdb.readthedocs.io/en/latest/meta.html}
+and the repository includes an iPython Notebook\footnote{https://github.com/specdb/specdb/blob/master/docs/nb/Query\_Meta.ipynb}
+with examples.
+
+\item {\it Retrieving spectra:} The InterfaceGroup class contains the
+low-level routines for spectral retrieval, but we recommend the higher-level
+methods within the SpecDB class.  These methods return the data packaged
+within an XSpectrum1D\footnote{http://linetools.readthedocs.io/en/latest/xspectrum1d.html} 
+object from the {\it linetools} package.
+Documentation is described 
+here\footnote{http://specdb.readthedocs.io/en/latest/spectra.html}
+and examples are located in an iPython 
+Notebook\footnote{https://github.com/specdb/specdb/blob/master/docs/nb/Retrieving\_Spectra.ipynb}
+in the repository.
+
+\end{itemize}
+
+We also refer the reader to an iPython 
+Notebook\footnote{Examples\_with\_igmspec.ipynb}
+for examples with {\it igmspec}. 
+Lastly, there is a set of command-line 
+scripts\footnote{http://specdb.readthedocs.io/en/latest/scripts.html}
+which enable the user to access the spectra without
+launching an explicit Python session.
+
+
+\subsection{SSA Interfacing}
+
+Although we primarily intend for the {\it igmspec} database
+to be downloaded and then
+accessed and manipulated locally 
+(the HDF5 file is only $\approx 25$\,Gb),
+the {\it specdb} software includes an SSAInterface object for 
+performing standard SSA queries on a {\it specdb} database file.
+The current implementation query 
+takes POS (position) and SIZE (angular radius) 
+inputs and returns an SSA v1.1 compliant VOTable. 
+One can also perform a FORMAT=METADATA query.
+Referring to v2.0 of the IVOA spectral data model (dated
+2016-09-28),  all of the mandatory fields of the model
+are provided except: (1) Char.SpatialAxis.Coverage.Bounds.Extent,
+as the aperture is not precisely known for all spectra in
+{\it igmspec};
+(2) Char.TimeAxis.Coverage.Bounds.Extent, because
+the total exposure time is not always recorded for 
+spectra coadded across multiple exposures.
+The current interface also does not include software
+to distribute individual spectra.  If community pressure is
+sufficient, we will stage {\it igmspec} within an online 
+SSA service.
+
+\subsection{Building a {\it specdb} Database}
+
+The {\it specdb} repository includes Python methods 
+to generate new {\it specdb} databases.
+The basic requirements are:
+ (i) files of the spectra that can be read by the spectra
+ tools in {\it linetools};
+ (ii) listings of the spectral meta data that provide at least
+ the default information in Table~\ref{tab:meta_spec};
+ (iii) source astrometry and redshifts.
+For the latter, one can interface with the {\it igmspec} database.
+The software also includes a means to add IVOA descriptors
+for meeting spectral data model 2.0.  
 
 \section{Concluding Remarks}
 \label{sec:end}
 
-With {\it igmspec}, it is our goal to provide (nearly)
+With the {\it igmspec} database, it is our goal to provide (nearly)
 all of the published spectral datasets that effectively
 probe the IGM.  Hopefully, this effort will
 enable new, unforeseen research on the IGM as well
@@ -617,6 +828,7 @@ Adam Myers, Joseph Hennawi,  and Marc Rafelski.
 
 
 \bibliographystyle{elsarticle-num}
+%\bibliographystyle{apj}
 \bibliography{igmspec_v02}
 
 %\input{Tables/tab_HIRES.tex}

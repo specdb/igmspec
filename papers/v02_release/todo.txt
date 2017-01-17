@@ -1,1 +1,16 @@
-1. Fix figure (add lines)
+    1. Fix figure (add lines)
+---- SUBMITTED ---
+    2. Add text on New Myers
+    3. Add wavelength limits for SSA
+    4. Revise text (Cooksey, SSA, Myers)
+    5. Add check on vstack
+    6. Fix MUSoDLA
+    7. Check through other issues on github
+8. Get UCO link for file
+9. Stage file with Shaw
+    10. Make sure database file access is obvious in the Intro
+    11. References
+    12. Update for 2.0 of the Data Model
+       -- Indicate exceptions in manuscript + referee report
+13. DOI for specdb and igmspec
+    14. Edit the response further

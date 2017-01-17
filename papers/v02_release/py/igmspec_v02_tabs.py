@@ -36,9 +36,8 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     """
     # Setup [confirm v02 eventually]
     igmsp = IgmSpec()
-    surveys = igmsp.idb.hdf.keys()
-    surveys.pop(surveys.index('catalog'))
-    surveys.sort()
+    groups = igmsp.groups
+    groups.sort()
 
     # Open
     tbfil = open(outfil, 'w')
@@ -46,12 +45,12 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     # Header
     tbfil.write('\\clearpage\n')
     tbfil.write('\\begin{table}[ht]\n')
-    tbfil.write('\\caption{{\\it igmspec} DATASETS \\label{tab:datasets}}\n')
+    tbfil.write('\\caption{{\\it igmspec} DATA GROUPS \\label{tab:datasets}}\n')
     #tbfil.write('\\tabletypesize{\\tiny}\n')
-    tbfil.write('\\begin{tabular}{lccccc}\n')
-    tbfil.write('Survey & $N_{\\rm source}^a$ \n')
+    tbfil.write('\\begin{tabular}{lcccccc}\n')
+    tbfil.write('Group & $N_{\\rm source}^a$ \n')
     tbfil.write('& $N_{\\rm spec}^b$ & $\\lambda_{\\rm min}$ (\\AA) \n')
-    tbfil.write('& $\\lambda_{\\rm max}$ (\\AA) & $R^c$ \\\\ \n')
+    tbfil.write('& $\\lambda_{\\rm max}$ (\\AA) & $R^c$  & Flux$^d$\\\\ \n')
     #tbfil.write('& References & Website \n')
     #tbfil.write('} \n')
 
@@ -59,21 +58,26 @@ def mktab_datasets(outfil='tab_datasets.tex'):
 
     # Looping on systems
     restrict = False
-    for survey in surveys:
+    for survey in groups:
         if survey == 'quasars':
             continue
         # Restrict
         #if survey != 'HD-LLS_DR1':
         #    continue
         if restrict:
-            if survey == 'BOSS_DR12':
-                pdb.set_trace()
-            elif survey == 'SDSS_DR7':
-                print("SKIPPING SDSS FOR NOW")
+            if survey in ['BOSS_DR12', 'SDSS_DR7']:
                 continue
         print("Working on survey={:s}".format(survey))
         # Setup
-        meta = Table(igmsp.idb.hdf[survey]['meta'].value)
+        meta = Table(igmsp.hdf[survey]['meta'].value)
+        try:
+            ssa = json.loads(igmsp.hdf[survey+'/meta'].attrs['SSA'])
+        except KeyError:
+            if survey not in ['COS-Halos']:
+                pdb.set_trace()
+            fluxc = 'MIXED'
+        else:
+            fluxc = ssa['FluxCalib']
 
         # Survey
         msurvey = survey.replace('_','\\_')
@@ -87,15 +91,18 @@ def mktab_datasets(outfil='tab_datasets.tex'):
         tbfil.write('& {:d}'.format(len(meta)))
 
         # Wave min
-        sig = igmsp.idb.hdf[survey]['spec']['sig']
+        sig = igmsp.hdf[survey]['spec']['sig']
         gds = sig > 0.
-        gdwv = igmsp.idb.hdf[survey]['spec']['wave'][gds]
+        gdwv = igmsp.hdf[survey]['spec']['wave'][gds]
         tbfil.write('& {:d}'.format(int(np.round(np.min(gdwv)))))
         # Wave max
         tbfil.write('& {:d}'.format(int(np.round(np.max(gdwv)))))
 
         # R
         tbfil.write('& {:d}'.format(int(np.round(np.median(meta['R'])))))
+
+        # Flux
+        tbfil.write('& {:s}'.format(fluxc))
 
         # Write
         tbfil.write('\\\\ \n')
@@ -112,6 +119,7 @@ def mktab_datasets(outfil='tab_datasets.tex'):
     tbfil.write('\\multicolumn{6}{l}{{$^a$}{Number of unique sources in the dataset. }} \\\\ \n')
     tbfil.write('\\multicolumn{6}{l}{{$^b$}{Number of unique spectra in the dataset. }} \\\\ \n')
     tbfil.write('\\multicolumn{6}{l}{{$^c$}{Characteristic FWHM resolution of the spectra. }} \\\\ \n')
+    tbfil.write('\\multicolumn{6}{l}{{$^d$}{Indicates whether the data are fluxed (absolute or relative) or normalized. The COS-Halos spectra include both fluxed (COS) and normalized (HIRES) spectra.}} \\\\ \n')
     #tbfil.write('\\tablenotetext{a}{Number of positive detections constraining the model.}')
     # End
     tbfil.write('\\end{tabular} \n')
