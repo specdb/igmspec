@@ -40,6 +40,8 @@ Meta Data
 See the links provided above to see the full set of meta data
 provided with BOSS catalogs.  It is quite extensive.
 
+The *flag_co* column indicates the source of the continuum.  It is a
+bitwise flag with 1=Zhu et al.; 2=Lee et al.
 
 Spectra
 =======
@@ -63,3 +65,4 @@ When available, we have used mean flux regulated continua kindly
 provided by K.G. Lee, as described in these papers:
 `Lee et al. 2012 <http://adsabs.harvard.edu/abs/2012AJ....143...51L>`_,
 `Lee et al. 2013 <http://adsabs.harvard.edu/abs/2013AJ....145...69L>`_.
+This continuum is restricted to rest-frame wavelengths of less than 1200A.
