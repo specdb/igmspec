@@ -319,7 +319,6 @@ def add_coflag(hdf):
         nsub = min(nsub+chunk, nspec)
     # Finish
     meta['flag_co'] = flg_co
-    pdb.set_trace()
     return meta
 
 
