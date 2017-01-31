@@ -263,6 +263,39 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, boss_hdf=No
     #
     return
 
+def add_coflag(hdf):
+    """ Generate a continuum flag to add to the meta table
+    Parameters
+    ----------
+    hdf
+
+    Returns
+    -------
+    new_meta : Table
+
+    """
+    flg_co = []
+    # Load meta
+    meta = Table(hdf['BOSS_DR12']['meta'].value)
+    nspec = len(meta)
+
+    # Loop on chunks of 10000 spectra
+    chunk = 10000
+    nsub = 0
+    while(nsub < nspec):
+        idx = np.arange(nsub,min(nsub+chunk, nspec)).astype(int)
+        # Grab spectra
+        msk = np.array([False]*nspec)
+        msk[idx] = True
+        data = hdf['BOSS_DR12']['spec'][msk]
+        # Add GZ flag
+        zem = meta['zem_GROUP'][idx]
+        wvlya = 1215.67*(1+zem)
+        pdb.set_trace()
+
+        # KG -- Loop on rows
+        #for row in meta:
+
 
 def add_ssa(hdf, dset):
     """  Add SSA info to meta dataset

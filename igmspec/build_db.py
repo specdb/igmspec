@@ -157,7 +157,10 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
                 # Copy spectra
                 v01hdf.copy(key+'/spec', hdf[key])
                 # Modify v01 meta and add
-                meta = Table(v01hdf[key+'/meta'].value)
+                if key == 'BOSS_DR12':
+                    meta = boss.add_coflag(v01hdf)
+                else:
+                    meta = Table(v01hdf[key+'/meta'].value)
                 meta.rename_column('GRATING', 'DISPERSER')
                 hdf[key+'/meta'] = meta
                 for akey in v01hdf[key+'/meta'].attrs.keys():
