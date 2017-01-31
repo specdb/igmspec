@@ -317,9 +317,9 @@ def add_coflag(hdf):
             if os.path.isfile(specfil):
                 flg_co[idx[ii]] += 2
         nsub = min(nsub+chunk, nspec)
-        pdb.set_trace()
     # Finish
     meta['flag_co'] = flg_co
+    pdb.set_trace()
     return meta
 
 
