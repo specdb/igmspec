@@ -159,6 +159,7 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
                 # Modify v01 meta and add
                 if key == 'BOSS_DR12':
                     meta = boss.add_coflag(v01hdf)
+                    pdb.set_trace()
                 else:
                     meta = Table(v01hdf[key+'/meta'].value)
                 meta.rename_column('GRATING', 'DISPERSER')
