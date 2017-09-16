@@ -208,7 +208,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
         print("HSTQSO: Reading {:s}".format(full_file))
         hduf = fits.open(full_file)
         head0 = hduf[0].header
-        spec = lsio.readspec(full_file)
+        spec = lsio.readspec(full_file, masking='edges')
         # Parse name
         fname = full_file.split('/')[-1]
         # npix
