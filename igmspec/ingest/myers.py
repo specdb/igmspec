@@ -4,8 +4,8 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import os
-#import pdb
-#from xastropy.xutils import xdebug as xdb
+import pdb
+
 from astropy.table import Table
 from astropy.io import fits
 from astropy import units as u
@@ -183,6 +183,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
             tmp = Column(sdss_myers_out[key].data.astype(str), name=key)
             sdss_myers_out.remove_column(key)
             sdss_myers_out[key] = tmp
+    pdb.set_trace()
     hdf['quasars'] = sdss_myers_out
     hdf['quasars'].attrs['MYERS_DATE'] = DATE
     # Myers dict
