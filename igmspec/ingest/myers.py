@@ -12,6 +12,8 @@ from astropy import units as u
 
 from linetools import utils as ltu
 
+from specdb.build import utils as sbu
+
 def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     """Generate Myers + SDSS_BOSS QSO catalog from Myers and DR12 files
 
@@ -177,13 +179,7 @@ def add_to_hdf(hdf, Z_MIN = 0.1, Z_MAX = 7.1, MATCH_TOL = 2.0*u.arcsec):
     keep = ztrim & coordtrim
     sdss_myers_out = sdss_myers_out[keep]
     # Clean out unicode
-    for key in sdss_myers_out.keys():
-        if 'unicode' in sdss_myers_out[key].dtype.name:
-            #warnings.warn("unicode in column {:s}.  Will convert to str for hdf5".format(key))
-            tmp = Column(sdss_myers_out[key].data.astype(str), name=key)
-            sdss_myers_out.remove_column(key)
-            sdss_myers_out[key] = tmp
-    pdb.set_trace()
+    sbu.clean_table_for_hdf(sdss_myers_out)
     hdf['quasars'] = sdss_myers_out
     hdf['quasars'].attrs['MYERS_DATE'] = DATE
     # Myers dict
