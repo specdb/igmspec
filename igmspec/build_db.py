@@ -107,7 +107,8 @@ def ver01(test=False, clobber=False, publisher='J.X. Prochaska', **kwargs):
     print("Update DB info in specdb.defs.dbase_info !!")
 
 
-def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False):
+def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False,
+          version='v02'):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -133,7 +134,6 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     maindb = igmsp_v01.cat.copy()
 
     # Start new file
-    version = 'v02'
     outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
     # Clobber?
     if not chk_clobber(outfil, clobber=clobber):
@@ -277,7 +277,7 @@ def get_build_groups(version):
         groups['KODIAQ_DR1'] = kodiaq
         groups['HD-LLS_DR1'] = hdlls
         groups['GGG'] = ggg
-    elif version == 'v02':
+    elif version[0:3] == 'v02':
         groups = OrderedDict()
         groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
         groups['XQ-100'] = xq100        # Lopez et al. 2016
