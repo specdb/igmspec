@@ -21,6 +21,7 @@ def parser(options=None):
     parser.add_argument("--boss_hdf", help="HDF file with BOSS dataset [avoids repeating spectra ingestion]")
     parser.add_argument("--sdss_hdf", help="HDF file with SDSS dataset [avoids repeating spectra ingestion]")
     parser.add_argument("--clobber", default=False, action='store_true', help="Clobber existing file?")
+    parser.add_argument("--out_path", type=str, help="Output path for file")
 
     if options is None:
         args = parser.parse_args()
@@ -74,7 +75,8 @@ def main(args=None):
         build_db.ver02(test=pargs.test, clobber=pargs.clobber)
     elif pargs.version == 'v02.1':
         print("Building v02.1 of the igmspec DB")
-        build_db.ver02(test=pargs.test, clobber=pargs.clobber)
+        build_db.ver02(test=pargs.test, version=pargs.version, clobber=pargs.clobber,
+                       out_path=pargs.out_path)
     else:
         raise IOError("Bad version number")
 

@@ -108,7 +108,7 @@ def ver01(test=False, clobber=False, publisher='J.X. Prochaska', **kwargs):
 
 
 def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False,
-          version='v02'):
+          version='v02', out_path=None):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -134,7 +134,9 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     maindb = igmsp_v01.cat.copy()
 
     # Start new file
-    outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    if out_path is None:
+        out_path = igmspec.__path__[0]+'/../DB/'
+    outfil = out_path + 'IGMspec_DB_{:s}.hdf5'.format(version)
     # Clobber?
     if not chk_clobber(outfil, clobber=clobber):
         return
