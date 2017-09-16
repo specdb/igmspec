@@ -212,10 +212,9 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
         # Survey flag
         flag_g = sdbbu.add_to_group_dict(gname, group_dict, skip_for_debug=True)
         # IDs
-        if gname == 'XQ-100':
-            debug = True
-        else:
-            debug=False
+        debug= False
+        #if gname == 'XQ-100':
+        #    debug = True
         maindb = sdbbu.add_ids(maindb, meta, flag_g, tkeys, idkey,
                                first=(flag_g==1), close_pairs=(gname in pair_groups),
                                debug=debug)
