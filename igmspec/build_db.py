@@ -126,7 +126,7 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     import os
     from specdb.specdb import IgmSpec
     # Read v01
-    v01file = os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5'
+    v01file = os.getenv('SPECDB')+'/IGMspec_DB_v01.hdf5'
     #v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     print("Loading v01")
     igmsp_v01 = IgmSpec(db_file=v01file)
