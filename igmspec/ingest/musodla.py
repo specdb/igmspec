@@ -102,31 +102,6 @@ def grab_meta():
     # Return
     return meta
 
-'''
-def meta_for_build():
-    """ Generates the meta data needed for the IGMSpec build
-    Returns
-    -------
-    meta : Table
-    """
-    musodla_meta = grab_meta()
-    names = musodla_meta['NAME'].data
-    uni, uni_idx = np.unique(names, return_index=True)
-    musodla_meta = musodla_meta[uni_idx]
-    nqso = len(musodla_meta)
-    #
-    meta = Table()
-    meta['RA'] = musodla_meta['RA']
-    meta['DEC'] = musodla_meta['DEC']
-    meta['zem'] = musodla_meta['zem']
-    meta['sig_zem'] = [0.]*nqso
-    meta['flag_zem'] = [str('SDSS')]*nqso
-    meta['STYPE'] = [str('QSO')]*nqso
-    # Return
-    return meta
-'''
-
-
 
 def hdf5_adddata(hdf, sname, musodla_meta, debug=False, chk_meta_only=False,
                  mk_test_file=False):
@@ -173,7 +148,7 @@ def hdf5_adddata(hdf, sname, musodla_meta, debug=False, chk_meta_only=False,
         # Extract
         f = os.getenv('RAW_IGMSPEC')+'/MUSoDLA/data/'+row['SPEC_FILE']
         try:
-            spec = lsio.readspec(f)
+            spec = lsio.readspec(f, masking='edges')
         except:
             pdb.set_trace()
         # Parse name
