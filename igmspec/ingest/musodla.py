@@ -35,6 +35,7 @@ def grab_meta():
     mRdict = {'MagE':71., 'XSHOOTER':59., 'UVES':7., 'HIRES':7.}
     gdict = {'MagE':'N/A', 'XSHOOTER':'ALL', 'UVES':'BOTH', 'HIRES':'RED'}
     tdict = {'MagE':'Magellan', 'XSHOOTER':'VLT', 'UVES':'VLT', 'HIRES':'Keck-I'}
+    spfdict = {'MagE':'MagE', 'XSHOOTER':'XShooter', 'UVES':'UVES', 'HIRES':'HIRES'}
     coords = []
     zems = []
     instrs = []
@@ -60,7 +61,7 @@ def grab_meta():
             gratings.append(gdict[instr])
             telescopes.append(tdict[instr])
             names.append(row['QSOname'])
-            sfiles.append(row['QSOname']+'_{:s}.ascii'.format(instr))
+            sfiles.append(row['QSOname']+'_{:s}.ascii'.format(spfdict[instr]))
             # Date
             assert dinfo[jj][0] == inst
             dinfos.append(str(dinfo[jj]))
