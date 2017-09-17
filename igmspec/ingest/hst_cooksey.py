@@ -156,7 +156,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
             hext = 0
         print("HST_Cooksey: Reading {:s}".format(full_file))
         try:
-            spec = lsio.readspec(full_file, head_ext=hext, masking='edges')
+            spec = lsio.readspec(full_file, head_exten=hext, masking='edges')
         except: # BAD HEADER
             hdu = fits.open(full_file)
             head1 = hdu[1].header
@@ -184,7 +184,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
         data['wave'][0][:npix] = spec.wavelength.value
         if spec.co_is_set:
             try:
-                data['wave'][0][:npix] = spec.co.value
+                data['co'][0][:npix] = spec.co.value
             except ValueError:
                 pdb.set_trace()
         # Meta
