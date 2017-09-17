@@ -156,13 +156,13 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
             hext = 0
         print("HST_Cooksey: Reading {:s}".format(full_file))
         try:
-            spec = lsio.readspec(full_file, head_ext=hext)
+            spec = lsio.readspec(full_file, head_ext=hext, masking='edges')
         except: # BAD HEADER
             hdu = fits.open(full_file)
             head1 = hdu[1].header
             hdu[1].verify('fix')
             tbl = Table(hdu[1].data)
-            spec = lsio.readspec(tbl)
+            spec = lsio.readspec(tbl, masking='edges')
             spec.meta['headers'][spec.select] = head1
             # Continuum
             cfile = full_file.replace('.fits', '_c.fits')
