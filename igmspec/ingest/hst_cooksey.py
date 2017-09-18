@@ -1,5 +1,4 @@
 """ Module to ingest HST+FUSE AGN spectra
-
 Cooksey et al. 2010
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
