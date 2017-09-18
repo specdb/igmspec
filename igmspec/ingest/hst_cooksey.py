@@ -224,13 +224,13 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
                     except:
                         pdb.set_trace()
                     try:
-                        ckey = card.keys()[0]
+                        ckey = list(card.keys())[0]
                     except IndexError:
                         continue
                     else:
                         card0 = card[0]
                 else:
-                    ckey, card0 = spec.header.keys()[ss], spec.header[ss]
+                    ckey, card0 = list(spec.header.keys())[ss], spec.header[ss]
                 # Parse
                 if ckey == 'APERTURE':
                     aper = card0
@@ -245,6 +245,11 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
             try:
                 datet = spec.header['DATE']
             except KeyError:  # handful of kludged coadds
+                if 'HISTORY' not in spec.header.keys():
+                    # Grab from the other extension, e.g. PKS0405
+                    hdu = fits.open(full_file)
+                    head1 = hdu[1].header
+                    spec.meta['headers'][0] = head1
                 for ihist in spec.header['HISTORY']:
                     if 'TDATEOBS' in ihist:
                         idash = ihist.find('-')
