@@ -263,6 +263,64 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, boss_hdf=No
     #
     return
 
+def add_coflag(hdf):
+    """ Generate a continuum flag to add to the meta table
+    Parameters
+    ----------
+    hdf
+
+    Returns
+    -------
+    new_meta : Table
+      New column 'flag_co' which is a bitwise flag
+        1 : GZ
+        2 : KG
+
+    """
+    dir = os.getenv('RAW_IGMSPEC')
+    # Load meta
+    meta = Table(hdf['BOSS_DR12']['meta'].value)
+    nspec = len(meta)
+    flg_co = np.zeros(nspec).astype(int)
+
+    # Loop on chunks of 10000 spectra
+    chunk = 10000
+    nsub = 0
+    while(nsub < nspec):
+        idx = np.arange(nsub,min(nsub+chunk, nspec)).astype(int)
+        # Grab spectra
+        msk = np.array([False]*nspec)
+        msk[idx] = True
+        data = hdf['BOSS_DR12']['spec'][msk]
+
+        # Add GZ flag
+        zem = meta['zem_GROUP'][idx]
+        # Avoid KG region
+        wvlya = 1215.67*(1+zem)
+        wvarr = np.outer(wvlya, np.ones(data['wave'].shape[1]))
+        gdwv = wvarr > data['wave']
+        # Check co
+        gdco = data['co'] > 0.
+        gdarr = gdwv & gdco
+        # Finish
+        gd_GZ = np.sum(gdarr,axis=1) > 0
+        flg_co[idx[gd_GZ]] += 1
+
+        # KG -- Loop on rows
+        plates = meta['PLATE'][idx].data
+        fibers = meta['FIBERID'][idx].data
+        mjds = meta['MJD'][idx].data
+        for ii in range(len(idx)):
+            pnm = '{0:04d}'.format(plates[ii])
+            path = dir+'/BOSS/BOSSLyaDR12_spectra_v1.0/{:s}/'.format(pnm)
+            specfil = path+'speclya-{:04d}-{:d}-{:04d}.fits.gz'.format(plates[ii], mjds[ii], fibers[ii])
+            if os.path.isfile(specfil):
+                flg_co[idx[ii]] += 2
+        nsub = min(nsub+chunk, nspec)
+    # Finish
+    meta['flag_co'] = flg_co
+    return meta
+
 
 def add_ssa(hdf, dset):
     """  Add SSA info to meta dataset
