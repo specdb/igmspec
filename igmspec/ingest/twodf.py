@@ -93,9 +93,9 @@ def grab_meta():
     #  6df??
     tdf_meta.add_column(Column([580.]*nspec, name='R'))
     #
-    tdf_meta.add_column(Column(['2dF']*nspec, name='INSTR'))
-    tdf_meta.add_column(Column(['300B']*nspec, name='DISPERSER'))
-    tdf_meta.add_column(Column(['UKST']*nspec, name='TELESCOPE'))
+    tdf_meta.add_column(Column([str('2dF')]*nspec, name='INSTR'))
+    tdf_meta.add_column(Column([str('300B')]*nspec, name='DISPERSER'))
+    tdf_meta.add_column(Column([str('UKST')]*nspec, name='TELESCOPE'))
     # Rename
     rad = (tdf_meta['RAh00']*3600 + tdf_meta['RAm00']*60 + tdf_meta['RAs00'])*360./86400.
     decd = np.abs(tdf_meta['DECd00']) + tdf_meta['DECm00']/60 + tdf_meta['DECs00']/3600.

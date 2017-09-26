@@ -187,7 +187,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 61000  # Just needs to be large enough
+    max_npix = 80000  # Just needs to be large enough
     data = init_data(max_npix, include_co=False)
     # Init
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
@@ -208,7 +208,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
         print("HSTQSO: Reading {:s}".format(full_file))
         hduf = fits.open(full_file)
         head0 = hduf[0].header
-        spec = lsio.readspec(full_file)
+        spec = lsio.readspec(full_file, masking='edges')
         # Parse name
         fname = full_file.split('/')[-1]
         # npix

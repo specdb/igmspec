@@ -22,6 +22,12 @@ The meta data provided with XQ-100 follows from Table A.3 of
 Lopez et al (2016).  We refer the reader to that paper for
 full details.
 
+The coordinates provided in that table, however, are erroneous
+by several arcseconds.
+We have therefore matched them to the Myers Quasar catalog
+and have adopted those.  There was one exception --
+B1418-065 -- where we adopted the coord from Simbad.
+
 
 Spectra
 =======

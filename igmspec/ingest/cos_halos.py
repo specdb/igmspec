@@ -34,7 +34,7 @@ def grab_meta():
     from specdb.specdb import IgmSpec
     from specdb.defs import get_res_dicts
     Rdicts = get_res_dicts()
-    igmsp = IgmSpec(db_file=os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5', skip_test=True)
+    igmsp = IgmSpec(db_file=os.getenv('SPECDB')+'/IGMspec_DB_v01.hdf5', skip_test=True)
 
     summ_file = os.getenv('RAW_IGMSPEC')+'/COS-Halos/cos_halos_obs.ascii'
     chalos_meta = Table.read(summ_file, format='ascii')
@@ -107,27 +107,6 @@ def grab_meta():
     assert chk_meta(chalos_meta, chk_cat_only=True)
     # Done
     return chalos_meta
-
-
-'''
-def meta_for_build():
-    """ Generates the meta data needed for the IGMSpec build
-    Returns
-    -------
-    meta : Table
-    """
-    chalos_meta = grab_meta()
-    # Cut down to unique QSOs
-    names = np.array([name for name in chalos_meta['QSO']])
-    uni, uni_idx = np.unique(names, return_index=True)
-    chalos_meta = chalos_meta[uni_idx]
-    #
-    meta = Table()
-    for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
-        meta[key] = chalos_meta[key]
-    # Return
-    return meta
-'''
 
 
 def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,

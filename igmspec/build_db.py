@@ -107,7 +107,8 @@ def ver01(test=False, clobber=False, publisher='J.X. Prochaska', **kwargs):
     print("Update DB info in specdb.defs.dbase_info !!")
 
 
-def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False):
+def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False,
+          version='v02', out_path=None):
     """ Build version 2.X
 
     Reads previous datasets from v1.X
@@ -125,7 +126,7 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     import os
     from specdb.specdb import IgmSpec
     # Read v01
-    v01file = os.getenv('IGMSPEC_DB')+'/IGMspec_DB_v01.hdf5'
+    v01file = os.getenv('SPECDB')+'/IGMspec_DB_v01.hdf5'
     #v01file_debug = igmspec.__path__[0]+'/tests/files/IGMspec_DB_v01_debug.hdf5'
     print("Loading v01")
     igmsp_v01 = IgmSpec(db_file=v01file)
@@ -133,8 +134,9 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     maindb = igmsp_v01.cat.copy()
 
     # Start new file
-    version = 'v02'
-    outfil = igmspec.__path__[0]+'/../DB/IGMspec_DB_{:s}.hdf5'.format(version)
+    if out_path is None:
+        out_path = igmspec.__path__[0]+'/../DB/'
+    outfil = out_path + 'IGMspec_DB_{:s}.hdf5'.format(version)
     # Clobber?
     if not chk_clobber(outfil, clobber=clobber):
         return
@@ -213,8 +215,12 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
         # Survey flag
         flag_g = sdbbu.add_to_group_dict(gname, group_dict, skip_for_debug=True)
         # IDs
+        debug= False
+        #if gname == 'XQ-100':
+        #    debug = True
         maindb = sdbbu.add_ids(maindb, meta, flag_g, tkeys, idkey,
-                               first=(flag_g==1), close_pairs=(gname in pair_groups))
+                               first=(flag_g==1), close_pairs=(gname in pair_groups),
+                               debug=debug)
         # Spectra
         if not meta_only:
             new_groups[gname].hdf5_adddata(hdf, gname, meta)
@@ -275,7 +281,7 @@ def get_build_groups(version):
         groups['KODIAQ_DR1'] = kodiaq
         groups['HD-LLS_DR1'] = hdlls
         groups['GGG'] = ggg
-    elif version == 'v02':
+    elif version[0:3] == 'v02':
         groups = OrderedDict()
         groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
         groups['XQ-100'] = xq100        # Lopez et al. 2016

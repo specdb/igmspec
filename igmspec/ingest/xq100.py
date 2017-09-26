@@ -33,6 +33,8 @@ def grab_meta():
     -------
 
     """
+    from specdb.specdb import IgmSpec
+    igmsp = IgmSpec()
     #
     xq100_table = Table.read(os.getenv('RAW_IGMSPEC')+'/XQ-100/XQ100_v1_2.fits.gz')
     nqso = len(xq100_table)
@@ -97,6 +99,17 @@ def grab_meta():
     # Rename
     xq100_meta.rename_column('RA','RA_GROUP')
     xq100_meta.rename_column('DEC','DEC_GROUP')
+    # Match to Myers
+    myers = Table(igmsp.hdf['quasars'].value)
+    myers_coord = SkyCoord(ra=myers['RA'], dec=myers['DEC'], unit='deg')
+    xq100_coord = SkyCoord(ra=xq100_meta['RA_GROUP'], dec=xq100_meta['DEC_GROUP'], unit='deg')
+    idx, d2d, _ = match_coordinates_sky(xq100_coord, myers_coord, nthneighbor=1)
+    xq100_meta['RA_GROUP'] = myers_coord.ra.value[idx]
+    xq100_meta['DEC_GROUP'] = myers_coord.dec.value[idx]
+    # One bad one (Taking RA/DEC from Simbad)
+    bad_c = d2d.to('arcsec') > 20*u.arcsec
+    xq100_meta['RA_GROUP'][bad_c] = 215.2823
+    xq100_meta['DEC_GROUP'][bad_c] = -6.73232
     # DATE-OBS
     meanmjd = []
     for row in xq100_meta:

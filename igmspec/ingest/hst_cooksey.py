@@ -1,5 +1,4 @@
 """ Module to ingest HST+FUSE AGN spectra
-
 Cooksey et al. 2010
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
@@ -156,13 +155,13 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
             hext = 0
         print("HST_Cooksey: Reading {:s}".format(full_file))
         try:
-            spec = lsio.readspec(full_file, head_ext=hext)
+            spec = lsio.readspec(full_file, head_exten=hext, masking='edges')
         except: # BAD HEADER
             hdu = fits.open(full_file)
             head1 = hdu[1].header
             hdu[1].verify('fix')
             tbl = Table(hdu[1].data)
-            spec = lsio.readspec(tbl)
+            spec = lsio.readspec(tbl, masking='edges')
             spec.meta['headers'][spec.select] = head1
             # Continuum
             cfile = full_file.replace('.fits', '_c.fits')
@@ -184,7 +183,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
         data['wave'][0][:npix] = spec.wavelength.value
         if spec.co_is_set:
             try:
-                data['wave'][0][:npix] = spec.co.value
+                data['co'][0][:npix] = spec.co.value
             except ValueError:
                 pdb.set_trace()
         # Meta
@@ -224,13 +223,13 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
                     except:
                         pdb.set_trace()
                     try:
-                        ckey = card.keys()[0]
+                        ckey = list(card.keys())[0]
                     except IndexError:
                         continue
                     else:
                         card0 = card[0]
                 else:
-                    ckey, card0 = spec.header.keys()[ss], spec.header[ss]
+                    ckey, card0 = list(spec.header.keys())[ss], spec.header[ss]
                 # Parse
                 if ckey == 'APERTURE':
                     aper = card0
@@ -245,6 +244,11 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False,
             try:
                 datet = spec.header['DATE']
             except KeyError:  # handful of kludged coadds
+                if 'HISTORY' not in spec.header.keys():
+                    # Grab from the other extension, e.g. PKS0405
+                    hdu = fits.open(full_file)
+                    head1 = hdu[1].header
+                    spec.meta['headers'][0] = head1
                 for ihist in spec.header['HISTORY']:
                     if 'TDATEOBS' in ihist:
                         idash = ihist.find('-')

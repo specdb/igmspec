@@ -35,6 +35,7 @@ def grab_meta():
     mRdict = {'MagE':71., 'XSHOOTER':59., 'UVES':7., 'HIRES':7.}
     gdict = {'MagE':'N/A', 'XSHOOTER':'ALL', 'UVES':'BOTH', 'HIRES':'RED'}
     tdict = {'MagE':'Magellan', 'XSHOOTER':'VLT', 'UVES':'VLT', 'HIRES':'Keck-I'}
+    spfdict = {'MagE':'MagE', 'XSHOOTER':'XShooter', 'UVES':'UVES', 'HIRES':'HIRES'}
     coords = []
     zems = []
     instrs = []
@@ -60,7 +61,7 @@ def grab_meta():
             gratings.append(gdict[instr])
             telescopes.append(tdict[instr])
             names.append(row['QSOname'])
-            sfiles.append(row['QSOname']+'_{:s}.ascii'.format(instr))
+            sfiles.append(row['QSOname']+'_{:s}.ascii'.format(spfdict[instr]))
             # Date
             assert dinfo[jj][0] == inst
             dinfos.append(str(dinfo[jj]))
@@ -101,31 +102,6 @@ def grab_meta():
     assert chk_meta(meta, chk_cat_only=True)
     # Return
     return meta
-
-'''
-def meta_for_build():
-    """ Generates the meta data needed for the IGMSpec build
-    Returns
-    -------
-    meta : Table
-    """
-    musodla_meta = grab_meta()
-    names = musodla_meta['NAME'].data
-    uni, uni_idx = np.unique(names, return_index=True)
-    musodla_meta = musodla_meta[uni_idx]
-    nqso = len(musodla_meta)
-    #
-    meta = Table()
-    meta['RA'] = musodla_meta['RA']
-    meta['DEC'] = musodla_meta['DEC']
-    meta['zem'] = musodla_meta['zem']
-    meta['sig_zem'] = [0.]*nqso
-    meta['flag_zem'] = [str('SDSS')]*nqso
-    meta['STYPE'] = [str('QSO')]*nqso
-    # Return
-    return meta
-'''
-
 
 
 def hdf5_adddata(hdf, sname, musodla_meta, debug=False, chk_meta_only=False,
@@ -173,7 +149,7 @@ def hdf5_adddata(hdf, sname, musodla_meta, debug=False, chk_meta_only=False,
         # Extract
         f = os.getenv('RAW_IGMSPEC')+'/MUSoDLA/data/'+row['SPEC_FILE']
         try:
-            spec = lsio.readspec(f)
+            spec = lsio.readspec(f, masking='edges')
         except:
             pdb.set_trace()
         # Parse name
