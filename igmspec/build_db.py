@@ -295,7 +295,7 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     # Meta
     new_groups = get_build_groups('v03')
     meta = new_groups[gname].grab_meta()
-    pair_groups = []
+    pair_groups = ['SDSS_DR7']
 
     # Survey flag
     flag_g = sdbbu.add_to_group_dict(gname, group_dict, skip_for_debug=True)
@@ -307,45 +307,56 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     new_groups[gname].hdf5_adddata(hdf, gname, meta)
     new_groups[gname].add_ssa(hdf, gname)
 
-    pdb.set_trace()
+    # Pop me
+    new_groups.pop('BOSS_DR14')
+
 
     # Copy over the old stuff
     redo_groups = []#'HD-LLS_DR1']
     skip_groups = ['BOSS_DR12']# 'SDSS_DR7'] #warnings.warn("NEED TO PUT BACK SDSS AND BOSS!")
     skip_copy = False
     if (not test) and (not skip_copy):
-        old_groups = get_build_groups('v01')
-        for key in v01hdf.keys():
-            if key in ['catalog','quasars']+redo_groups+skip_groups:
+        old1 = get_build_groups('v01')
+        old2 = get_build_groups('v02')
+        for key,item in old2.items():
+            old1[key] = item
+        #
+        for key in old1.keys():
+            if key in ['catalog']+redo_groups+skip_groups:
                 continue
-            else:
-                #v01hdf.copy(key, hdf)  # ONE STOP SHOPPING
-                grp = hdf.create_group(key)
-                # Copy spectra
-                v01hdf.copy(key+'/spec', hdf[key])
-                # Modify v01 meta and add
-                if key == 'BOSS_DR12':
-                    meta = boss.add_coflag(v01hdf)
-                else:
-                    meta = Table(v01hdf[key+'/meta'].value)
-                meta.rename_column('GRATING', 'DISPERSER')
-                hdf[key+'/meta'] = meta
-                for akey in v01hdf[key+'/meta'].attrs.keys():
-                    hdf[key+'/meta'].attrs[akey] = v01hdf[key+'/meta'].attrs[akey]
-                # SSA info
-                old_groups[key].add_ssa(hdf, key)
-    skip_myers = False
+            print("Working on: {:s}".format(key))
+            grp = hdf.create_group(key)
+            # Meta
+            meta = Table(v02hdf[key+'/meta'].value)
+            meta.remove_column('IGM_ID')
+            # Survey flag
+            flag_g = sdbbu.add_to_group_dict(key, group_dict, skip_for_debug=True)
+            # IDs
+            maindb = sdbbu.add_ids(maindb, meta, flag_g, tkeys, idkey,
+                                   first=(flag_g==1), close_pairs=(key in pair_groups),
+                                   debug=False)
+            # Add meta to HDF5
+            #meta.rename_column('GRATING', 'DISPERSER')
+            hdf[key+'/meta'] = meta
+            for akey in v02hdf[key+'/meta'].attrs.keys():
+                hdf[key+'/meta'].attrs[akey] = v02hdf[key+'/meta'].attrs[akey]
+            # SSA info
+            old1[key].add_ssa(hdf, key)
+            # Copy spectra
+            v02hdf.copy(key+'/spec', hdf[key])
+
+
+    skip_myers = True
     if skip_myers:
         warnings.warn("NEED TO INCLUDE MYERS!")
     else:
         myers.add_to_hdf(hdf)
 
     # Setup groups
-    old_groups = get_build_groups('v01')
     pair_groups = []
-    group_dict = igmsp_v01.qcat.group_dict
 
 
+    '''
     # Loop over the old groups to update (as needed)
     new_IDs = False
     for gname in redo_groups:
@@ -364,9 +375,9 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
         # Spectra
         old_groups[gname].hdf5_adddata(hdf, gname, meta)
         old_groups[gname].add_ssa(hdf, gname)
+    '''
 
     meta_only = False
-    new_groups = get_build_groups(version)
     # Loop over the new groups
     for gname in new_groups:
         print("Working on group: {:s}".format(gname))
@@ -397,7 +408,7 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
         pdb.set_trace()
 
     # Finish
-    zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
+    zpri = v02hdf['catalog'].attrs['Z_PRIORITY']
     sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri,
                     group_dict, version, Publisher=str(publisher))
 
@@ -454,7 +465,7 @@ def get_build_groups(version):
         groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
         groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
     elif version[0:3] == 'v03':
-        groups['BOSS_DR14'] = boss_dr14 # Paris et al.
+        groups['BOSS_DR14'] = boss_dr14 # Paris et al.  # Already being added
     else:
         raise IOError("Not ready for this version")
     # Return
