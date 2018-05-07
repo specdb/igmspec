@@ -78,9 +78,13 @@ def main(args=None):
         build_db.ver02(test=pargs.test, version=pargs.version, clobber=pargs.clobber,
                        out_path=pargs.out_path)
     elif pargs.version == 'v03':
-        print("Building v03.0 of the igmspec DB")
+        print("Building v03 of the igmspec DB")
         build_db.ver03(test=pargs.test, version=pargs.version, clobber=pargs.clobber,
-                       out_path=pargs.out_path)
+                       out_path=pargs.out_path, redo_dr14=True)
+    elif pargs.version == 'v03.1':
+        print("Building v03.1 of the igmspec DB")
+        build_db.ver03(test=pargs.test, version=pargs.version, clobber=pargs.clobber,
+                       out_path=pargs.out_path, redo_dr14=False)
     else:
         raise IOError("Bad version number")
 
