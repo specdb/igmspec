@@ -26,6 +26,7 @@ from igmspec.ingest import musodla
 from igmspec.ingest import uves_dall
 from igmspec.ingest import boss_dr14
 from igmspec.ingest import esi_z6
+from igmspec.ingest import kodiaq_two
 
 from astropy.table import Table, vstack, Column
 from astropy import units as u
@@ -510,6 +511,7 @@ def get_build_groups(version):
     elif version[0:3] == 'v03':
         groups['BOSS_DR14'] = boss_dr14 # Paris et al.  # Already being added
         groups['ESI_z6'] = esi_z6 # Eiler et al. 2018
+        groups['KODIAQ_DR2'] = kodiaq_two
     else:
         raise IOError("Not ready for this version")
     # Return

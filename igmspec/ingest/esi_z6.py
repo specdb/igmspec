@@ -39,6 +39,7 @@ def grab_meta():
     meta.rename_column('z', 'zem_GROUP')
     meta.rename_column('instrument', 'INSTR')
     meta.rename_column('telescope', 'TELESCOPE')
+    meta.rename_column('date', 'DATE-OBS')
     #
     # Add zem
     meta['sig_zem'] = 0.
@@ -47,8 +48,6 @@ def grab_meta():
     #
     meta['STYPE'] = str('QSO')
     meta['DISPERSER'] = str('ECH')
-    # KLUDGE FOR NOW
-    meta['DATE-OBS'] = str('9999-01-01')
     # Check
     assert chk_meta(meta, chk_cat_only=True)
     # Return
