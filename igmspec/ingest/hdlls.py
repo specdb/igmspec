@@ -82,11 +82,11 @@ def grab_meta():
     # Build
     hdlls_full = hdlls_full[1:]
     hdlls_full.remove_column('SPEC_FILES')
-    hdlls_full.add_column(Column(spec_files,name='SPEC_FILE'))
+    hdlls_full.add_column(Column(np.array(spec_files).astype(str),name='SPEC_FILE'))
     # Cut on unique SPEC_FILEs
-    uni, uni_idx = np.unique(np.array(spec_files), return_index=True)
+    uni, uni_idx = np.unique(np.array(spec_files).astype(str), return_index=True)
     # REMOVE ONE FILE (A DUPLICATE) BY HAND
-    mt = uni != 'HD-LLS_J130756.70+042215.0_MIKE.fits'
+    mt = uni != 'HD-LLS_J130756.73+042215.5_MIKE.fits'
     uni_idx = uni_idx[mt]
     #
     hdlls_full = hdlls_full[uni_idx]

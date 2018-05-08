@@ -3,7 +3,7 @@
 import os
 import pytest
 
-from ..hdlls import meta_for_build
+from igmspec.ingest.hdlls import grab_meta
 
 #def data_path(filename):
 #    data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -15,6 +15,6 @@ def test_hdlls():
         assert True
         return
     #
-    meta = meta_for_build()
-    assert len(meta) == 129
+    meta = grab_meta()
+    assert len(meta) == 145
 
