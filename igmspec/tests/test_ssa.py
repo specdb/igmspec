@@ -7,7 +7,6 @@ import os
 
 from specdb.specdb import IgmSpec
 from specdb import ssa as spdb_ssa
-import igmspec
 
 #version = 'v01'
 version = 'v02'
@@ -17,6 +16,9 @@ def data_path(filename):
     return os.path.join(data_dir, filename)
 
 def test_sdss_ssa_querydata():
+    if os.getenv('SPECDB') is None:  # Would need to generate a new debug file for this to work..
+        assert True
+        return
     igmsp = IgmSpec()#db_file=db_file)
     #
     ssa = spdb_ssa.SSAInterface(igmsp)
@@ -28,6 +30,9 @@ def test_sdss_ssa_querydata():
 def test_chalos_ssa_querydata():
     """ Mixes COS and HIRES
     """
+    if os.getenv('SPECDB') is None:  # Would need to generate a new debug file for this to work..
+        assert True
+        return
     igmsp = IgmSpec()#db_file=db_file)
     #
     ssa = spdb_ssa.SSAInterface(igmsp)
