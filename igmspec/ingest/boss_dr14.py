@@ -1,0 +1,346 @@
+""" Module to ingest SDSS III (aka BOSS) data products
+"""
+from __future__ import print_function, absolute_import, division, unicode_literals
+
+
+import numpy as np
+import os, json
+import pdb
+import datetime
+
+from pkg_resources import resource_filename
+
+from astropy.table import Table, Column, vstack
+from astropy.time import Time
+from astropy.io import fits
+from astropy.coordinates import SkyCoord, match_coordinates_sky
+from astropy import units as u
+
+from linetools import utils as ltu
+from linetools.spectra import io as lsio
+
+from specdb.build.utils import chk_for_duplicates
+from specdb.build.utils import chk_meta
+from specdb.build.utils import init_data
+
+
+def grab_meta(test=False):
+    """ Grab BOSS meta Table
+
+    Returns
+    -------
+    boss_meta : Table
+
+    """
+
+    # Paris et al.
+    qsos_dr14 = Table.read(os.getenv('RAW_IGMSPEC')+'/BOSS_DR14/DR14Q_v4_4.fits.gz')
+    # Add original ID to coordinate with spectra and remove it later
+    qsos_dr14['ORIG_ID'] = np.arange(len(qsos_dr14))
+    # Cut on BOSS (do not include DR7 files)
+    boss_dr14 = qsos_dr14[qsos_dr14['SPECTRO'] == 'BOSS']
+
+    # Cut out bad ones
+    bad_meta = Table.read(resource_filename('igmspec', 'ingest/files/bad_dr14.fits'))
+    keep = np.array([True]*len(boss_dr14))
+    for row in bad_meta:
+        bad_qso = np.where((boss_dr14['PLATE'] == row['PLATE']) & (
+            boss_dr14['FIBERID'] == row['FIBERID']))[0]
+        keep[bad_qso] = False
+    boss_dr14 = boss_dr14[keep]
+    if test:
+        boss_dr14 = boss_dr14[:100]
+    '''
+    # Cut out Plate 7840
+    plate7840 = Table.read(resource_filename('igmspec', 'ingest/files/bossdr14_plate7840_matched.ascii'), format='ascii')
+    not_7840 = boss_dr14['PLATE'] != 7840
+    for ii in range(len(plate7840)):
+        isplit = plate7840['sfile'][ii].split('-')
+        idx = np.where((boss_dr14['PLATE'] == 7840) & (boss_dr14['FIBERID'] == int(isplit[-1][0:4])))[0]
+        assert len(idx) == 1
+        not_7840[idx[0]] = True
+    boss_dr14 = boss_dr14[not_7840]
+    # Cut out others
+    for plate in [7879, 3678, 7513, 4869, 7306]:
+        ptbl = Table.read(resource_filename('igmspec', 'ingest/files/bossdr14_plate{:d}_matched.ascii'.format(plate)),
+                           format='ascii.csv')
+        not_in = boss_dr14['PLATE'] != plate
+        for ii in range(len(ptbl)):
+            idx = np.where((boss_dr14['PLATE'] == ptbl['plate'][ii]) & (boss_dr14['FIBERID'] == ptbl['fiber'][ii]))[0]
+            not_in[idx[0]] = True
+        boss_dr14 = boss_dr14[not_in]
+    '''
+
+    # Proceed
+    boss_dr14['CAT'] = str('DR14')
+    # Cut on redshift?
+    #gd = np.any([boss_dr14['Z_PIPE'] > 0., boss_dr14['Z_PCA'] > 0.],axis=0) # CUTS Z_VI
+    #boss_dr12 = boss_dr12[gd]
+    #
+    #
+    nboss = len(boss_dr14)
+    # DATE-OBS
+    t = Time(list(boss_dr14['MJD'].data), format='mjd', out_subfmt='date')  # Fixes to YYYY-MM-DD
+    boss_dr14.add_column(Column(t.iso, name='DATE-OBS'))
+    # Add columns
+    boss_dr14.add_column(Column(['BOSS']*nboss, name='INSTR'))
+    boss_dr14.add_column(Column(['BOTH']*nboss, name='DISPERSER'))
+    #http://www.sdss.org/instruments/boss_spectrograph/
+    boss_dr14.add_column(Column([2100.]*nboss, name='R'))  # RESOLUTION
+    boss_dr14.add_column(Column(['SDSS 2.5-M']*nboss, name='TELESCOPE'))
+    # Redshift logic
+    boss_dr14['zem_GROUP'] = boss_dr14['Z']
+    boss_dr14['sig_zem'] = boss_dr14['Z_PIPE_ERR']
+    boss_dr14['flag_zem'] = boss_dr14['SOURCE_Z']
+    '''
+    # Fix bad redshifts
+    bad_pca = boss_meta['Z_PCA'] < 0.
+    boss_meta['zem_GROUP'][bad_pca] = boss_meta['Z_PIPE'][bad_pca]
+    boss_meta['sig_zem'][bad_pca] = boss_meta['ERR_ZPIPE'][bad_pca]
+    boss_meta['flag_zem'][bad_pca] = str('BOSS_PIPE')
+    '''
+    # Rename RA/DEC
+    boss_dr14.rename_column('RA', 'RA_GROUP')
+    boss_dr14.rename_column('DEC', 'DEC_GROUP')
+    # STYPE
+    boss_dr14['STYPE'] = str('QSO')
+    # Check
+    assert chk_meta(boss_dr14, chk_cat_only=True)
+    # Return
+    return boss_dr14
+
+'''
+def meta_for_build():
+    """ Load the meta info
+    DR12 quasars : https://data.sdss.org/datamodel/files/BOSS_QSO/DR12Q/DR12Q.html
+
+    Returns
+    -------
+
+    """
+    boss_meta = grab_meta()
+    # Cut down to unique
+    c_main = SkyCoord(ra=boss_meta['RA_SPEC'], dec=boss_meta['DEC_SPEC'], unit='deg')
+    idx, d2d, d3d = match_coordinates_sky(c_main, c_main, nthneighbor=2)
+    dups = np.where(d2d < 2*u.arcsec)[0]
+    flgs = np.array([True]*len(boss_meta))
+    #
+    for ii in dups:
+        if boss_meta[ii]['CAT'] == 'SUPBD':
+            flgs[ii] = False
+    boss_meta = boss_meta[flgs]
+    if not chk_for_duplicates(boss_meta):
+        raise ValueError("DUPLICATES IN BOSS")
+    #
+    meta = Table()
+    for key in ['RA', 'DEC', 'zem', 'sig_zem', 'flag_zem']:
+        meta[key] = boss_meta[key]
+    meta['STYPE'] = [str('QSO')]*len(meta)
+    # Return
+    return meta
+'''
+
+
+def get_specfil(idx, meta, KG=False, hiz=False):
+    """Grab the BOSS file name + path
+    KG : bool, optional
+      Grab MFR continuum generated by KG
+    """
+    pnm = '{0:04d}'.format(meta['PLATE'][idx])
+    fnm = '{0:04d}'.format(meta['FIBERID'][idx])
+    mjd = str(meta['MJD'][idx])
+
+    # Generate file name (DR4 is different)
+    path = os.getenv('RAW_IGMSPEC')+'/BOSS_DR14/'
+
+    oid = meta['ORIG_ID'][idx]
+
+    if pnm == '6190':
+        path += 'dr12_quasar_PlATE_6190/'
+    elif oid < 50000:
+        path += 'dr14_quasar_0-50000/'
+    elif oid < 100000:
+        path += 'dr14_quasar_50000-100000/'
+    elif oid < 150000:
+        path += 'dr14_quasar_100000-150000/'
+    elif oid < 200000:
+        path += 'dr14_quasar_150000-200000/'
+    elif oid < 250000:
+        path += 'dr14_quasar_200000-250000/'
+    elif oid < 300000:
+        path += 'dr14_quasar_250000-300000/'
+    elif oid < 350000:
+        path += 'dr14_quasar_300000-350000/'
+    elif oid < 400000:
+        path += 'dr14_quasar_350000-400000/'
+    elif oid < 450000:
+        path += 'dr14_quasar_400000-450000/'
+    elif oid < 500000:
+        path += 'dr14_quasar_450000-500000/'
+    elif oid < 600000:
+        path += 'dr14_quasar_500000-526356/'
+    else:
+        pdb.set_trace()
+        raise ValueError("Uh oh")
+
+    specfil = path+'spec-{:s}-{:s}-{:s}.fits'.format(pnm, mjd, fnm)
+
+    # Finish
+    return specfil
+
+
+def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False, boss_hdf=None, **kwargs):
+    """ Add BOSS data to the DB
+
+    Parameters
+    ----------
+    hdf : hdf5 pointer
+    IDs : ndarray
+      int array of IGM_ID values in mainDB
+    sname : str
+      Survey name
+    chk_meta_only : bool, optional
+      Only check meta file;  will not write
+    boss_hdf : str, optional
+
+
+    Returns
+    -------
+
+    """
+    # Add Survey
+    print("Adding {:s} survey to DB".format(sname))
+    if boss_hdf is not None:
+        print("Using previously generated {:s} dataset...".format(sname))
+        boss_hdf.copy(sname, hdf)
+        return
+    boss_grp = hdf.create_group(sname)
+
+    # Build spectra (and parse for meta)
+    nspec = len(meta)
+    max_npix = 4660  # Just needs to be large enough
+    data = init_data(max_npix, include_co=False)
+    # Init
+    spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
+                                         maxshape=(None,), compression='gzip')
+    spec_set.resize((nspec,))
+    wvminlist = []
+    wvmaxlist = []
+    speclist = []
+    npixlist = []
+    # Loop
+    maxpix = 0
+    bad_spec = np.array([False]*len(meta))
+    for jj in range(len(meta)):
+        # Generate full file
+        full_file = get_specfil(jj, meta)
+        if full_file == 'None':
+            continue
+        # Read
+        try:
+            spec = lsio.readspec(full_file, masking='edges')
+        except:
+            print("Failed on full_file: {:s}, {:d}".format(full_file, jj))
+            bad_spec[jj] = True
+            continue
+        # npix
+        npix = spec.npix
+        if npix < 10:
+            print("Not enough pixels in file: {:s}, {:d}".format(full_file, jj))
+            bad_spec[jj] = True
+            continue
+        '''
+        # Kludge for higest redshift systems
+        if npix < 10:
+            full_file = get_specfil(jj, meta, hiz=True)
+            try:
+                spec = lsio.readspec(full_file)
+            except:
+                print("Missing: {:s}".format(full_file))
+            npix = spec.npix
+        elif npix > max_npix:
+            raise ValueError("Not enough pixels in the data... ({:d})".format(npix))
+        else:
+            maxpix = max(npix,maxpix)
+        '''
+        maxpix = max(npix,maxpix)
+        # Parse name
+        fname = full_file.split('/')[-1]
+        # Fill
+        for key in ['wave','flux','sig']:
+            data[key] = 0.  # Important to init (for compression too)
+        data['flux'][0][:npix] = spec.flux.value
+        data['sig'][0][:npix] = spec.sig.value
+        data['wave'][0][:npix] = spec.wavelength.value
+        '''
+        # GZ Continuum -- packed in with spectrum, generated by my IDL script
+        try:
+            co = spec.co.value
+        except AttributeError:
+            co = np.zeros_like(spec.flux.value)
+        # KG Continuum
+        KG_file = get_specfil(row, KG=True)
+        if os.path.isfile(KG_file) and (npix>1):  # Latter is for junk in GZ file.  Needs fixing
+            hduKG = fits.open(KG_file)
+            KGtbl = hduKG[1].data
+            wvKG = 10.**KGtbl['LOGLAM']
+            try:
+                assert (wvKG[0]-spec.wavelength[0].value) < 1e-5
+            except:
+                pdb.set_trace()
+            gdpix = np.where(wvKG < (1+row['zem_GROUP'])*1200.)[0]
+            co[gdpix] = KGtbl['CONT'][gdpix]
+        data['co'][0][:npix] = co
+        '''
+        # Meta
+        speclist.append(str(fname))
+        wvminlist.append(np.min(data['wave'][0][:npix]))
+        wvmaxlist.append(np.max(data['wave'][0][:npix]))
+        npixlist.append(npix)
+        if chk_meta_only:
+            continue
+        # Only way to set the dataset correctly
+        spec_set[jj] = data
+
+    # Deal with null spec -- Should only be done once, saved and then ready to go
+    if np.any(bad_spec):
+        bad_meta = meta[bad_spec]
+        pdb.set_trace()
+    print("Max pix = {:d}".format(maxpix))
+    # Add columns
+    meta.add_column(Column(speclist, name='SPEC_FILE'))
+    meta.add_column(Column(npixlist, name='NPIX'))
+    meta.add_column(Column(wvminlist, name='WV_MIN'))
+    meta.add_column(Column(wvmaxlist, name='WV_MAX'))
+    meta.add_column(Column(np.arange(nspec,dtype=int),name='GROUP_ID'))
+    meta.add_column(Column([2000.]*len(meta), name='EPOCH'))
+
+    # Add HDLLS meta to hdf5
+    if chk_meta(meta):
+        if chk_meta_only:
+            pdb.set_trace()
+        hdf[sname]['meta'] = meta
+    else:
+        pdb.set_trace()
+        raise ValueError("meta file failed")
+    # References
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2015ApJS..219...12A',
+                 bib='boss_qso_dr12'),
+            ]
+    jrefs = ltu.jsonify(refs)
+    hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
+    #
+    return
+
+
+def add_ssa(hdf, dset):
+    """  Add SSA info to meta dataset
+    Parameters
+    ----------
+    hdf
+    dset : str
+    """
+    from specdb.ssa import default_fields
+    Title = '{:s}: BOSS DR14 Quasars'.format(dset)
+    ssa_dict = default_fields(Title, flux='flambda', fxcalib='ABSOLUTE')
+    hdf[dset]['meta'].attrs['SSA'] = json.dumps(ltu.jsonify(ssa_dict))
