@@ -9,9 +9,9 @@ This document describes the data groups of igmspec.
 List of Surveys
 ===============
 
-Below is the list of data groups included in igmspec v02:
+Below is the list of data groups included in igmspec v03:
 
-* :doc:`boss`  [BOSS_DR12]
+* :doc:`boss_dr14`  [BOSS_DR14]
 * :doc:`cos_dwarfs`   [COS-Dwarfs]
 * :doc:`cos_halos`   [COS-Halos]
 * :doc:`esidla`   [ESI_DLA]
@@ -21,16 +21,23 @@ Below is the list of data groups included in igmspec v02:
 * :doc:`hst_z2`   [HST_z2]
 * :doc:`hst_qso`   [HSTQSO]
 * :doc:`kodiaq` [KODIAQ_DR1]
+* :doc:`kodiaq` [KODIAQ_DR2]
 * :doc:`musodla`   [MUSoDLA]
 * :doc:`xq100`   [XQ-100]
 * :doc:`sdss`   [SDSS_DR7]
 * :doc:`uves_dall`   [UVES_Dall]
 * :doc:`uvpsm4`   [UVpSM4]
 * :doc:`twoqz`   [2QZ]
+* :doc:`esi_z6`   [ESI_z6]
 
 Each document provides the survey reference
 and additional details on the spectra and
 associated meta data.
+
+Here is the list of data groups in v02 that are *not* included
+in v03 because they are superseded by v03:
+
+* :doc:`boss_dr12`  [BOSS_DR12]
 
 Overview
 ========

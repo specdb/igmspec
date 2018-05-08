@@ -1,10 +1,10 @@
 .. highlight:: rest
 
-************
-BOSS Dataset
-************
+*****************
+BOSS DR12 Dataset
+*****************
 
-This document describes the BOSS dataset.
+This document describes the BOSS DR12 dataset.
 
 Notebooks
 =========
