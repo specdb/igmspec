@@ -48,3 +48,10 @@ Spectra
 In igmspec v03 are all of the spectra released in DR1 and DR2 of
 KODIAQ in separate data groups: KODIAQ_DR1, KODIAQ_DR2.
 These data are continuum normalized.
+
+Redshifts
+=========
+
+The redshifts provide in DR1 were drawn from Simbad.
+In DR2, preference is given to the SDSS with Simbad
+as the secondary source.

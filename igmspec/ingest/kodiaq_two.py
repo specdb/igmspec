@@ -61,7 +61,7 @@ def grab_meta():
     # z
     kodiaq_meta.rename_column('zem', 'zem_GROUP')
     kodiaq_meta['sig_zem'] = 0.
-    kodiaq_meta['flag_zem'] = str('SIMBAD')
+    kodiaq_meta['flag_zem'] = str('SDSS-SIMBAD')
     #
     assert chk_meta(kodiaq_meta, chk_cat_only=True)
     return kodiaq_meta
@@ -89,12 +89,12 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     kodiaq_grp = hdf.create_group(sname)
     # Load up
     # Checks
-    if sname != 'KODIAQ_DR1':
+    if sname != 'KODIAQ_DR2':
         raise IOError("Not expecting this survey..")
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 200000  # Just needs to be large enough
+    max_npix = 60000  # Just needs to be large enough
     # Init
     data = init_data(max_npix, include_co=False)
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
@@ -136,9 +136,12 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
-        if head['XDISPERS'].strip() == 'UV':
-            gratinglist.append('BLUE')
-        else:
+        if 'XDISPERS' in head.keys():
+            if head['XDISPERS'].strip() == 'UV':
+                gratinglist.append('BLUE')
+            else:
+                gratinglist.append('RED')
+        else:  # Original, earl data
             gratinglist.append('RED')
         npixlist.append(npix)
         try:
