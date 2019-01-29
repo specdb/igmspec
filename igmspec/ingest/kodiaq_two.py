@@ -1,6 +1,6 @@
-""" Module to ingest KODIAQ Survey data
+""" Module to ingest KODIAQ DR2 Survey data
 
-O'Meara et al. 2016
+O'Meara et al. 2017
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -8,7 +8,6 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import pdb
 import os, json
-import imp
 
 import datetime
 
@@ -24,7 +23,6 @@ from specdb.build.utils import chk_meta
 from specdb.build.utils import set_resolution
 from specdb.build.utils import init_data
 
-igms_path = imp.find_module('igmspec')[1]
 
 
 def grab_meta():
@@ -33,12 +31,11 @@ def grab_meta():
     -------
 
     """
-    kodiaq_file = igms_path+'/data/meta/KODIAQ_DR1_summary.ascii'
+    kodiaq_file = os.getenv('RAW_IGMSPEC')+'/KODIAQ2/KODIAQ_DR2_summary.ascii'
     kodiaq_meta = Table.read(kodiaq_file, format='ascii', comment='#')
-    nspec = len(kodiaq_meta)
     # Verify DR1
-    for row in kodiaq_meta:
-        assert row['kodrelease'] == 1
+    dr2 = kodiaq_meta['kodrelease'] == 2
+    kodiaq_meta = kodiaq_meta[dr2]
     # RA/DEC, DATE
     ra = []
     dec = []
@@ -58,41 +55,17 @@ def grab_meta():
     kodiaq_meta.add_column(Column(dec, name='DEC_GROUP'))
     kodiaq_meta.add_column(Column(dateobs, name='DATE-OBS'))
     #
-    kodiaq_meta.add_column(Column(['HIRES']*nspec, name='INSTR'))
-    kodiaq_meta.add_column(Column(['Keck-I']*nspec, name='TELESCOPE'))
-    kodiaq_meta['STYPE'] = [str('QSO')]*nspec
+    kodiaq_meta['INSTR'] = 'HIRES'
+    kodiaq_meta['TELESCOPE'] = 'Keck-I'
+    kodiaq_meta['STYPE'] = str('QSO')
     # z
     kodiaq_meta.rename_column('zem', 'zem_GROUP')
-    kodiaq_meta['sig_zem'] = [0.]*nspec
-    kodiaq_meta['flag_zem'] = [str('SIMBAD')]*nspec
+    kodiaq_meta['sig_zem'] = 0.
+    kodiaq_meta['flag_zem'] = str('SDSS-SIMBAD')
     #
     assert chk_meta(kodiaq_meta, chk_cat_only=True)
     return kodiaq_meta
 
-'''
-def meta_for_build():
-    """ Generates the meta data needed for the IGMSpec build
-    Returns
-    -------
-    meta : Table
-    """
-    kodiaq_meta = grab_meta()
-    # Cut down to unique QSOs
-    names = np.array([name[0:26] for name in kodiaq_meta['qso']])
-    uni, uni_idx = np.unique(names, return_index=True)
-    kodiaq_meta = kodiaq_meta[uni_idx]
-    nqso = len(kodiaq_meta)
-    #
-    meta = Table()
-    meta['RA'] = kodiaq_meta['RA']
-    meta['DEC'] = kodiaq_meta['DEC']
-    meta['zem'] = kodiaq_meta['zem']
-    meta['sig_zem'] = [0.]*nqso
-    meta['flag_zem'] = [str('SIMBAD')]*nqso
-    meta['STYPE'] = [str('QSO')]*nqso
-    # Return
-    return meta
-'''
 
 def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     """ Append KODIAQ data to the h5 file
@@ -116,12 +89,12 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     kodiaq_grp = hdf.create_group(sname)
     # Load up
     # Checks
-    if sname != 'KODIAQ_DR1':
+    if sname != 'KODIAQ_DR2':
         raise IOError("Not expecting this survey..")
 
     # Build spectra (and parse for meta)
     nspec = len(meta)
-    max_npix = 200000  # Just needs to be large enough
+    max_npix = 60000  # Just needs to be large enough
     # Init
     data = init_data(max_npix, include_co=False)
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
@@ -135,8 +108,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     npixlist = []
     speclist = []
     # Loop
-    #path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20150421/'
-    path = os.getenv('RAW_IGMSPEC')+'/KODIAQ_data_20160618/'  # BZERO FIXED
+    path = os.getenv('RAW_IGMSPEC')+'/KODIAQ2/Data/'
     maxpix = 0
     for jj,row in enumerate(meta):
         # Generate full file
@@ -164,9 +136,12 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
         speclist.append(str(fname))
         wvminlist.append(np.min(data['wave'][0][:npix]))
         wvmaxlist.append(np.max(data['wave'][0][:npix]))
-        if head['XDISPERS'].strip() == 'UV':
-            gratinglist.append('BLUE')
-        else:
+        if 'XDISPERS' in head.keys():
+            if head['XDISPERS'].strip() == 'UV':
+                gratinglist.append('BLUE')
+            else:
+                gratinglist.append('RED')
+        else:  # Original, earl data
             gratinglist.append('RED')
         npixlist.append(npix)
         try:
@@ -187,7 +162,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     meta.add_column(Column(wvminlist, name='WV_MIN'))
     meta.add_column(Column(wvmaxlist, name='WV_MAX'))
     meta.add_column(Column(Rlist, name='R'))
-    meta.add_column(Column(gratinglist, name='GRATING'))
+    meta.add_column(Column(gratinglist, name='DISPERSER'))
     meta.add_column(Column(np.arange(nspec,dtype=int),name='GROUP_ID'))
 
     # Add HDLLS meta to hdf5
@@ -198,8 +173,8 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     else:
         raise ValueError("meta file failed")
     # References
-    refs = [dict(url='http://adsabs.harvard.edu/abs/2015AJ....150..111O',
-                 bib='kodiaq2')
+    refs = [dict(url='http://adsabs.harvard.edu/abs/2017AJ....154..114O',
+                 bib='kodiaq')
             ]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)

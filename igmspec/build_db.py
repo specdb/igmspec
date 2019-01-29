@@ -353,8 +353,6 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
         new_groups[gname].hdf5_adddata(hdf, gname, meta)
         new_groups[gname].add_ssa(hdf, gname)
 
-    pdb.set_trace()
-
     # Copy over all the old stuff
     redo_groups = []#'HD-LLS_DR1']
     skip_groups = ['BOSS_DR12']# 'SDSS_DR7'] #warnings.warn("NEED TO PUT BACK SDSS AND BOSS!")
