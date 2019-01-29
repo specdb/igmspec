@@ -241,7 +241,7 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
 
     # Finish
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
-    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri,
+    sdbbuwrite_hdf(hdf, str('igmspec'), maindb, zpri,
                     group_dict, version, Publisher=str(publisher))
 
     print("Wrote {:s} DB file".format(outfil))
@@ -497,20 +497,20 @@ def get_build_groups(version):
         groups['HD-LLS_DR1'] = hdlls
         groups['GGG'] = ggg
     elif version[0:3] == 'v02':
-        groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
-        groups['XQ-100'] = xq100        # Lopez et al. 2016
-        groups['HDLA100'] = hdla100     # Neeleman et al. 2013
-        groups['2QZ'] = twodf           # Croom et al.
-        groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
-        groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
+        groups['HST_z2'] = hst_z2         # O'Meara et al. 2011
+        groups['XQ-100'] = xq100          # Lopez et al. 2016
+        groups['HDLA100'] = hdla100       # Neeleman et al. 2013
+        groups['2QZ'] = twodf             # Croom et al.
+        groups['ESI_DLA'] = esidla        # Rafelski et al. 2012, 2014
+        groups['COS-Halos'] = cos_halos   # Tumlinson et al. 2013
         groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
-        groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
-        groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
-        groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
-        groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
+        groups['HSTQSO'] = hst_qso        # Ribaudo et al. 2011; Neeleman et al. 2016
+        groups['MUSoDLA'] = musodla       # Jorgensen et al. 2013
+        groups['UVES_Dall'] = uves_dall   # Dall'Aglio et al. 2008
+        groups['UVpSM4'] = hst_c          # Cooksey et al. 2010, 2011
     elif version[0:3] == 'v03':
-        groups['BOSS_DR14'] = boss_dr14 # Paris et al.  # Already being added
-        groups['ESI_z6'] = esi_z6 # Eiler et al. 2018
+        groups['BOSS_DR14'] = boss_dr14   # Paris et al. 2018
+        groups['ESI_z6'] = esi_z6         # Eiler et al. 2018
         groups['KODIAQ_DR2'] = kodiaq_two
     else:
         raise IOError("Not ready for this version")
