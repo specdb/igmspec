@@ -64,6 +64,7 @@ def read_spec(row):
     # Return
     return filename, spec
 
+
 def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     """ Append GGG data to the h5 file
 
@@ -82,7 +83,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     """
     # Add Survey
     print("Adding {:s} survey to DB".format(sname))
-    ggg_grp = hdf.create_group(sname)
+    _ = hdf.create_group(sname)
     # Load up
     if sname != 'ESI_z6':
         raise IOError("Not expecting this survey..")
@@ -91,7 +92,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
     nspec = len(meta)
     max_npix = 30000  # Just needs to be large enough
     # Init
-    data = init_data(max_npix, include_co=False)
+    data = init_data(max_npix, include_co=True)
     spec_set = hdf[sname].create_dataset('spec', data=data, chunks=True,
                                          maxshape=(None,), compression='gzip')
     spec_set.resize((nspec,))
@@ -123,6 +124,7 @@ def hdf5_adddata(hdf, sname, meta, debug=False, chk_meta_only=False):
         data['flux'][0][:npix] = spec.flux.value
         data['sig'][0][:npix] = spec.sig.value
         data['wave'][0][:npix] = spec.wavelength.value
+        data['co'][0][:npix] = spec.co.value
         # Meta
         #head = spec.header
         speclist.append(str(fname))

@@ -307,8 +307,8 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
 
         grp = hdf.create_group(gname)
         # Copy spectra
-        warnings.warn("GET THE DR14 spectra!")
-        #igmsp_v030.hdf.copy(gname+'/spec', hdf[gname])
+        #warnings.warn("GET THE DR14 spectra!")
+        igmsp_v030.hdf.copy(gname+'/spec', hdf[gname])
         # Copy meta
         igmsp_v030.hdf.copy(gname+'/meta', hdf[gname])
         # Meta for maindb (a little risky as Meta needs to be aligned to the spectra but they should be)
@@ -335,12 +335,12 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
         new_groups[gname].hdf5_adddata(hdf, gname, meta)
         new_groups[gname].add_ssa(hdf, gname)
 
-
     # Pop me
     new_groups.pop('BOSS_DR14')
 
     # Loop on new v3 groups before copying in the others
     for gname in new_groups.keys():
+        print("Working on group: {:s}".format(gname))
         # Meta
         meta = new_groups[gname].grab_meta()
         # Survey flag
@@ -360,9 +360,10 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     if (not test) and (not skip_copy):
         old1 = get_build_groups('v01')
         old2 = get_build_groups('v02')
+        # Add v02 to v01 list
         for key,item in old2.items():
             old1[key] = item
-        #
+        # Loop on the combined
         for key in old1.keys():
             if key in ['catalog']+redo_groups+skip_groups:
                 continue
@@ -388,15 +389,17 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
             v02hdf.copy(key+'/spec', hdf[key])
 
 
-    skip_myers = True
+    skip_myers = False
     if skip_myers:
         warnings.warn("NEED TO INCLUDE MYERS!")
     else:
-        myers.add_to_hdf(hdf)
+        # Copy from v02
+        _ = hdf.create_group('quasars')
+        v02hdf.copy('quasars', hdf['quasars'])
+        #myers.add_to_hdf(hdf)
 
     # Setup groups
     pair_groups = []
-
 
     '''
     # Loop over the old groups to update (as needed)
@@ -419,6 +422,7 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
         old_groups[gname].add_ssa(hdf, gname)
     '''
 
+    '''
     meta_only = False
     # Loop over the new groups
     for gname in new_groups:
@@ -436,8 +440,10 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
                                debug=debug)
         # Spectra
         if not meta_only:
+            pdb.set_trace()
             new_groups[gname].hdf5_adddata(hdf, gname, meta)
             new_groups[gname].add_ssa(hdf, gname)
+    '''
 
     # Check for duplicates -- There is 1 pair in SDSS (i.e. 2 duplicates)
     if not sdbbu.chk_for_duplicates(maindb, dup_lim=2):
@@ -506,7 +512,7 @@ def get_build_groups(version):
         groups['MUSoDLA'] = musodla       # Jorgensen et al. 2013
         groups['UVES_Dall'] = uves_dall   # Dall'Aglio et al. 2008
         groups['UVpSM4'] = hst_c          # Cooksey et al. 2010, 2011
-    elif version[0:3] == 'v03':
+    elif version == 'v03':
         groups['BOSS_DR14'] = boss_dr14   # Paris et al. 2018
         groups['ESI_z6'] = esi_z6         # Eiler et al. 2018
         groups['KODIAQ_DR2'] = kodiaq_two
