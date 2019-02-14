@@ -25,6 +25,8 @@ from igmspec.ingest import cos_dwarfs
 from igmspec.ingest import musodla
 from igmspec.ingest import uves_dall
 from igmspec.ingest import boss_dr14
+from igmspec.ingest import esi_z6
+from igmspec.ingest import kodiaq_two
 
 from astropy.table import Table, vstack, Column
 from astropy import units as u
@@ -239,7 +241,7 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
 
     # Finish
     zpri = v01hdf['catalog'].attrs['Z_PRIORITY']
-    sdbbu.write_hdf(hdf, str('igmspec'), maindb, zpri,
+    sdbbuwrite_hdf(hdf, str('igmspec'), maindb, zpri,
                     group_dict, version, Publisher=str(publisher))
 
     print("Wrote {:s} DB file".format(outfil))
@@ -247,7 +249,7 @@ def ver02(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
 
 
 def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False,
-          version='v03', out_path=None):
+          version='v03.1', out_path=None, redo_dr14=False):
     """ Build version 3.X
     Reads several previous datasets from v1.X
     Remakes the maindb using BOSS DR14 as the main driver
@@ -281,6 +283,10 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     # Clobber?
     if not chk_clobber(outfil, clobber=clobber):
         return
+
+    # Other bits
+    pair_groups = ['SDSS_DR7']
+
     # Begin
     hdf = h5py.File(outfil,'w')
 
@@ -290,37 +296,74 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
     group_dict = {}
 
     # BOSS DR14
-    gname = 'BOSS_DR14'
-    print("Working on group: {:s}".format(gname))
-    # Meta
     new_groups = get_build_groups('v03')
-    meta = new_groups[gname].grab_meta()
-    pair_groups = ['SDSS_DR7']
-
+    gname = 'BOSS_DR14'
     # Survey flag
     flag_g = sdbbu.add_to_group_dict(gname, group_dict, skip_for_debug=True)
-    # IDs
-    maindb = sdbbu.add_ids(maindb, meta, flag_g, tkeys, idkey,
-                           first=(flag_g==1), close_pairs=(gname in pair_groups),
-                           debug=False)
-    # Spectra
-    new_groups[gname].hdf5_adddata(hdf, gname, meta)
-    new_groups[gname].add_ssa(hdf, gname)
+
+    if not redo_dr14:
+        v030file = os.getenv('SPECDB')+'/IGMspec_DB_v03.0.hdf5'
+        igmsp_v030 = IgmSpec(db_file=v030file)
+
+        grp = hdf.create_group(gname)
+        # Copy spectra
+        #warnings.warn("GET THE DR14 spectra!")
+        igmsp_v030.hdf.copy(gname+'/spec', hdf[gname])
+        # Copy meta
+        igmsp_v030.hdf.copy(gname+'/meta', hdf[gname])
+        # Meta for maindb (a little risky as Meta needs to be aligned to the spectra but they should be)
+        meta = igmsp_v030['BOSS_DR14'].meta
+        meta.remove_column('IGM_ID')
+        maindb = sdbbu.add_ids(maindb, meta, flag_g, tkeys, idkey,
+                               first=(flag_g==1), close_pairs=(gname in pair_groups),
+                               debug=False)
+        #hdf[key+'/meta'] = meta
+        #for akey in v01hdf[key+'/meta'].attrs.keys():
+        #    hdf[key+'/meta'].attrs[akey] = v01hdf[key+'/meta'].attrs[akey]
+        # SSA info
+        #new_groups[gname].add_ssa(hdf, gname)
+    else:
+        # BOSS DR14
+        print("Working on group: {:s}".format(gname))
+        # Meta
+        meta = new_groups[gname].grab_meta()
+        # IDs
+        maindb = sdbbu.add_ids(maindb, meta, flag_g, tkeys, idkey,
+                               first=(flag_g==1), close_pairs=(gname in pair_groups),
+                               debug=False)
+        # Spectra
+        new_groups[gname].hdf5_adddata(hdf, gname, meta)
+        new_groups[gname].add_ssa(hdf, gname)
 
     # Pop me
     new_groups.pop('BOSS_DR14')
 
+    # Loop on new v3 groups before copying in the others
+    for gname in new_groups.keys():
+        print("Working on group: {:s}".format(gname))
+        # Meta
+        meta = new_groups[gname].grab_meta()
+        # Survey flag
+        flag_g = sdbbu.add_to_group_dict(gname, group_dict, skip_for_debug=True)
+        # IDs
+        maindb = sdbbu.add_ids(maindb, meta, flag_g, tkeys, idkey,
+                               first=(flag_g==1), close_pairs=(gname in pair_groups),
+                               debug=False)
+        # Spectra
+        new_groups[gname].hdf5_adddata(hdf, gname, meta)
+        new_groups[gname].add_ssa(hdf, gname)
 
-    # Copy over the old stuff
+    # Copy over all the old stuff
     redo_groups = []#'HD-LLS_DR1']
     skip_groups = ['BOSS_DR12']# 'SDSS_DR7'] #warnings.warn("NEED TO PUT BACK SDSS AND BOSS!")
     skip_copy = False
     if (not test) and (not skip_copy):
         old1 = get_build_groups('v01')
         old2 = get_build_groups('v02')
+        # Add v02 to v01 list
         for key,item in old2.items():
             old1[key] = item
-        #
+        # Loop on the combined
         for key in old1.keys():
             if key in ['catalog']+redo_groups+skip_groups:
                 continue
@@ -346,15 +389,17 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
             v02hdf.copy(key+'/spec', hdf[key])
 
 
-    skip_myers = True
+    skip_myers = False
     if skip_myers:
         warnings.warn("NEED TO INCLUDE MYERS!")
     else:
-        myers.add_to_hdf(hdf)
+        # Copy from v02
+        _ = hdf.create_group('quasars')
+        v02hdf.copy('quasars', hdf['quasars'])
+        #myers.add_to_hdf(hdf)
 
     # Setup groups
     pair_groups = []
-
 
     '''
     # Loop over the old groups to update (as needed)
@@ -377,6 +422,7 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
         old_groups[gname].add_ssa(hdf, gname)
     '''
 
+    '''
     meta_only = False
     # Loop over the new groups
     for gname in new_groups:
@@ -394,8 +440,10 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
                                debug=debug)
         # Spectra
         if not meta_only:
+            pdb.set_trace()
             new_groups[gname].hdf5_adddata(hdf, gname, meta)
             new_groups[gname].add_ssa(hdf, gname)
+    '''
 
     # Check for duplicates -- There is 1 pair in SDSS (i.e. 2 duplicates)
     if not sdbbu.chk_for_duplicates(maindb, dup_lim=2):
@@ -453,19 +501,21 @@ def get_build_groups(version):
         groups['HD-LLS_DR1'] = hdlls
         groups['GGG'] = ggg
     elif version[0:3] == 'v02':
-        groups['HST_z2'] = hst_z2       # O'Meara et al. 2011
-        groups['XQ-100'] = xq100        # Lopez et al. 2016
-        groups['HDLA100'] = hdla100     # Neeleman et al. 2013
-        groups['2QZ'] = twodf           # Croom et al.
-        groups['ESI_DLA'] = esidla      # Rafelski et al. 2012, 2014
-        groups['COS-Halos'] = cos_halos # Tumlinson et al. 2013
+        groups['HST_z2'] = hst_z2         # O'Meara et al. 2011
+        groups['XQ-100'] = xq100          # Lopez et al. 2016
+        groups['HDLA100'] = hdla100       # Neeleman et al. 2013
+        groups['2QZ'] = twodf             # Croom et al.
+        groups['ESI_DLA'] = esidla        # Rafelski et al. 2012, 2014
+        groups['COS-Halos'] = cos_halos   # Tumlinson et al. 2013
         groups['COS-Dwarfs'] = cos_dwarfs # Bordoloi et al. 2014
-        groups['HSTQSO'] = hst_qso      # Ribaudo et al. 2011; Neeleman et al. 2016
-        groups['MUSoDLA'] = musodla     # Jorgensen et al. 2013
-        groups['UVES_Dall'] = uves_dall # Dall'Aglio et al. 2008
-        groups['UVpSM4'] = hst_c        # Cooksey et al. 2010, 2011
-    elif version[0:3] == 'v03':
-        groups['BOSS_DR14'] = boss_dr14 # Paris et al.  # Already being added
+        groups['HSTQSO'] = hst_qso        # Ribaudo et al. 2011; Neeleman et al. 2016
+        groups['MUSoDLA'] = musodla       # Jorgensen et al. 2013
+        groups['UVES_Dall'] = uves_dall   # Dall'Aglio et al. 2008
+        groups['UVpSM4'] = hst_c          # Cooksey et al. 2010, 2011
+    elif version == 'v03':
+        groups['BOSS_DR14'] = boss_dr14   # Paris et al. 2018
+        groups['ESI_z6'] = esi_z6         # Eiler et al. 2018
+        groups['KODIAQ_DR2'] = kodiaq_two
     else:
         raise IOError("Not ready for this version")
     # Return
