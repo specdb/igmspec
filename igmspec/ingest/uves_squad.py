@@ -167,6 +167,7 @@ def hdf5_adddata(hdf, sname, squad_meta, debug=False, chk_meta_only=False):
     # Add columns
     squad_meta['GROUP_ID'] = np.arange(nspec, dtype=int)
     squad_meta['R'] = Rlist
+    squad_meta['NPIX'] = npixlist
     squad_meta['DATE-OBS'] = dateobslist
 
     # Add HDLLS meta to hdf5
@@ -182,7 +183,6 @@ def hdf5_adddata(hdf, sname, squad_meta, debug=False, chk_meta_only=False):
             ]
     jrefs = ltu.jsonify(refs)
     hdf[sname]['meta'].attrs['Refs'] = json.dumps(jrefs)
-    pdb.set_trace()
     #
     return
 

@@ -298,10 +298,8 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
         igmsp_v030 = IgmSpec(db_file=v030file)
 
         grp = hdf.create_group(gname)
-        '''
         # Copy spectra
         igmsp_v030.hdf.copy(gname+'/spec', hdf[gname])
-        '''
         # Copy meta
         igmsp_v030.hdf.copy(gname+'/meta', hdf[gname])
         # Meta for maindb (a little risky as Meta needs to be aligned to the spectra but they should be)
@@ -340,7 +338,6 @@ def ver03(test=False, skip_copy=False, publisher='J.X. Prochaska', clobber=False
         # Spectra
         new_groups[gname].hdf5_adddata(hdf, gname, meta)
         new_groups[gname].add_ssa(hdf, gname)
-        pdb.set_trace()
 
     # Copy over all the old stuff
     redo_groups = []#'HD-LLS_DR1']
